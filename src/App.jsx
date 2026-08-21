@@ -21,6 +21,8 @@ import FloatingClientBar from './components/FloatingBar';
 // Modals
 import CartDrawer from './components/modals/CartDrawer';
 import ProductDetailModal from './components/modals/ProductDetailModal';
+import StoryReelModal from './components/modals/StoryReelModal';
+import FoodRouletteModal from './components/modals/FoodRouletteModal';
 import BillingModal from './components/modals/BillingModal';
 import TicketModal from './components/modals/TicketModal';
 import DailyCloseModal from './components/modals/DailyCloseModal';
@@ -33,7 +35,7 @@ import {
 
 export default function App() {
   const [currentRole, setCurrentRole] = useState('client');
-  const [clientLayout, setClientLayout] = useState('list');
+  const [clientLayout, setClientLayout] = useState('editorial');
   const [tableNumber, setTableNumber] = useState('4');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('Todos');
@@ -48,6 +50,16 @@ export default function App() {
   const [invoices, setInvoices] = useState([]);
   const [dailyCloseHistory, setDailyCloseHistory] = useState([]);
 
+  // Favorites state (persisted)
+  const [favorites, setFavorites] = useState(() => {
+    try {
+      const saved = localStorage.getItem('gourmet_favorites');
+      return saved ? JSON.parse(saved) : [1, 4];
+    } catch (e) {
+      return [1, 4];
+    }
+  });
+
   // Cart
   const [cart, setCart] = useState([]);
   const [includeTip, setIncludeTip] = useState(true);
@@ -55,6 +67,9 @@ export default function App() {
   // Modals
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
+  const [activeStoryIndex, setActiveStoryIndex] = useState(0);
+  const [isRouletteOpen, setIsRouletteOpen] = useState(false);
   const [isWaiterModalOpen, setIsWaiterModalOpen] = useState(false);
   const [isGeoModalOpen, setIsGeoModalOpen] = useState(false);
   const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
@@ -72,6 +87,19 @@ export default function App() {
   const showToast = (msg) => {
     setToast({ show: true, message: msg });
     setTimeout(() => setToast({ show: false, message: '' }), 3000);
+  };
+
+  const toggleFavorite = (productId) => {
+    setFavorites(prev => {
+      const exists = prev.includes(productId);
+      const updated = exists ? prev.filter(id => id !== productId) : [...prev, productId];
+      try {
+        localStorage.setItem('gourmet_favorites', JSON.stringify(updated));
+      } catch (e) {}
+      showToast(exists ? 'Eliminado de favoritos 💔' : '¡Guardado en tus favoritos! ❤️');
+      playChime();
+      return updated;
+    });
   };
 
   const playChime = () => {
@@ -95,7 +123,7 @@ export default function App() {
   };
 
   return (
-    <div className="bg-slate-950 text-slate-100 font-sans min-h-screen pb-24 selection:bg-orange-500 selection:text-white">
+    <div className="bg-[#14120c] text-[#fdfcf7] font-sans min-h-screen pb-24 selection:bg-[#9b7e09] selection:text-[#fdfcf7]">
       <Header
         currentRole={currentRole}
         setCurrentRole={(r) => {
@@ -128,6 +156,13 @@ export default function App() {
             clientLayout={clientLayout}
             setClientLayout={setClientLayout}
             setSelectedProduct={setSelectedProduct}
+            favorites={favorites}
+            toggleFavorite={toggleFavorite}
+            onOpenStory={(idx) => {
+              setActiveStoryIndex(idx);
+              setIsStoryModalOpen(true);
+            }}
+            onOpenRoulette={() => setIsRouletteOpen(true)}
           />
         )}
 
@@ -246,12 +281,39 @@ export default function App() {
       {selectedProduct && (
         <ProductDetailModal
           product={selectedProduct}
+          allProducts={products}
+          isFavorite={favorites.includes(selectedProduct.id)}
+          onToggleFavorite={toggleFavorite}
           onClose={() => setSelectedProduct(null)}
           onAddToCart={(cartItem) => {
             setCart(prev => [...prev, cartItem]);
-            setSelectedProduct(null);
             showToast('¡Agregado a tu pedido! 🛒');
+            playChime();
           }}
+        />
+      )}
+
+      {isStoryModalOpen && (
+        <StoryReelModal
+          initialStoryIndex={activeStoryIndex}
+          products={products}
+          onClose={() => setIsStoryModalOpen(false)}
+          onOpenProductDetail={(prod) => {
+            setIsStoryModalOpen(false);
+            setSelectedProduct(prod);
+          }}
+        />
+      )}
+
+      {isRouletteOpen && (
+        <FoodRouletteModal
+          products={products}
+          onClose={() => setIsRouletteOpen(false)}
+          onOpenProductDetail={(prod) => {
+            setIsRouletteOpen(false);
+            setSelectedProduct(prod);
+          }}
+          playChime={playChime}
         />
       )}
 
