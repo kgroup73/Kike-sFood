@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sparkles } from 'lucide-react';
 
 // Data & Libs
@@ -49,6 +49,22 @@ export default function App() {
   const [kitchenOrders, setKitchenOrders] = useState(INITIAL_KITCHEN_ORDERS);
   const [invoices, setInvoices] = useState([]);
   const [dailyCloseHistory, setDailyCloseHistory] = useState([]);
+
+  // Inventario: historial de desabastecimiento reportado por cocina (persistido)
+  const [stockEvents, setStockEvents] = useState(() => {
+    try {
+      const saved = localStorage.getItem('gourmet_stock_history');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('gourmet_stock_history', JSON.stringify(stockEvents.slice(0, 300)));
+    } catch (e) {}
+  }, [stockEvents]);
 
   // Favorites state (persisted)
   const [favorites, setFavorites] = useState(() => {
@@ -122,6 +138,47 @@ export default function App() {
     }
   };
 
+  // ===== Inventario: marcado manual de agotados por Cocina (tiempo real) =====
+  const markProductSoldOut = (productId, { missingIngredients = [], note = '' }) => {
+    const target = products.find(p => p.id === productId);
+    if (!target || target.soldOut) return;
+    const iso = new Date().toISOString();
+    setProducts(prev => prev.map(p => p.id === productId ? { ...p, soldOut: true, soldOutInfo: { at: iso, by: 'Cocina', missingIngredients, note } } : p));
+    setStockEvents(prev => [{
+      id: Date.now(),
+      type: 'AGOTADO',
+      productId,
+      productName: target.name,
+      productImage: target.image,
+      missingIngredients,
+      note,
+      reportedBy: 'Cocina',
+      timestamp: iso
+    }, ...prev]);
+    playChime();
+    showToast(`"${target.name}" marcado Agotado. Carta actualizada en tiempo real 📦`);
+  };
+
+  const restockProduct = (productId) => {
+    const target = products.find(p => p.id === productId);
+    if (!target || !target.soldOut) return;
+    const iso = new Date().toISOString();
+    setProducts(prev => prev.map(p => p.id === productId ? { ...p, soldOut: false, soldOutInfo: null } : p));
+    setStockEvents(prev => [{
+      id: Date.now(),
+      type: 'REPUESTO',
+      productId,
+      productName: target.name,
+      productImage: target.image,
+      missingIngredients: target.soldOutInfo?.missingIngredients || [],
+      note: '',
+      reportedBy: 'Cocina',
+      timestamp: iso
+    }, ...prev]);
+    playChime();
+    showToast(`"${target.name}" nuevamente disponible en la carta ✅`);
+  };
+
   return (
     <div className="bg-[#14120c] text-[#fdfcf7] font-sans min-h-screen pb-24 selection:bg-[#9b7e09] selection:text-[#fdfcf7]">
       <Header
@@ -169,11 +226,14 @@ export default function App() {
         {currentRole === 'kitchen' && (
           <KitchenView
             kitchenOrders={kitchenOrders}
+            products={products}
             updateOrderStatus={(id, status) => {
               setKitchenOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
               if (status === 'Por Cobrar') showToast(`Comanda #${id} enviada a Caja POS`);
               playChime();
             }}
+            onMarkSoldOut={markProductSoldOut}
+            onRestock={restockProduct}
           />
         )}
 
@@ -197,6 +257,7 @@ export default function App() {
           <AdminView
             products={products}
             company={company}
+            stockEvents={stockEvents}
             setCompany={setCompany}
             showToast={showToast}
             toggleProductAvailability={(id) => {
@@ -257,12 +318,20 @@ export default function App() {
               return;
             }
             if (!cart.length) return;
+            // Validación en tiempo real: descarta ítems marcados agotados por cocina
+            const validCart = cart.filter(c => !products.find(p => p.id === c.product.id)?.soldOut);
+            const removedCount = cart.length - validCart.length;
+            if (removedCount > 0) {
+              setCart(validCart);
+              showToast(`Se retiraron ${removedCount} producto(s) agotado(s) de tu pedido ⚠️`);
+            }
+            if (!validCart.length) return;
             const newOrder = {
               id: Math.floor(100 + Math.random() * 900),
               table: tableNumber,
               time: 'Hace un instante',
               status: 'Pendiente',
-              items: cart.map(c => ({
+              items: validCart.map(c => ({
                 name: c.product.name,
                 quantity: c.quantity,
                 price: c.product.price,
@@ -280,12 +349,17 @@ export default function App() {
 
       {selectedProduct && (
         <ProductDetailModal
-          product={selectedProduct}
+          product={products.find(p => p.id === selectedProduct.id) || selectedProduct}
           allProducts={products}
           isFavorite={favorites.includes(selectedProduct.id)}
           onToggleFavorite={toggleFavorite}
           onClose={() => setSelectedProduct(null)}
           onAddToCart={(cartItem) => {
+            const liveProduct = products.find(p => p.id === cartItem.product.id);
+            if (liveProduct?.soldOut) {
+              showToast(`${cartItem.product.name} se agotó y no puede agregarse al pedido 😔`);
+              return;
+            }
             setCart(prev => [...prev, cartItem]);
             showToast('¡Agregado a tu pedido! 🛒');
             playChime();
@@ -307,7 +381,7 @@ export default function App() {
 
       {isRouletteOpen && (
         <FoodRouletteModal
-          products={products}
+          products={products.filter(p => !p.soldOut)}
           onClose={() => setIsRouletteOpen(false)}
           onOpenProductDetail={(prod) => {
             setIsRouletteOpen(false);

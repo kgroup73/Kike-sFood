@@ -12,7 +12,8 @@ import {
   Info,
   Check,
   Heart,
-  ChefHat
+  ChefHat,
+  PackageX
 } from 'lucide-react';
 import { formatCOP } from '../../lib/dian';
 
@@ -91,12 +92,17 @@ export default function ProductDetailModal({
           <img
             src={product.image}
             alt={product.name}
-            className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+            className={`w-full h-full object-cover transition-transform duration-500 hover:scale-105 ${product.soldOut ? 'grayscale opacity-70' : ''}`}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#1e1b13] via-transparent to-black/40" />
 
           {/* Floating Badges */}
           <div className="absolute top-3.5 left-3.5 flex flex-wrap gap-1.5 z-10">
+            {product.soldOut && (
+              <span className="bg-rose-600 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-lg flex items-center gap-1">
+                <PackageX className="w-3 h-3" /> Agotado
+              </span>
+            )}
             {product.isChef && (
               <span className="bg-[#9b7e09] text-[#fdfcf7] text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-lg flex items-center gap-1">
                 <ChefHat className="w-3 h-3" /> Especial Chef
@@ -175,6 +181,20 @@ export default function ProductDetailModal({
             <h3 className="text-lg sm:text-xl font-extrabold text-[#fdfcf7]">{product.name}</h3>
             <p className="text-xs text-[#aba489] mt-1 leading-relaxed">{product.description}</p>
           </div>
+
+          {/* Aviso de agotamiento (Inventario en tiempo real) */}
+          {product.soldOut && (
+            <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-2.5">
+              <PackageX className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <p className="text-xs font-bold text-rose-300">Producto agotado</p>
+                <p className="text-[11px] text-[#aba489] leading-relaxed">
+                  La cocina reportó falta de insumos{product.soldOutInfo?.missingIngredients?.length ? ` (${product.soldOutInfo.missingIngredients.join(', ')})` : ''}.
+                  No está disponible para pedir en este momento.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Interactive Navigation Tabs */}
           <div className="flex items-center space-x-1.5 p-1 bg-[#14120c] rounded-xl border border-[#383324] text-xs font-semibold">
@@ -384,36 +404,47 @@ export default function ProductDetailModal({
 
         {/* Footer & Quantity Stepper */}
         <div className="p-4 sm:p-5 border-t border-[#383324] bg-[#14120c]/95 backdrop-blur-md space-y-3 shrink-0">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-[#aba489]">Porciones / Cantidad:</span>
-            <div className="flex items-center space-x-3 bg-[#1e1b13] px-3 py-1.5 rounded-xl border border-[#383324]">
-              <button
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="text-[#857f5d] hover:text-[#fdfcf7] font-bold p-1 transition-colors"
-              >
-                <Minus className="w-3.5 h-3.5" />
-              </button>
-              <span className="text-sm font-black text-[#fdfcf7] min-w-[24px] text-center">{quantity}</span>
-              <button
-                onClick={() => setQuantity(quantity + 1)}
-                className="text-[#857f5d] hover:text-[#fdfcf7] font-bold p-1 transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
+          {product.soldOut ? (
+            <button
+              disabled
+              className="w-full py-3.5 bg-[#383324] text-[#857f5d] font-black text-xs sm:text-sm rounded-2xl cursor-not-allowed flex justify-center items-center gap-2"
+            >
+              <PackageX className="w-4 h-4" /> No Disponible por Agotamiento
+            </button>
+          ) : (
+            <>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-[#aba489]">Porciones / Cantidad:</span>
+                <div className="flex items-center space-x-3 bg-[#1e1b13] px-3 py-1.5 rounded-xl border border-[#383324]">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="text-[#857f5d] hover:text-[#fdfcf7] font-bold p-1 transition-colors"
+                  >
+                    <Minus className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="text-sm font-black text-[#fdfcf7] min-w-[24px] text-center">{quantity}</span>
+                  <button
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="text-[#857f5d] hover:text-[#fdfcf7] font-bold p-1 transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
 
-          <button
-            onClick={handleAddMainAndPairing}
-            className="w-full py-3.5 bg-gradient-to-r from-[#9b7e09] to-[#b8960e] hover:from-[#b8960e] hover:to-[#9b7e09] active:scale-98 text-[#fdfcf7] font-black text-xs sm:text-sm rounded-2xl shadow-xl shadow-[#9b7e09]/25 transition-all flex justify-between px-5 items-center"
-          >
-            <span>
-              {includePairing ? 'Agregar Platillo + Maridaje' : 'Agregar al Pedido'}
-            </span>
-            <span className="bg-[#110f0a]/40 px-2.5 py-1 rounded-xl text-xs sm:text-sm font-black">
-              {formatCOP(calculateTotal())}
-            </span>
-          </button>
+              <button
+                onClick={handleAddMainAndPairing}
+                className="w-full py-3.5 bg-gradient-to-r from-[#9b7e09] to-[#b8960e] hover:from-[#b8960e] hover:to-[#9b7e09] active:scale-98 text-[#fdfcf7] font-black text-xs sm:text-sm rounded-2xl shadow-xl shadow-[#9b7e09]/25 transition-all flex justify-between px-5 items-center"
+              >
+                <span>
+                  {includePairing ? 'Agregar Platillo + Maridaje' : 'Agregar al Pedido'}
+                </span>
+                <span className="bg-[#110f0a]/40 px-2.5 py-1 rounded-xl text-xs sm:text-sm font-black">
+                  {formatCOP(calculateTotal())}
+                </span>
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
