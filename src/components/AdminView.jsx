@@ -55,12 +55,13 @@ export default function AdminView({
 
   const filteredIngredients = useMemo(() => {
     const q = ingredientQuery.trim().toLowerCase();
-    if (!q) return masterIngredients;
+    if (!q) return masterIngredients.filter(ing => ingredientsStock[ing.key]?.soldOut);
     return masterIngredients.filter(ing =>
-      ing.name.toLowerCase().includes(q) ||
-      ing.usedBy.some(pn => pn.toLowerCase().includes(q))
+      ingredientsStock[ing.key]?.soldOut &&
+      (ing.name.toLowerCase().includes(q) ||
+      ing.usedBy.some(pn => pn.toLowerCase().includes(q)))
     );
-  }, [masterIngredients, ingredientQuery]);
+  }, [masterIngredients, ingredientQuery, ingredientsStock]);
 
   const soldOutIngredients = masterIngredients.filter(ing => ingredientsStock[ing.key]?.soldOut);
 
@@ -164,7 +165,7 @@ export default function AdminView({
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div>
                 <h4 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
-                  <Boxes className="w-4 h-4 text-orange-400" /> Materias Primas ({soldOutIngredients.length} agotadas)
+                  <Boxes className="w-4 h-4 text-orange-400" /> Materias Primas Agotadas ({soldOutIngredients.length})
                 </h4>
                 <p className="text-[11px] text-slate-400 mt-0.5">
                   Reporte informativo. La cocina es la encargada de agotar y reponer las materias primas.
@@ -222,7 +223,7 @@ export default function AdminView({
               </div>
             ) : (
               <div className="py-6 text-center text-xs text-slate-500 border border-dashed border-slate-800 rounded-xl">
-                {masterIngredients.length ? 'Sin resultados para tu búsqueda.' : 'No hay materias primas registradas en el catálogo.'}
+                {masterIngredients.length ? 'No hay materias primas agotadas actualmente.' : 'No hay materias primas registradas en el catálogo.'}
               </div>
             )}
           </div>
