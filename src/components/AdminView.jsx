@@ -14,13 +14,18 @@ import {
   ShoppingCart,
   ClipboardList,
   Layers,
-  History
+  History,
+  Search,
+  Boxes
 } from 'lucide-react';
 import { formatCOP } from '../lib/dian';
 import { timeAgo, formatEventTimestamp } from '../lib/inventory';
 
 export default function AdminView({
   products,
+  productsWithStock = [],
+  masterIngredients = [],
+  ingredientsStock = {},
   company,
   stockEvents = [],
   setCompany,
@@ -31,21 +36,33 @@ export default function AdminView({
   openNewProduct
 }) {
   const [adminTab, setAdminTab] = useState('products');
+  const [ingredientQuery, setIngredientQuery] = useState('');
 
-  const soldOutNow = useMemo(() => products.filter(p => p.soldOut), [products]);
+  const soldOutNow = useMemo(() => productsWithStock.filter(p => p.soldOut), [productsWithStock]);
   const depletedEvents = useMemo(() => stockEvents.filter(e => e.type === 'AGOTADO'), [stockEvents]);
 
   // Ranking de materias primas que más agotamientos han provocado (para compras)
   const rankedIngredients = useMemo(() => {
     const totals = {};
     depletedEvents.forEach(ev => {
-      (ev.missingIngredients || []).forEach(ing => {
-        totals[ing] = (totals[ing] || 0) + 1;
-      });
+      const ing = ev.ingredient || (ev.missingIngredients || [])[0];
+      if (!ing) return;
+      totals[ing] = (totals[ing] || 0) + 1;
     });
     return Object.entries(totals).sort((a, b) => b[1] - a[1]);
   }, [depletedEvents]);
   const maxIngredientCount = rankedIngredients.length ? rankedIngredients[0][1] : 0;
+
+  const filteredIngredients = useMemo(() => {
+    const q = ingredientQuery.trim().toLowerCase();
+    if (!q) return masterIngredients;
+    return masterIngredients.filter(ing =>
+      ing.name.toLowerCase().includes(q) ||
+      ing.usedBy.some(pn => pn.toLowerCase().includes(q))
+    );
+  }, [masterIngredients, ingredientQuery]);
+
+  const soldOutIngredients = masterIngredients.filter(ing => ingredientsStock[ing.key]?.soldOut);
 
   return (
     <div className="space-y-6">
@@ -140,6 +157,74 @@ export default function AdminView({
             <span className="hidden sm:inline text-[10px] bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded border border-emerald-500/30 whitespace-nowrap">
               Sincronizado con KDS
             </span>
+          </div>
+
+          {/* Control de Materias Primas */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3 shadow-md">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <h4 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                  <Boxes className="w-4 h-4 text-orange-400" /> Materias Primas ({soldOutIngredients.length} agotadas)
+                </h4>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Reporte informativo. La cocina es la encargada de agotar y reponer las materias primas.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5 w-full sm:w-64">
+                <Search className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                <input
+                  type="text"
+                  value={ingredientQuery}
+                  onChange={e => setIngredientQuery(e.target.value)}
+                  placeholder="Buscar ingrediente o platillo..."
+                  className="bg-transparent outline-none text-xs text-white w-full placeholder:text-slate-600"
+                />
+              </div>
+            </div>
+
+            {filteredIngredients.length ? (
+              <div className="space-y-2 max-h-96 overflow-y-auto hide-scrollbar pr-1">
+                {filteredIngredients.map(ing => {
+                  const info = ingredientsStock[ing.key];
+                  const isSoldOut = !!info?.soldOut;
+                  return (
+                    <div key={ing.key} className={`bg-slate-950 border rounded-xl p-3 flex items-center justify-between gap-3 transition-all ${isSoldOut ? 'border-rose-500/25' : 'border-slate-800/80'}`}>
+                      <div className="min-w-0 space-y-0.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h5 className="text-xs font-bold text-white truncate">{ing.name}</h5>
+                          {isSoldOut && (
+                            <span className="text-[9px] font-black px-2 py-0.5 rounded-full border bg-rose-500/15 text-rose-300 border-rose-500/30">
+                              AGOTADO
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-500 truncate">
+                          Usado en {ing.usedBy.length} {ing.usedBy.length === 1 ? 'platillo' : 'platillos'}: {ing.usedBy.join(', ') || '—'}
+                        </p>
+                        {isSoldOut && info.at && (
+                          <p className="text-[10px] text-slate-600">Agotado {timeAgo(info.at)}{info.note ? ` · “${info.note}”` : ''}</p>
+                        )}
+                      </div>
+                      <div className="shrink-0">
+                        {isSoldOut ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30 px-2 py-1 rounded-lg whitespace-nowrap">
+                            <PackageX className="w-3.5 h-3.5" /> Agotado en cocina
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 px-2 py-1 rounded-lg whitespace-nowrap">
+                            <PackageCheck className="w-3.5 h-3.5" /> Disponible
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="py-6 text-center text-xs text-slate-500 border border-dashed border-slate-800 rounded-xl">
+                {masterIngredients.length ? 'Sin resultados para tu búsqueda.' : 'No hay materias primas registradas en el catálogo.'}
+              </div>
+            )}
           </div>
 
           {/* Métricas clave */}
@@ -253,11 +338,16 @@ export default function AdminView({
                         }`}>
                           {ev.type}
                         </span>
-                        <span className="text-xs font-bold text-slate-200">{ev.productName}</span>
+                        <span className="text-xs font-bold text-slate-200">{ev.ingredient || ev.productName || 'Materia prima'}</span>
                       </div>
-                      {ev.missingIngredients?.length > 0 && (
+                      {(ev.missingIngredients?.length > 0 && !ev.ingredient) && (
                         <p className="text-[11px] text-slate-400">
                           Materia prima: <span className="text-amber-300 font-medium">{ev.missingIngredients.join(', ')}</span>
+                        </p>
+                      )}
+                      {ev.affectedProducts?.length > 0 && (
+                        <p className="text-[11px] text-slate-400">
+                          Afectó: <span className="text-rose-300 font-medium">{ev.affectedProducts.join(', ')}</span>
                         </p>
                       )}
                       {ev.note && <p className="text-[11px] italic text-slate-500">“{ev.note}”</p>}

@@ -1,27 +1,63 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Flame,
   PackageX,
   PackageCheck,
   UtensilsCrossed,
-  Boxes
+  Boxes,
+  Layers,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import { formatCOP } from '../lib/dian';
-import { timeAgo } from '../lib/inventory';
-import StockControlModal from './modals/StockControlModal';
+import { timeAgo, INGREDIENT_CATEGORIES } from '../lib/inventory';
 
 export default function KitchenView({
   kitchenOrders,
   products = [],
+  masterIngredients = [],
+  ingredientsStock = {},
   updateOrderStatus,
-  onMarkSoldOut,
-  onRestock
+  onMarkIngredientSoldOut,
+  onRestockIngredient
 }) {
   const [activeTab, setActiveTab] = useState('orders');
-  const [stockTarget, setStockTarget] = useState(null);
+  const [expandedCategories, setExpandedCategories] = useState({});
+
+  const toggleCategory = (id) => {
+    setExpandedCategories(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const activeOrdersCount = kitchenOrders.filter(o => o.status !== 'Por Cobrar').length;
-  const soldOutProducts = products.filter(p => p.soldOut);
+  const soldOutIngredients = masterIngredients.filter(ing => ingredientsStock[ing.key]?.soldOut);
+
+  const categoryCounts = useMemo(() => {
+    const counts = { todos: masterIngredients.length };
+    masterIngredients.forEach(ing => {
+      counts[ing.category] = (counts[ing.category] || 0) + 1;
+    });
+    return counts;
+  }, [masterIngredients]);
+
+  const groupedByCategory = useMemo(() => {
+    const groups = new Map();
+    masterIngredients.forEach(ing => {
+      const id = ing.category || 'otros';
+      if (!groups.has(id)) {
+        groups.set(id, {
+          id,
+          label: INGREDIENT_CATEGORIES.find(c => c.id === id)?.label || 'Otros',
+          ingredients: []
+        });
+      }
+      groups.get(id).ingredients.push(ing);
+    });
+    return [...groups.values()].sort((a, b) => {
+      const ia = INGREDIENT_CATEGORIES.findIndex(c => c.id === a.id);
+      const ib = INGREDIENT_CATEGORIES.findIndex(c => c.id === b.id);
+      return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+    });
+  }, [masterIngredients]);
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -30,7 +66,7 @@ export default function KitchenView({
           <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
             <Flame className="w-5 h-5 text-orange-500" /> Monitor KDS de Cocina
           </h2>
-          <p className="text-xs text-slate-400">Comandas en tiempo real e inventario de agotados</p>
+          <p className="text-xs text-slate-400">Comandas en tiempo real e inventario de materias primas</p>
         </div>
 
         <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-[11px] font-bold w-full sm:w-auto">
@@ -52,9 +88,9 @@ export default function KitchenView({
             }`}
           >
             <Boxes className="w-3.5 h-3.5" /> Inventario
-            {soldOutProducts.length > 0 && (
+            {soldOutIngredients.length > 0 && (
               <span className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[9px] px-1.5 py-0.2 rounded-full font-bold shadow">
-                {soldOutProducts.length}
+                {soldOutIngredients.length}
               </span>
             )}
           </button>
@@ -148,98 +184,111 @@ export default function KitchenView({
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-start gap-3">
             <PackageX className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
             <p className="text-xs text-slate-400 leading-relaxed">
-              Marca manualmente un platillo como <strong className="text-rose-300">Agotado</strong> indicando la materia prima faltante.
-              El cambio se refleja al instante en la carta del cliente (quedará como <em>No Disponible</em> y no podrá pedirse) y se registra
-              en el reporte del administrador para prevenir futuros faltantes.
+              Marca manualmente una <strong className="text-rose-300">materia prima</strong> como <strong className="text-rose-300">Agotada</strong>.
+              El cambio se refleja al instante en la carta del cliente: <strong>todos los platillos que la usan</strong> quedarán como <em>No Disponible</em> y no podrán pedirse. El faltante se registra en el reporte del administrador para prevenir futuros desabastecimientos.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {products.map(p => (
-              <div
-                key={p.id}
-                className={`bg-slate-900 border rounded-2xl p-4 flex flex-col gap-3 shadow-xl transition-all ${
-                  p.soldOut ? 'border-rose-500/50 shadow-rose-500/5' : 'border-slate-800'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <img
-                    src={p.image}
-                    alt={p.name}
-                    className={`w-12 h-12 rounded-xl object-cover shrink-0 transition-all ${p.soldOut ? 'grayscale opacity-60' : ''}`}
-                    loading="lazy"
-                  />
-                  <div className="min-w-0">
-                    <h4 className="font-bold text-white text-xs truncate">{p.name}</h4>
-                    <span className="text-[10px] text-slate-500 block truncate">
-                      {p.category} • {formatCOP(p.price)}
-                    </span>
-                  </div>
-                </div>
-
-                {p.soldOut ? (
-                  <div className="space-y-2 flex-1">
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30 px-2 py-0.5 rounded-full">
-                      <PackageX className="w-3 h-3" /> Agotado • {timeAgo(p.soldOutInfo?.at)}
-                    </span>
-                    <div className="text-[11px] space-y-1">
-                      <span className="block text-slate-400 font-semibold">Materia prima faltante:</span>
-                      <div className="flex flex-wrap gap-1">
-                        {(p.soldOutInfo?.missingIngredients || []).map(ing => (
-                          <span key={ing} className="px-2 py-0.5 rounded-md bg-slate-950 border border-rose-500/25 text-rose-200 font-medium">
-                            {ing}
-                          </span>
-                        ))}
+          {/* Clasificaciones desplegables */}
+          {groupedByCategory.length ? (
+            <div className="space-y-2">
+              {groupedByCategory.map(group => {
+                const isExpanded = !!expandedCategories[group.id];
+                const groupSoldOut = group.ingredients.filter(ing => ingredientsStock[ing.key]?.soldOut).length;
+                const anySoldOut = groupSoldOut > 0;
+                return (
+                  <div key={group.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-md">
+                    <button
+                      onClick={() => toggleCategory(group.id)}
+                      className="w-full flex items-center justify-between gap-3 px-4 py-3.5 transition-all hover:bg-slate-800/40"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0">
+                          <Layers className="w-5 h-5 text-orange-400" />
+                        </div>
+                        <div className="text-left min-w-0">
+                          <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2 truncate">
+                            {group.label}
+                            {anySoldOut && (
+                              <span className="text-[9px] font-black px-2 py-0.5 rounded-full border bg-rose-500/15 text-rose-300 border-rose-500/30 shrink-0">
+                                {groupSoldOut} agotada(s)
+                              </span>
+                            )}
+                          </h3>
+                          <p className="text-[11px] text-slate-500">
+                            {group.ingredients.length} {group.ingredients.length === 1 ? 'materia prima' : 'materias primas'}
+                          </p>
+                        </div>
                       </div>
-                      {p.soldOutInfo?.note && (
-                        <p className="italic text-slate-500 pt-0.5">“{p.soldOutInfo.note}”</p>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex-1">
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">
-                      <PackageCheck className="w-3 h-3" /> Disponible
-                    </span>
-                  </div>
-                )}
+                      {isExpanded
+                        ? <ChevronDown className="w-5 h-5 text-slate-400 shrink-0 transition-transform" />
+                        : <ChevronRight className="w-5 h-5 text-slate-400 shrink-0 transition-transform" />}
+                    </button>
 
-                {p.soldOut ? (
-                  <button
-                    onClick={() => onRestock(p.id)}
-                    className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5"
-                  >
-                    <PackageCheck className="w-3.5 h-3.5" /> Reponer Stock
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => setStockTarget(p)}
-                    className="w-full py-2.5 bg-rose-600/90 hover:bg-rose-500 active:scale-95 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5"
-                  >
-                    <PackageX className="w-3.5 h-3.5" /> Marcar Agotado
-                  </button>
-                )}
-              </div>
-            ))}
+                    {isExpanded && (
+                      <div className="px-3 pb-3 pt-1 space-y-1.5">
+                        {group.ingredients.map(ing => {
+                          const info = ingredientsStock[ing.key];
+                          const isSoldOut = !!info?.soldOut;
+                          return (
+                            <div
+                              key={ing.key}
+                              className={`flex flex-wrap md:flex-nowrap items-center gap-2 px-3 py-2 rounded-xl border transition-all ${isSoldOut ? 'bg-rose-500/5 border-rose-500/30' : 'bg-slate-950 border-slate-800'}`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <Layers className={`w-4 h-4 shrink-0 ${isSoldOut ? 'text-rose-400' : 'text-orange-400'}`} />
+                                <div className="min-w-0 leading-tight">
+                                  <h4 className="font-bold text-white text-xs truncate">{ing.name}</h4>
+                                  <p className="text-[10px] text-slate-500 truncate">
+                                    Usado en {ing.usedBy.join(', ') || '—'}
+                                  </p>
+                                </div>
+                              </div>
 
-            {!products.length && (
-              <div className="col-span-full py-12 text-center text-slate-500 text-xs">
-                No hay platillos en el catálogo.
-              </div>
-            )}
-          </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                {isSoldOut ? (
+                                  <>
+                                    <span className="text-[10px] text-rose-300 font-semibold whitespace-nowrap" title={info.note || `Agotado ${timeAgo(info.at)}`}>
+                                      Agotado {info.note ? `· “${info.note}”` : `· ${timeAgo(info.at)}`}
+                                    </span>
+                                    <button
+                                      onClick={() => onRestockIngredient(ing.name)}
+                                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-[11px] rounded-lg transition-all flex items-center gap-1"
+                                    >
+                                      <PackageCheck className="w-3.5 h-3.5" /> Reponer
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="hidden sm:inline text-[10px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                                      Disponible
+                                    </span>
+                                    <button
+                                      onClick={() => onMarkIngredientSoldOut(ing.name)}
+                                      className="px-3 py-1.5 bg-rose-600/90 hover:bg-rose-500 active:scale-95 text-white font-bold text-[11px] rounded-lg transition-all flex items-center gap-1"
+                                    >
+                                      <PackageX className="w-3.5 h-3.5" /> Agotar
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="py-12 text-center text-slate-500 text-xs border border-dashed border-slate-800 rounded-xl">
+              {masterIngredients.length
+                ? 'No hay materias primas en esta categoría.'
+                : 'No hay materias primas registradas en el catálogo.'}
+            </div>
+          )}
         </div>
-      )}
-
-      {stockTarget && (
-        <StockControlModal
-          product={stockTarget}
-          onClose={() => setStockTarget(null)}
-          onConfirm={({ missingIngredients, note }) => {
-            onMarkSoldOut(stockTarget.id, { missingIngredients, note });
-            setStockTarget(null);
-          }}
-        />
       )}
     </div>
   );

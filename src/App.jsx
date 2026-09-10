@@ -1,5 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Sparkles } from 'lucide-react';
+import {
+  normalizeIngredient,
+  buildMasterIngredientList,
+  getAffectedProducts,
+  deriveProductsWithStock
+} from './lib/inventory';
 
 // Data & Libs
 import {
@@ -65,6 +71,30 @@ export default function App() {
       localStorage.setItem('gourmet_stock_history', JSON.stringify(stockEvents.slice(0, 300)));
     } catch (e) {}
   }, [stockEvents]);
+
+  // Inventario: estado de materias primas (ingredientes) agotadas (persistido)
+  // Formato: { [claveNormalizada]: { name, soldOut, at, by, note } }
+  const [ingredientsStock, setIngredientsStock] = useState(() => {
+    try {
+      const saved = localStorage.getItem('gourmet_ingredients_stock');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('gourmet_ingredients_stock', JSON.stringify(ingredientsStock));
+    } catch (e) {}
+  }, [ingredientsStock]);
+
+  // Listado maestro de materias primas y estado derivado de los platillos
+  const masterIngredients = useMemo(() => buildMasterIngredientList(products), [products]);
+  const productsWithStock = useMemo(
+    () => deriveProductsWithStock(products, ingredientsStock),
+    [products, ingredientsStock]
+  );
 
   // Favorites state (persisted)
   const [favorites, setFavorites] = useState(() => {
@@ -138,45 +168,87 @@ export default function App() {
     }
   };
 
-  // ===== Inventario: marcado manual de agotados por Cocina (tiempo real) =====
-  const markProductSoldOut = (productId, { missingIngredients = [], note = '' }) => {
-    const target = products.find(p => p.id === productId);
-    if (!target || target.soldOut) return;
+  // ===== Inventario: agotamiento por Materia Prima (ingrediente) =====
+  // Marcar un ingrediente como agotado desactiva automáticamente todos los
+  // platillos que lo contienen en su array `ingredients`.
+  const markIngredientSoldOut = (ingredientNames, { note = '' } = {}) => {
+    const names = (Array.isArray(ingredientNames) ? ingredientNames : [ingredientNames])
+      .map(n => (typeof n === 'string' ? n.trim() : ''))
+      .filter(Boolean);
+    if (!names.length) return;
+
     const iso = new Date().toISOString();
-    setProducts(prev => prev.map(p => p.id === productId ? { ...p, soldOut: true, soldOutInfo: { at: iso, by: 'Cocina', missingIngredients, note } } : p));
-    setStockEvents(prev => [{
-      id: Date.now(),
-      type: 'AGOTADO',
-      productId,
-      productName: target.name,
-      productImage: target.image,
-      missingIngredients,
-      note,
-      reportedBy: 'Cocina',
-      timestamp: iso
-    }, ...prev]);
+    const affectedSet = new Set();
+    const added = names.filter(name => {
+      const key = normalizeIngredient(name);
+      if (ingredientsStock[key]?.soldOut) return false;
+      getAffectedProducts(products, key).forEach(pn => affectedSet.add(pn));
+      return true;
+    });
+    if (!added.length) return;
+
+    setIngredientsStock(prev => {
+      const next = { ...prev };
+      added.forEach(name => {
+        next[normalizeIngredient(name)] = { name, soldOut: true, at: iso, by: 'Cocina', note };
+      });
+      return next;
+    });
+
+    setStockEvents(prev => [
+      ...added.map(name => ({
+        id: Date.now() + Math.random(),
+        type: 'AGOTADO',
+        ingredient: name,
+        missingIngredients: [name],
+        affectedProducts: getAffectedProducts(products, name),
+        note,
+        reportedBy: 'Cocina',
+        timestamp: iso
+      })),
+      ...prev
+    ]);
     playChime();
-    showToast(`"${target.name}" marcado Agotado. Carta actualizada en tiempo real 📦`);
+    const list = added.join(', ');
+    if (affectedSet.size) {
+      showToast(`"${list}" agotado. Se desactivó: ${[...affectedSet].join(', ')} 📦`);
+    } else {
+      showToast(`"${list}" agotado (sin platillos vinculados) 📦`);
+    }
   };
 
-  const restockProduct = (productId) => {
-    const target = products.find(p => p.id === productId);
-    if (!target || !target.soldOut) return;
+  const restockIngredient = (ingredientName) => {
+    const key = normalizeIngredient(ingredientName);
+    const current = ingredientsStock[key];
+    if (!current?.soldOut) return;
     const iso = new Date().toISOString();
-    setProducts(prev => prev.map(p => p.id === productId ? { ...p, soldOut: false, soldOutInfo: null } : p));
+    const affected = getAffectedProducts(products, key);
+
+    const nextStock = { ...ingredientsStock };
+    delete nextStock[key];
+    const stillSoldOut = deriveProductsWithStock(products, nextStock)
+      .filter(p => affected.includes(p.name))
+      .map(p => p.name);
+
+    setIngredientsStock(nextStock);
     setStockEvents(prev => [{
-      id: Date.now(),
+      id: Date.now() + Math.random(),
       type: 'REPUESTO',
-      productId,
-      productName: target.name,
-      productImage: target.image,
-      missingIngredients: target.soldOutInfo?.missingIngredients || [],
+      ingredient: current.name,
+      missingIngredients: [current.name],
+      affectedProducts: affected,
       note: '',
       reportedBy: 'Cocina',
       timestamp: iso
     }, ...prev]);
     playChime();
-    showToast(`"${target.name}" nuevamente disponible en la carta ✅`);
+    if (stillSoldOut.length) {
+      showToast(`"${current.name}" repuesto. Siguen agotados (otro insumo): ${stillSoldOut.join(', ')} ✅`);
+    } else if (affected.length) {
+      showToast(`"${current.name}" repuesto. Disponible de nuevo: ${affected.join(', ')} ✅`);
+    } else {
+      showToast(`"${current.name}" repuesto ✅`);
+    }
   };
 
   return (
@@ -203,7 +275,7 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4">
         {currentRole === 'client' && (
           <ClientView
-            products={products}
+            products={productsWithStock}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             activeCategory={activeCategory}
@@ -226,14 +298,16 @@ export default function App() {
         {currentRole === 'kitchen' && (
           <KitchenView
             kitchenOrders={kitchenOrders}
-            products={products}
+            products={productsWithStock}
+            masterIngredients={masterIngredients}
+            ingredientsStock={ingredientsStock}
             updateOrderStatus={(id, status) => {
               setKitchenOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
               if (status === 'Por Cobrar') showToast(`Comanda #${id} enviada a Caja POS`);
               playChime();
             }}
-            onMarkSoldOut={markProductSoldOut}
-            onRestock={restockProduct}
+            onMarkIngredientSoldOut={markIngredientSoldOut}
+            onRestockIngredient={restockIngredient}
           />
         )}
 
@@ -256,6 +330,9 @@ export default function App() {
         {currentRole === 'config' && (
           <AdminView
             products={products}
+            productsWithStock={productsWithStock}
+            masterIngredients={masterIngredients}
+            ingredientsStock={ingredientsStock}
             company={company}
             stockEvents={stockEvents}
             setCompany={setCompany}
@@ -319,7 +396,7 @@ export default function App() {
             }
             if (!cart.length) return;
             // Validación en tiempo real: descarta ítems marcados agotados por cocina
-            const validCart = cart.filter(c => !products.find(p => p.id === c.product.id)?.soldOut);
+            const validCart = cart.filter(c => !productsWithStock.find(p => p.id === c.product.id)?.soldOut);
             const removedCount = cart.length - validCart.length;
             if (removedCount > 0) {
               setCart(validCart);
@@ -349,13 +426,13 @@ export default function App() {
 
       {selectedProduct && (
         <ProductDetailModal
-          product={products.find(p => p.id === selectedProduct.id) || selectedProduct}
-          allProducts={products}
+          product={productsWithStock.find(p => p.id === selectedProduct.id) || selectedProduct}
+          allProducts={productsWithStock}
           isFavorite={favorites.includes(selectedProduct.id)}
           onToggleFavorite={toggleFavorite}
           onClose={() => setSelectedProduct(null)}
           onAddToCart={(cartItem) => {
-            const liveProduct = products.find(p => p.id === cartItem.product.id);
+            const liveProduct = productsWithStock.find(p => p.id === cartItem.product.id);
             if (liveProduct?.soldOut) {
               showToast(`${cartItem.product.name} se agotó y no puede agregarse al pedido 😔`);
               return;
@@ -370,7 +447,7 @@ export default function App() {
       {isStoryModalOpen && (
         <StoryReelModal
           initialStoryIndex={activeStoryIndex}
-          products={products}
+          products={productsWithStock}
           onClose={() => setIsStoryModalOpen(false)}
           onOpenProductDetail={(prod) => {
             setIsStoryModalOpen(false);
@@ -381,7 +458,7 @@ export default function App() {
 
       {isRouletteOpen && (
         <FoodRouletteModal
-          products={products.filter(p => !p.soldOut)}
+          products={productsWithStock.filter(p => !p.soldOut)}
           onClose={() => setIsRouletteOpen(false)}
           onOpenProductDetail={(prod) => {
             setIsRouletteOpen(false);

@@ -1,17 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { X, Plus, PackageX, Info, Check } from 'lucide-react';
+import { getAffectedProducts } from '../../lib/inventory';
 
-export default function StockControlModal({ product, onClose, onConfirm }) {
-  const [selected, setSelected] = useState([]);
+export default function StockControlModal({ ingredients = [], products = [], preselected = [], onClose, onConfirm }) {
+  const [selected, setSelected] = useState(preselected || []);
   const [customIngredient, setCustomIngredient] = useState('');
   const [note, setNote] = useState('');
-
-  if (!product) return null;
-
-  const allOptions = [...(product.ingredients || [])];
-  selected.forEach(s => {
-    if (!allOptions.includes(s)) allOptions.push(s);
-  });
 
   const toggleIngredient = (name) => {
     setSelected(prev => prev.includes(name) ? prev.filter(i => i !== name) : [...prev, name]);
@@ -24,9 +18,18 @@ export default function StockControlModal({ product, onClose, onConfirm }) {
     setCustomIngredient('');
   };
 
+  // Productos que se desactivarán automáticamente por los ingredientes seleccionados
+  const affectedProducts = useMemo(() => {
+    const set = new Set();
+    selected.forEach(name => {
+      getAffectedProducts(products, name).forEach(pn => set.add(pn));
+    });
+    return [...set];
+  }, [selected, products]);
+
   const handleConfirm = () => {
     if (!selected.length) return;
-    onConfirm({ missingIngredients: selected, note: note.trim() });
+    onConfirm({ ingredients: selected, note: note.trim() });
   };
 
   return (
@@ -35,35 +38,29 @@ export default function StockControlModal({ product, onClose, onConfirm }) {
 
         <div className="flex justify-between items-center pb-2 border-b border-slate-800">
           <h4 className="font-bold text-white text-sm flex items-center gap-2">
-            <PackageX className="w-4 h-4 text-rose-400" /> Reportar Producto Agotado
+            <PackageX className="w-4 h-4 text-rose-400" /> Reportar Materia Prima Agotada
           </h4>
           <button onClick={onClose} className="text-slate-400 hover:text-white p-1"><X className="w-4 h-4" /></button>
         </div>
 
-        <div className="flex items-center gap-3 bg-slate-950 border border-slate-800 rounded-xl p-2.5">
-          <img src={product.image} alt={product.name} className="w-11 h-11 rounded-lg object-cover shrink-0" loading="lazy" />
-          <div className="min-w-0">
-            <h5 className="font-bold text-white text-xs truncate">{product.name}</h5>
-            <span className="text-[10px] text-slate-500">{product.category}</span>
-          </div>
-        </div>
-
         <div className="flex items-start gap-2 p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/25 text-blue-200 leading-relaxed">
           <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-          <span>El platillo se mostrará como <strong>No Disponible</strong> en la carta del cliente al instante y el faltante quedará registrado para el reporte del administrador.</span>
+          <span>
+            Al agotar una materia prima, <strong>todos los platillos que la usan</strong> quedarán como <strong>No Disponible</strong> en la carta del cliente al instante y el faltante quedará registrado para el reporte del administrador.
+          </span>
         </div>
 
         <div className="space-y-2">
           <label className="block text-slate-300 font-bold">¿Qué materia prima se agotó? <span className="text-rose-400">*</span></label>
-          {allOptions.length > 0 ? (
+          {ingredients.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
-              {allOptions.map(opt => {
-                const isSelected = selected.includes(opt);
+              {ingredients.map(ing => {
+                const isSelected = selected.includes(ing.name);
                 return (
                   <button
-                    key={opt}
+                    key={ing.key}
                     type="button"
-                    onClick={() => toggleIngredient(opt)}
+                    onClick={() => toggleIngredient(ing.name)}
                     className={`px-2.5 py-1.5 rounded-lg border text-[11px] font-semibold transition-all flex items-center gap-1 ${
                       isSelected
                         ? 'bg-rose-500/20 border-rose-500 text-rose-200'
@@ -71,13 +68,13 @@ export default function StockControlModal({ product, onClose, onConfirm }) {
                     }`}
                   >
                     {isSelected && <Check className="w-3 h-3" />}
-                    {opt}
+                    {ing.name}
                   </button>
                 );
               })}
             </div>
           ) : (
-            <p className="text-slate-500">Este platillo no tiene materias primas registradas. Agrégalas manualmente:</p>
+            <p className="text-slate-500">No hay materias primas registradas. Agrégala manualmente:</p>
           )}
 
           <div className="flex gap-2 pt-1">
@@ -91,7 +88,7 @@ export default function StockControlModal({ product, onClose, onConfirm }) {
                   addCustomIngredient();
                 }
               }}
-              placeholder="Otra materia prima (ej: Palta Hass)"
+              placeholder="Otra materia prima (ej: Lechuga)"
               className="flex-1 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-orange-500"
             />
             <button
@@ -104,6 +101,21 @@ export default function StockControlModal({ product, onClose, onConfirm }) {
             </button>
           </div>
         </div>
+
+        {selected.length > 0 && (
+          <div className={`p-2.5 rounded-xl border leading-relaxed ${
+            affectedProducts.length
+              ? 'bg-rose-500/10 border-rose-500/30 text-rose-200'
+              : 'bg-amber-500/10 border-amber-500/30 text-amber-200'
+          }`}>
+            <strong>Esto agotará automáticamente:</strong>{' '}
+            {affectedProducts.length ? (
+              <span className="font-bold">{affectedProducts.join(', ')}</span>
+            ) : (
+              <span>ningún platillo (materia prima sin usar en la carta)</span>
+            )}
+          </div>
+        )}
 
         <div className="space-y-1.5">
           <label className="block text-slate-300 font-bold">Nota para el administrador (opcional)</label>
