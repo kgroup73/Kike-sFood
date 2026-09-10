@@ -98,78 +98,238 @@
   }
 }
 
-.page-flip-next {
-  animation: flip-next-animation 0.65s cubic-bezier(0.645, 0.045, 0.355, 1) forwards;
-  transform-origin: left center;
+/* 3D Magazine Viewport & Physics */
+.book-viewport {
+  perspective: 2500px;
+  transform-style: preserve-3d;
 }
 
-.page-flip-prev {
-  animation: flip-prev-animation 0.65s cubic-bezier(0.645, 0.045, 0.355, 1) forwards;
-  transform-origin: right center;
+.book-zoom-intro {
+  animation: book-approach 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-@keyframes flip-next-animation {
+@keyframes book-approach {
   0% {
-    transform: rotateY(0deg);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-  }
-  50% {
-    transform: rotateY(-90deg) scale(0.96);
-    box-shadow: 20px 20px 50px rgba(0,0,0,0.6);
+    transform: scale(0.92) translateY(24px);
+    opacity: 0.4;
   }
   100% {
-    transform: rotateY(0deg);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    transform: scale(1) translateY(0);
+    opacity: 1;
   }
 }
 
-@keyframes flip-prev-animation {
-  0% {
-    transform: rotateY(0deg);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-  }
-  50% {
-    transform: rotateY(90deg) scale(0.96);
-    box-shadow: -20px 20px 50px rgba(0,0,0,0.6);
-  }
-  100% {
-    transform: rotateY(0deg);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-  }
-}
-
-/* Luxury Paper Gutter / Spine Shadow */
-.book-gutter-shadow {
-  background: linear-gradient(to right, rgba(133, 127, 93, 0.25) 0%, rgba(133, 127, 93, 0.06) 6%, transparent 14%);
-}
-
-.book-gutter-center {
-  background: linear-gradient(to right, transparent 0%, rgba(133, 127, 93, 0.15) 48%, rgba(133, 127, 93, 0.28) 50%, rgba(133, 127, 93, 0.15) 52%, transparent 100%);
-}
-
-/* Corner Dog-Ear Curl */
-.corner-curl {
+/* 3D Flipping Leaf Container */
+.magazine-leaf {
   position: absolute;
   top: 0;
+  bottom: 0;
+  transform-style: preserve-3d;
+  will-change: transform;
+  z-index: 35;
+  pointer-events: none;
+}
+
+/* Desktop Right Leaf: hinges at center spine (left of right page) */
+.magazine-leaf-desktop-next {
   right: 0;
+  width: 50%;
+  transform-origin: left center;
+  animation: flip-leaf-next-desktop 0.55s cubic-bezier(0.35, 0, 0.25, 1) forwards;
+}
+
+/* Desktop Left Leaf: hinges at center spine (right of left page) */
+.magazine-leaf-desktop-prev {
+  left: 0;
+  width: 50%;
+  transform-origin: right center;
+  animation: flip-leaf-prev-desktop 0.55s cubic-bezier(0.35, 0, 0.25, 1) forwards;
+}
+
+/* Mobile Leaf: full width hinged at left */
+.magazine-leaf-mobile-next {
+  left: 0;
+  width: 100%;
+  transform-origin: left center;
+  animation: flip-leaf-next-mobile 0.48s cubic-bezier(0.35, 0, 0.25, 1) forwards;
+}
+
+.magazine-leaf-mobile-prev {
+  left: 0;
+  width: 100%;
+  transform-origin: right center;
+  animation: flip-leaf-prev-mobile 0.48s cubic-bezier(0.35, 0, 0.25, 1) forwards;
+}
+
+/* Desktop Animations */
+@keyframes flip-leaf-next-desktop {
+  0% {
+    transform: rotateY(0deg);
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+  }
+  45% {
+    filter: drop-shadow(-18px 18px 30px rgba(0, 0, 0, 0.45));
+  }
+  100% {
+    transform: rotateY(-180deg);
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+  }
+}
+
+@keyframes flip-leaf-prev-desktop {
+  0% {
+    transform: rotateY(-180deg);
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+  }
+  45% {
+    filter: drop-shadow(18px 18px 30px rgba(0, 0, 0, 0.45));
+  }
+  100% {
+    transform: rotateY(0deg);
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+  }
+}
+
+/* Mobile Animations */
+@keyframes flip-leaf-next-mobile {
+  0% {
+    transform: rotateY(0deg);
+    filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.2));
+  }
+  50% {
+    transform: rotateY(-90deg) scale(0.97);
+    filter: drop-shadow(-20px 20px 35px rgba(0, 0, 0, 0.5));
+  }
+  100% {
+    transform: rotateY(-180deg);
+    filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.2));
+  }
+}
+
+@keyframes flip-leaf-prev-mobile {
+  0% {
+    transform: rotateY(180deg);
+    filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.2));
+  }
+  50% {
+    transform: rotateY(90deg) scale(0.97);
+    filter: drop-shadow(20px 20px 35px rgba(0, 0, 0, 0.5));
+  }
+  100% {
+    transform: rotateY(0deg);
+    filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.2));
+  }
+}
+
+/* 3D Leaf Faces (Front and Back) */
+.magazine-face-front {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: rotateY(0deg);
+  z-index: 2;
+  overflow: hidden;
+}
+
+.magazine-face-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: rotateY(180deg);
+  z-index: 1;
+  overflow: hidden;
+}
+
+/* Magazine Center Spine Gutter Crease */
+.magazine-spine-gutter {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 28px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    to right,
+    rgba(133, 127, 93, 0.04) 0%,
+    rgba(20, 18, 12, 0.18) 45%,
+    rgba(20, 18, 12, 0.32) 50%,
+    rgba(20, 18, 12, 0.18) 55%,
+    rgba(133, 127, 93, 0.04) 100%
+  );
+  pointer-events: none;
+  z-index: 28;
+}
+
+/* Magazine Paper Shadow Overlays */
+.magazine-page-shadow-left {
+  box-shadow: inset -15px 0 25px -10px rgba(20, 18, 12, 0.12);
+}
+
+.magazine-page-shadow-right {
+  box-shadow: inset 15px 0 25px -10px rgba(20, 18, 12, 0.12);
+}
+
+/* Corner Dog-Ear / Fold Curls */
+.corner-curl-interactive {
+  position: absolute;
   width: 0;
   height: 0;
+  z-index: 30;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.corner-curl-tr {
+  top: 0;
+  right: 0;
   border-style: solid;
-  border-width: 0 45px 45px 0;
+  border-width: 0 40px 40px 0;
   border-color: transparent rgba(155, 126, 9, 0.75) transparent transparent;
-  transition: all 0.3s ease;
-  filter: drop-shadow(-3px 3px 6px rgba(0,0,0,0.35));
+  filter: drop-shadow(-2px 3px 5px rgba(0,0,0,0.3));
 }
 
-.corner-curl:hover {
-  border-width: 0 60px 60px 0;
+.corner-curl-tr:hover {
+  border-width: 0 54px 54px 0;
   border-color: transparent rgba(184, 150, 14, 1) transparent transparent;
+  filter: drop-shadow(-4px 5px 8px rgba(0,0,0,0.4));
 }
 
-/* Paper Background: Pure Ivory (#fdfcf7) with Warm Texture */
+.corner-curl-br {
+  bottom: 0;
+  right: 0;
+  border-style: solid;
+  border-width: 0 0 40px 40px;
+  border-color: transparent transparent rgba(155, 126, 9, 0.75) transparent;
+  filter: drop-shadow(-2px -3px 5px rgba(0,0,0,0.3));
+}
+
+.corner-curl-br:hover {
+  border-width: 0 0 54px 54px;
+  border-color: transparent transparent rgba(184, 150, 14, 1) transparent;
+  filter: drop-shadow(-4px -5px 8px rgba(0,0,0,0.4));
+}
+
+.corner-curl-tl {
+  top: 0;
+  left: 0;
+  border-style: solid;
+  border-width: 40px 40px 0 0;
+  border-color: rgba(155, 126, 9, 0.75) transparent transparent transparent;
+  filter: drop-shadow(2px 3px 5px rgba(0,0,0,0.3));
+}
+
+.corner-curl-tl:hover {
+  border-width: 54px 54px 0 0;
+  border-color: rgba(184, 150, 14, 1) transparent transparent transparent;
+  filter: drop-shadow(4px 5px 8px rgba(0,0,0,0.4));
+}
+
+/* Paper Background: Pure Ivory (#fdfcf7) with subtle texture */
 .editorial-paper-texture {
   background-color: #fdfcf7;
-  background-image: radial-gradient(rgba(133, 127, 93, 0.1) 1px, transparent 0);
+  background-image: radial-gradient(rgba(133, 127, 93, 0.08) 1px, transparent 0);
   background-size: 16px 16px;
 }
 

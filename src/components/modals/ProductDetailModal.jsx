@@ -87,7 +87,7 @@ export default function ProductDetailModal({
       <div className="bg-[#1e1b13] border border-[#383324] rounded-t-3xl sm:rounded-3xl max-w-lg w-full max-h-[92vh] sm:max-h-[85vh] overflow-y-auto hide-scrollbar shadow-2xl flex flex-col justify-between text-[#fdfcf7]">
         
         {/* Top Hero Image Banner */}
-        <div className="relative h-56 sm:h-64 bg-[#110f0a] shrink-0 overflow-hidden">
+        <div className="relative h-44 sm:h-52 bg-[#110f0a] shrink-0 overflow-hidden">
           <img
             src={product.image}
             alt={product.name}
