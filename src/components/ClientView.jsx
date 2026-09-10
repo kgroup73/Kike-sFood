@@ -17,7 +17,8 @@ import {
   Sparkles,
   Dices,
   Wine,
-  ChefHat
+  ChefHat,
+  PackageX
 } from 'lucide-react';
 import { formatCOP } from '../lib/dian';
 import { CATEGORIES, MENU_STORIES } from '../data/mockData';
@@ -40,7 +41,7 @@ export default function ClientView({
   onOpenRoulette
 }) {
   const filteredProducts = useMemo(() => {
-    return products.filter(p => {
+    const visible = products.filter(p => {
       const isAvailable = p.available !== false;
       const matchesCategory = activeCategory === 'Todos' || p.category === activeCategory;
       const matchesSearch =
@@ -58,6 +59,9 @@ export default function ClientView({
 
       return isAvailable && matchesCategory && matchesSearch && matchesDiet;
     });
+
+    // Los agotados se muestran como "No Disponible" al final de la carta
+    return [...visible].sort((a, b) => (a.soldOut ? 1 : 0) - (b.soldOut ? 1 : 0));
   }, [products, searchQuery, activeCategory, dietaryFilter, favorites]);
 
   return (
@@ -320,6 +324,15 @@ export default function ClientView({
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#110f0a]/90 via-transparent to-black/30" />
 
+                  {/* Overlay Agotado (Inventario en tiempo real) */}
+                  {product.soldOut && (
+                    <div className="absolute inset-0 bg-[#110f0a]/75 backdrop-grayscale flex flex-col items-center justify-center gap-1.5 z-10 pointer-events-none">
+                      <PackageX className="w-6 h-6 text-rose-400" />
+                      <span className="bg-rose-600 text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-lg">Agotado</span>
+                      <span className="text-[9px] text-[#aba489] font-bold uppercase tracking-wider">No disponible</span>
+                    </div>
+                  )}
+
                   {/* Top Left Tags */}
                   <div className="absolute top-2 left-2 flex flex-wrap gap-1">
                     {product.isChef && (
@@ -387,13 +400,19 @@ export default function ClientView({
                     <span className="text-[#9b7e09] font-extrabold text-sm sm:text-base">
                       {formatCOP(product.price)}
                     </span>
-                    <button
-                      onClick={() => setSelectedProduct(product)}
-                      className="px-3.5 py-1.5 bg-gradient-to-r from-[#9b7e09] to-[#b8960e] hover:from-[#b8960e] hover:to-[#9b7e09] active:scale-95 text-[#fdfcf7] font-bold text-xs rounded-xl shadow-md shadow-[#9b7e09]/20 transition-all flex items-center gap-1.5"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Pedir</span>
-                    </button>
+                    {product.soldOut ? (
+                      <span className="px-3.5 py-1.5 bg-[#383324] text-rose-300 font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-not-allowed">
+                        <PackageX className="w-3.5 h-3.5" /> Agotado
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => setSelectedProduct(product)}
+                        className="px-3.5 py-1.5 bg-gradient-to-r from-[#9b7e09] to-[#b8960e] hover:from-[#b8960e] hover:to-[#9b7e09] active:scale-95 text-[#fdfcf7] font-bold text-xs rounded-xl shadow-md shadow-[#9b7e09]/20 transition-all flex items-center gap-1.5"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Pedir</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -432,6 +451,12 @@ export default function ClientView({
                       ★ {product.rating}
                     </span>
                   )}
+                  {product.soldOut && (
+                    <div className="absolute inset-0 bg-[#110f0a]/75 backdrop-grayscale flex flex-col items-center justify-center gap-1 pointer-events-none">
+                      <PackageX className="w-4 h-4 text-rose-400" />
+                      <span className="bg-rose-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full uppercase shadow">Agotado</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex-1 min-w-0 flex flex-col justify-between h-full space-y-1">
@@ -464,12 +489,18 @@ export default function ClientView({
                     <span className="text-[#9b7e09] font-extrabold text-sm sm:text-base">
                       {formatCOP(product.price)}
                     </span>
-                    <button
-                      onClick={() => setSelectedProduct(product)}
-                      className="px-3.5 py-1.5 bg-gradient-to-r from-[#9b7e09] to-[#b8960e] hover:from-[#b8960e] hover:to-[#9b7e09] active:scale-95 text-[#fdfcf7] font-bold text-[11px] rounded-xl shadow-md shadow-[#9b7e09]/20 transition-all flex items-center gap-1"
-                    >
-                      <Plus className="w-3 h-3" /> Pedir
-                    </button>
+                    {product.soldOut ? (
+                      <span className="px-3.5 py-1.5 bg-[#383324] text-rose-300 font-bold text-[11px] rounded-xl flex items-center gap-1 cursor-not-allowed">
+                        <PackageX className="w-3 h-3" /> Agotado
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => setSelectedProduct(product)}
+                        className="px-3.5 py-1.5 bg-gradient-to-r from-[#9b7e09] to-[#b8960e] hover:from-[#b8960e] hover:to-[#9b7e09] active:scale-95 text-[#fdfcf7] font-bold text-[11px] rounded-xl shadow-md shadow-[#9b7e09]/20 transition-all flex items-center gap-1"
+                      >
+                        <Plus className="w-3 h-3" /> Pedir
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -500,6 +531,15 @@ export default function ClientView({
                     loading="lazy"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#110f0a] via-[#110f0a]/30 to-black/40" />
+
+                  {/* Overlay Agotado (Inventario en tiempo real) */}
+                  {product.soldOut && (
+                    <div className="absolute inset-0 bg-[#110f0a]/75 backdrop-grayscale flex flex-col items-center justify-center gap-1.5 z-10 pointer-events-none">
+                      <PackageX className="w-7 h-7 text-rose-400" />
+                      <span className="bg-rose-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">Agotado</span>
+                      <span className="text-[9px] text-[#aba489] font-bold uppercase tracking-wider">No disponible</span>
+                    </div>
+                  )}
 
                   {/* Top Badges */}
                   <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
@@ -572,12 +612,18 @@ export default function ClientView({
                   )}
 
                   <div className="pt-2 flex items-center gap-2">
-                    <button
-                      onClick={() => setSelectedProduct(product)}
-                      className="flex-1 py-2.5 bg-gradient-to-r from-[#9b7e09] to-[#b8960e] hover:from-[#b8960e] hover:to-[#9b7e09] active:scale-98 text-[#fdfcf7] font-extrabold text-xs rounded-xl shadow-lg shadow-[#9b7e09]/20 flex items-center justify-center gap-1.5 transition-all"
-                    >
-                      <Plus className="w-3.5 h-3.5" /> Personalizar y Pedir
-                    </button>
+                    {product.soldOut ? (
+                      <span className="flex-1 py-2.5 bg-[#383324] text-rose-300 font-extrabold text-xs rounded-xl flex items-center justify-center gap-1.5 cursor-not-allowed">
+                        <PackageX className="w-3.5 h-3.5" /> No Disponible por Agotamiento
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => setSelectedProduct(product)}
+                        className="flex-1 py-2.5 bg-gradient-to-r from-[#9b7e09] to-[#b8960e] hover:from-[#b8960e] hover:to-[#9b7e09] active:scale-98 text-[#fdfcf7] font-extrabold text-xs rounded-xl shadow-lg shadow-[#9b7e09]/20 flex items-center justify-center gap-1.5 transition-all"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Personalizar y Pedir
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

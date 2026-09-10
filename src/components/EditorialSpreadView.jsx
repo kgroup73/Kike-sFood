@@ -16,7 +16,10 @@ import {
   Wine,
   Info,
   Layers,
-  UtensilsCrossed
+  UtensilsCrossed,
+  BookMarked,
+  RotateCcw,
+  Ban
 } from 'lucide-react';
 import { formatCOP } from '../lib/dian';
 
@@ -208,13 +211,18 @@ export default function EditorialSpreadView({
                 <img
                   src={heroDish.image}
                   alt={heroDish.name}
-                  className="w-full h-full rounded-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className={`w-full h-full rounded-full object-cover group-hover:scale-105 transition-transform duration-500 ${heroDish.soldOut ? 'grayscale opacity-60' : ''}`}
                   loading="lazy"
                 />
               </div>
 
               {/* Top Badges */}
               <div className="absolute top-0 right-0 flex flex-col gap-1 items-end">
+                {heroDish.soldOut && (
+                  <span className="bg-rose-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg uppercase tracking-wide flex items-center gap-1">
+                    <Ban className="w-2.5 h-2.5" /> Agotado
+                  </span>
+                )}
                 {heroDish.isChef && (
                   <span className="bg-gradient-to-r from-[#9b7e09] to-[#b8960e] text-[#fdfcf7] text-[9px] font-black px-2 py-0.5 rounded-full shadow-md flex items-center gap-1">
                     <Award className="w-2.5 h-2.5" /> Chef Pick
@@ -271,13 +279,25 @@ export default function EditorialSpreadView({
 
             {/* Action Buttons */}
             <div className="flex items-center gap-2 pt-1">
-              <button
-                onClick={() => setSelectedProduct(heroDish)}
-                className="px-4 py-1.5 rounded-full bg-gradient-to-r from-[#9b7e09] to-[#b8960e] hover:from-[#b8960e] hover:to-[#9b7e09] text-[#fdfcf7] text-xs font-black shadow-md shadow-[#9b7e09]/20 flex items-center gap-1.5 transition-transform active:scale-95"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Pedir / Personalizar</span>
-              </button>
+              {heroDish.soldOut ? (
+                <button
+                  type="button"
+                  onClick={() => setSelectedProduct(heroDish)}
+                  className="px-4 py-1.5 rounded-full bg-rose-600/90 hover:bg-rose-700 text-[#fdfcf7] text-xs font-black shadow-md flex items-center gap-1.5 transition-transform active:scale-95"
+                >
+                  <Ban className="w-3.5 h-3.5" />
+                  <span>Agotado • Ver Detalle</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setSelectedProduct(heroDish)}
+                  className="px-4 py-1.5 rounded-full bg-gradient-to-r from-[#9b7e09] to-[#b8960e] hover:from-[#b8960e] hover:to-[#9b7e09] text-[#fdfcf7] text-xs font-black shadow-md shadow-[#9b7e09]/20 flex items-center gap-1.5 transition-transform active:scale-95"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Pedir / Personalizar</span>
+                </button>
+              )}
             </div>
           </div>
         ) : (
@@ -338,19 +358,30 @@ export default function EditorialSpreadView({
                   {dish2.ingredients?.join(', ') || dish2.description}
                 </p>
                 <div className="pt-0.5">
-                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-[#9b7e09] group-hover:translate-x-0.5 transition-transform">
-                    <Plus className="w-3 h-3" /> Añadir
-                  </span>
+                  {dish2.soldOut ? (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-black text-rose-600">
+                      <Ban className="w-3 h-3" /> No disponible
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-[#9b7e09] group-hover:translate-x-0.5 transition-transform">
+                      <Plus className="w-3 h-3" /> Añadir
+                    </span>
+                  )}
                 </div>
               </div>
 
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shrink-0 shadow-md border border-[#e9e2ca] bg-[#110f0a] aspect-square">
+              <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shrink-0 shadow-md border border-[#e9e2ca] bg-[#110f0a] aspect-square">
                 <img
                   src={dish2.image}
                   alt={dish2.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${dish2.soldOut ? 'grayscale opacity-60' : ''}`}
                   loading="lazy"
                 />
+                {dish2.soldOut && (
+                  <span className="absolute top-1 right-1 bg-rose-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full shadow-lg z-10 uppercase tracking-wide">
+                    Agotado
+                  </span>
+                )}
               </div>
             </div>
           ) : (
@@ -381,19 +412,30 @@ export default function EditorialSpreadView({
                   {dish3.ingredients?.join(', ') || dish3.description}
                 </p>
                 <div className="pt-0.5">
-                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-[#9b7e09] group-hover:translate-x-0.5 transition-transform">
-                    <Plus className="w-3 h-3" /> Añadir
-                  </span>
+                  {dish3.soldOut ? (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-black text-rose-600">
+                      <Ban className="w-3 h-3" /> No disponible
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-[#9b7e09] group-hover:translate-x-0.5 transition-transform">
+                      <Plus className="w-3 h-3" /> Añadir
+                    </span>
+                  )}
                 </div>
               </div>
 
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shrink-0 shadow-md border border-[#e9e2ca] bg-[#110f0a] aspect-square">
+              <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shrink-0 shadow-md border border-[#e9e2ca] bg-[#110f0a] aspect-square">
                 <img
                   src={dish3.image}
                   alt={dish3.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${dish3.soldOut ? 'grayscale opacity-60' : ''}`}
                   loading="lazy"
                 />
+                {dish3.soldOut && (
+                  <span className="absolute top-1 right-1 bg-rose-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full shadow-lg z-10 uppercase tracking-wide">
+                    Agotado
+                  </span>
+                )}
               </div>
             </div>
           ) : (
@@ -470,9 +512,15 @@ export default function EditorialSpreadView({
                     {dish.ingredients?.join(', ') || dish.description}
                   </p>
                   <div className="pt-0.5 flex items-center gap-2">
-                    <span className="text-[9px] font-black text-[#9b7e09] flex items-center gap-0.5">
-                      <Plus className="w-2.5 h-2.5" /> Pedir
-                    </span>
+                    {dish.soldOut ? (
+                      <span className="text-[9px] font-black text-rose-600 flex items-center gap-0.5">
+                        <Ban className="w-2.5 h-2.5" /> No disponible
+                      </span>
+                    ) : (
+                      <span className="text-[9px] font-black text-[#9b7e09] flex items-center gap-0.5">
+                        <Plus className="w-2.5 h-2.5" /> Pedir
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -481,10 +529,15 @@ export default function EditorialSpreadView({
                     <img
                       src={dish.image}
                       alt={dish.name}
-                      className="w-full h-full object-cover"
+                      className={`w-full h-full object-cover ${dish.soldOut ? 'grayscale opacity-60' : ''}`}
                       loading="lazy"
                     />
                   </div>
+                  {dish.soldOut && (
+                    <span className="absolute -top-1 -left-1 bg-rose-600 text-white text-[7px] font-black px-1 py-0.5 rounded-full shadow uppercase">
+                      Agotado
+                    </span>
+                  )}
                   {isFav && (
                     <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center shadow">
                       <Heart className="w-2.5 h-2.5 fill-current" />
