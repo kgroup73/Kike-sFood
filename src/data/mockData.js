@@ -356,7 +356,7 @@ export const INITIAL_PRODUCTS = [
     spicyLevel: 0,
     calories: '530 kcal',
     chefNotes: 'Servida a temperatura ambiente para permitir que el corazón de stracciatella fluya cremosamente.',
-    ingredients: ['Burrata de búfala 150g', 'Prosciutto di Parma', 'Pesto genovés con piñones', 'Tomates cherry confitados', 'Aceite de oliva extra virgen'],
+    ingredients: ['Burrata de búfala 150g', 'Prosciutto di Parma', 'Pesto genovés con piñones', 'Tomates cherry', 'Tomates cherry confitados', 'Aceite de oliva extra virgen'],
     pairing: {
       productId: 7,
       name: 'Sangría Artesanal de Frutos Rojos',

@@ -12,7 +12,8 @@ import {
   ArrowRight,
   ArrowLeft,
   BookMarked,
-  RotateCcw
+  RotateCcw,
+  Ban
 } from 'lucide-react';
 import { formatCOP } from '../lib/dian';
 
@@ -269,12 +270,23 @@ export default function EditorialSpreadView({
                       <img
                         src={dish1.image}
                         alt={dish1.name}
-                        className="w-full h-full rounded-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        className={`w-full h-full rounded-full object-cover group-hover:scale-110 transition-transform duration-500 ${dish1.soldOut ? 'grayscale opacity-60' : ''}`}
                       />
                     </div>
-                    <div className="absolute -bottom-2 -left-1 bg-gradient-to-r from-[#9b7e09] to-[#b8960e] text-[#fdfcf7] text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Plus className="w-2.5 h-2.5" /> Pedir
-                    </div>
+                    {dish1.soldOut && (
+                      <span className="absolute -top-1 -right-1 bg-rose-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-lg z-10 uppercase tracking-wide">
+                        Agotado
+                      </span>
+                    )}
+                    {dish1.soldOut ? (
+                      <div className="absolute -bottom-2 -left-1 bg-rose-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg flex items-center gap-1">
+                        <Ban className="w-2.5 h-2.5" /> No disponible
+                      </div>
+                    ) : (
+                      <div className="absolute -bottom-2 -left-1 bg-gradient-to-r from-[#9b7e09] to-[#b8960e] text-[#fdfcf7] text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Plus className="w-2.5 h-2.5" /> Pedir
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -313,12 +325,23 @@ export default function EditorialSpreadView({
                       <img
                         src={dish2.image}
                         alt={dish2.name}
-                        className="w-full h-full rounded-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        className={`w-full h-full rounded-full object-cover group-hover:scale-110 transition-transform duration-500 ${dish2.soldOut ? 'grayscale opacity-60' : ''}`}
                       />
                     </div>
-                    <div className="absolute -bottom-2 -right-1 bg-gradient-to-r from-[#9b7e09] to-[#b8960e] text-[#fdfcf7] text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Plus className="w-2.5 h-2.5" /> Pedir
-                    </div>
+                    {dish2.soldOut && (
+                      <span className="absolute -top-1 -right-1 bg-rose-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-lg z-10 uppercase tracking-wide">
+                        Agotado
+                      </span>
+                    )}
+                    {dish2.soldOut ? (
+                      <div className="absolute -bottom-2 -right-1 bg-rose-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg flex items-center gap-1">
+                        <Ban className="w-2.5 h-2.5" /> No disponible
+                      </div>
+                    ) : (
+                      <div className="absolute -bottom-2 -right-1 bg-gradient-to-r from-[#9b7e09] to-[#b8960e] text-[#fdfcf7] text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Plus className="w-2.5 h-2.5" /> Pedir
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -356,12 +379,23 @@ export default function EditorialSpreadView({
                       <img
                         src={dish3.image}
                         alt={dish3.name}
-                        className="w-full h-full rounded-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        className={`w-full h-full rounded-full object-cover group-hover:scale-110 transition-transform duration-500 ${dish3.soldOut ? 'grayscale opacity-60' : ''}`}
                       />
                     </div>
-                    <div className="absolute -bottom-2 -left-1 bg-gradient-to-r from-[#9b7e09] to-[#b8960e] text-[#fdfcf7] text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Plus className="w-2.5 h-2.5" /> Pedir
-                    </div>
+                    {dish3.soldOut && (
+                      <span className="absolute -top-1 -right-1 bg-rose-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-lg z-10 uppercase tracking-wide">
+                        Agotado
+                      </span>
+                    )}
+                    {dish3.soldOut ? (
+                      <div className="absolute -bottom-2 -left-1 bg-rose-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg flex items-center gap-1">
+                        <Ban className="w-2.5 h-2.5" /> No disponible
+                      </div>
+                    ) : (
+                      <div className="absolute -bottom-2 -left-1 bg-gradient-to-r from-[#9b7e09] to-[#b8960e] text-[#fdfcf7] text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Plus className="w-2.5 h-2.5" /> Pedir
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
