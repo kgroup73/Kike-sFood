@@ -1,10 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Sparkles,
   BookOpen,
   Plus,
   ArrowRight,
-  ArrowLeft
+  ArrowLeft,
+  Ban,
+  Heart
 } from 'lucide-react';
 
 // Subcomponent: Luxury Leather Hardcover (Front Cover)
@@ -79,7 +81,9 @@ function PageCard({
   formatEditorialPrice,
   onDogEarClick,
   canGoNext,
-  isEntering = false
+  isEntering = false,
+  favorites = [],
+  toggleFavorite
 }) {
   return (
     <div className="w-full min-h-[540px] xs:min-h-[580px] sm:min-h-[660px] rounded-2xl relative overflow-hidden bg-[#fdfcf7] text-[#1a1711] flex flex-col justify-between p-3 xs:p-4 sm:p-6 editorial-paper-texture border border-[#e9e2ca] shadow-inner select-none">
@@ -132,6 +136,7 @@ function PageCard({
         {dishes.map((dish, idx) => {
           const isReversed = idx % 2 === 1;
           const staggerClass = isEntering ? `dish-stagger-${idx + 1}` : '';
+          const isFav = favorites.includes(dish.id);
 
           return (
             <div
@@ -150,6 +155,11 @@ function PageCard({
                     {formatEditorialPrice(dish.price)}
                   </span>
                   <span className="text-[8px] xs:text-[9px] sm:text-[10px] font-bold text-[#857f5d]">mil COP</span>
+                  {dish.soldOut && (
+                    <span className="ml-1.5 text-[8px] sm:text-[9px] font-black text-rose-600 bg-rose-100 px-1.5 py-0.5 rounded-full uppercase tracking-wide">
+                      Agotado
+                    </span>
+                  )}
                 </div>
                 <h3 className="text-xs xs:text-sm sm:text-base font-extrabold text-[#1a1711] group-hover:text-[#9b7e09] transition-colors leading-tight truncate">
                   {dish.name}
@@ -171,12 +181,38 @@ function PageCard({
                   <img
                     src={dish.image}
                     alt={dish.name}
-                    className="w-full h-full rounded-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    className={`w-full h-full rounded-full object-cover group-hover:scale-110 transition-transform duration-700 ${
+                      dish.soldOut ? 'grayscale opacity-60' : ''
+                    }`}
                   />
                 </div>
-                <div className={`absolute -bottom-1 ${isReversed ? '-right-1' : '-left-1'} bg-gradient-to-r from-[#9b7e09] to-[#b8960e] text-[#fdfcf7] text-[7px] xs:text-[8px] font-black px-1.5 py-0.5 rounded-full shadow flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity`}>
-                  <Plus className="w-2 h-2" /> Pedir
-                </div>
+
+                {/* Favorite button */}
+                {toggleFavorite && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite(dish.id);
+                    }}
+                    className={`absolute -top-1 ${isReversed ? '-left-1' : '-right-1'} w-5 h-5 rounded-full flex items-center justify-center backdrop-blur-sm transition-all shadow-sm ${
+                      isFav ? 'bg-rose-500 text-white' : 'bg-white/80 text-[#857f5d] hover:text-rose-500'
+                    }`}
+                    title={isFav ? 'Quitar de favoritos' : 'Guardar en favoritos'}
+                  >
+                    <Heart className={`w-2.5 h-2.5 ${isFav ? 'fill-current' : ''}`} />
+                  </button>
+                )}
+
+                {dish.soldOut ? (
+                  <div className={`absolute -bottom-1 ${isReversed ? '-right-1' : '-left-1'} bg-rose-600 text-white text-[7px] xs:text-[8px] font-black px-1.5 py-0.5 rounded-full shadow flex items-center gap-0.5`}>
+                    <Ban className="w-2 h-2" /> Agotado
+                  </div>
+                ) : (
+                  <div className={`absolute -bottom-1 ${isReversed ? '-right-1' : '-left-1'} bg-gradient-to-r from-[#9b7e09] to-[#b8960e] text-[#fdfcf7] text-[7px] xs:text-[8px] font-black px-1.5 py-0.5 rounded-full shadow flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity`}>
+                    <Plus className="w-2 h-2" /> Pedir
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -201,7 +237,7 @@ function PageCard({
 }
 
 export default function EditorialSpreadView({
-  products,
+  products = [],
   setSelectedProduct,
   favorites = [],
   toggleFavorite
@@ -306,7 +342,8 @@ export default function EditorialSpreadView({
   };
 
   // Group products into book pages (4 dishes per page so more dishes fit per sheet!)
-  const pages = React.useMemo(() => {
+  const pages = useMemo(() => {
+    if (!products || products.length === 0) return [];
     const pageSize = 4;
     const chunks = [];
     for (let i = 0; i < products.length; i += pageSize) {
@@ -314,6 +351,15 @@ export default function EditorialSpreadView({
     }
     return chunks.length > 0 ? chunks : [products];
   }, [products]);
+
+  // Safe clamping of currentPage when products change
+  useEffect(() => {
+    if (pages.length === 0) {
+      setCurrentPage(0);
+    } else if (currentPage >= pages.length) {
+      setCurrentPage(Math.max(0, pages.length - 1));
+    }
+  }, [pages.length, currentPage]);
 
   const pageTitles = [
     { main: 'CHEF SELECTION', sub: 'CLÁSICOS & ENTRADAS DE AUTOR', badge: 'VOL. 1' },
@@ -496,6 +542,8 @@ export default function EditorialSpreadView({
                 setActiveDishId={setActiveDishId}
                 formatEditorialPrice={formatEditorialPrice}
                 canGoNext={false}
+                favorites={favorites}
+                toggleFavorite={toggleFavorite}
               />
             </div>
             <div className="absolute inset-0 w-full h-full z-20 book-cover-open-3d">
@@ -518,6 +566,8 @@ export default function EditorialSpreadView({
                 setActiveDishId={setActiveDishId}
                 formatEditorialPrice={formatEditorialPrice}
                 canGoNext={false}
+                favorites={favorites}
+                toggleFavorite={toggleFavorite}
               />
             </div>
             <div className="absolute inset-0 w-full h-full z-20 book-cover-close-3d">
@@ -545,6 +595,8 @@ export default function EditorialSpreadView({
                     setActiveDishId={setActiveDishId}
                     formatEditorialPrice={formatEditorialPrice}
                     canGoNext={false}
+                    favorites={favorites}
+                    toggleFavorite={toggleFavorite}
                   />
                 </div>
 
@@ -560,6 +612,8 @@ export default function EditorialSpreadView({
                     setActiveDishId={setActiveDishId}
                     formatEditorialPrice={formatEditorialPrice}
                     canGoNext={false}
+                    favorites={favorites}
+                    toggleFavorite={toggleFavorite}
                   />
                 </div>
               </>
@@ -580,6 +634,8 @@ export default function EditorialSpreadView({
                     setActiveDishId={setActiveDishId}
                     formatEditorialPrice={formatEditorialPrice}
                     canGoNext={false}
+                    favorites={favorites}
+                    toggleFavorite={toggleFavorite}
                   />
                 </div>
 
@@ -595,6 +651,8 @@ export default function EditorialSpreadView({
                     setActiveDishId={setActiveDishId}
                     formatEditorialPrice={formatEditorialPrice}
                     canGoNext={false}
+                    favorites={favorites}
+                    toggleFavorite={toggleFavorite}
                   />
                 </div>
               </>
@@ -614,6 +672,8 @@ export default function EditorialSpreadView({
                   formatEditorialPrice={formatEditorialPrice}
                   onDogEarClick={goToNextPage}
                   canGoNext={currentPage < pages.length - 1}
+                  favorites={favorites}
+                  toggleFavorite={toggleFavorite}
                 />
               </div>
             )}
@@ -629,6 +689,7 @@ export default function EditorialSpreadView({
         
         {/* Left: Previous Page button (On Page 1 it smoothly closes the book cover!) */}
         <button
+          type="button"
           onClick={goToPrevPage}
           disabled={!isBookOpened || isTransitioning || coverState !== 'idle'}
           className="px-2.5 xs:px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-[#2c271d] hover:bg-[#383324] active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5 text-[#e9e2ca] shrink-0 min-h-[40px] sm:min-h-[44px]"
@@ -656,6 +717,7 @@ export default function EditorialSpreadView({
                 {pages.map((_, idx) => (
                   <button
                     key={idx}
+                    type="button"
                     disabled={isTransitioning || coverState !== 'idle'}
                     onClick={() => goToPage(idx)}
                     className={`h-2 sm:h-2.5 rounded-full transition-all ${
@@ -673,6 +735,7 @@ export default function EditorialSpreadView({
             </>
           ) : (
             <button
+              type="button"
               onClick={handleOpenBook}
               disabled={coverState !== 'idle'}
               className="text-[11px] sm:text-xs font-black text-[#e9e2ca] hover:text-[#fdfcf7] flex items-center gap-1 sm:gap-1.5 transition-colors truncate"
@@ -686,6 +749,7 @@ export default function EditorialSpreadView({
         {/* Right: Next Page or Open Cover */}
         {!isBookOpened ? (
           <button
+            type="button"
             onClick={handleOpenBook}
             disabled={coverState !== 'idle'}
             className="px-3 xs:px-4 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-[#9b7e09] to-[#b8960e] hover:from-[#b8960e] hover:to-[#9b7e09] active:scale-95 text-[#fdfcf7] text-xs font-black transition-all flex items-center gap-1 sm:gap-1.5 shadow-md shadow-[#9b7e09]/25 shrink-0 min-h-[40px] sm:min-h-[44px]"
@@ -695,6 +759,7 @@ export default function EditorialSpreadView({
           </button>
         ) : (
           <button
+            type="button"
             onClick={goToNextPage}
             disabled={currentPage === pages.length - 1 || isTransitioning || coverState !== 'idle'}
             className="px-2.5 xs:px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-[#9b7e09] to-[#b8960e] hover:from-[#b8960e] hover:to-[#9b7e09] active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed text-[#fdfcf7] text-xs font-black transition-all flex items-center gap-1 sm:gap-1.5 shadow-md shadow-[#9b7e09]/20 shrink-0 min-h-[40px] sm:min-h-[44px]"
