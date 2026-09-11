@@ -23,7 +23,8 @@ export default function ProductDetailModal({
   onAddToCart,
   isFavorite = false,
   onToggleFavorite,
-  allProducts = []
+  allProducts = [],
+  plan = 'full'
 }) {
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState({});
@@ -411,6 +412,16 @@ export default function ProductDetailModal({
             >
               <PackageX className="w-4 h-4" /> No Disponible por Agotamiento
             </button>
+          ) : plan === 'basic' ? (
+            <div className="py-3 px-4 bg-[#1e1b13] border border-[#383324] rounded-2xl flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <span className="text-xs font-black text-[#e9e2ca] block truncate">Carta Digital de Consulta</span>
+                <span className="text-[11px] text-[#857f5d] block truncate">Pide este platillo directamente a tu mesero</span>
+              </div>
+              <span className="bg-[#110f0a]/80 border border-[#383324] px-3 py-1.5 rounded-xl text-xs sm:text-sm font-black text-[#b8960e] shrink-0">
+                {formatCOP(calculateTotal())}
+              </span>
+            </div>
           ) : (
             <>
               <div className="flex items-center justify-between">

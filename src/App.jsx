@@ -32,15 +32,25 @@ import FoodRouletteModal from './components/modals/FoodRouletteModal';
 import BillingModal from './components/modals/BillingModal';
 import TicketModal from './components/modals/TicketModal';
 import DailyCloseModal from './components/modals/DailyCloseModal';
+import LoginModal from './components/LoginModal';
 import {
   NewCustomerModal,
   WaiterCallModal,
   GeoNfcModal,
   AdminProductModal
 } from './components/modals/AuxiliaryModals';
+import { supabase, isSupabaseConfigured } from './lib/supabaseClient';
 
 export default function App() {
   const [currentRole, setCurrentRole] = useState('client');
+  const [isStaffAuthenticated, setIsStaffAuthenticated] = useState(() => {
+    try {
+      return sessionStorage.getItem('kikes_staff_auth') === 'true';
+    } catch (e) {
+      return false;
+    }
+  });
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [clientLayout, setClientLayout] = useState('editorial');
   const [tableNumber, setTableNumber] = useState('4');
   const [isNfcConnected, setIsNfcConnected] = useState(false);
@@ -49,8 +59,20 @@ export default function App() {
   const [dietaryFilter, setDietaryFilter] = useState('');
   const [soundEnabled, setSoundEnabled] = useState(true);
 
-  // States
-  const [company, setCompany] = useState(INITIAL_COMPANY);
+  // States & Persistence
+  const [company, setCompany] = useState(() => {
+    try {
+      const saved = localStorage.getItem('kikes_company');
+      if (saved) return { ...INITIAL_COMPANY, slug: 'la-trattoria', plan: 'full', ...JSON.parse(saved) };
+    } catch (e) {}
+    return { ...INITIAL_COMPANY, slug: 'la-trattoria', plan: 'full' };
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('kikes_company', JSON.stringify(company));
+    } catch (e) {}
+  }, [company]);
   const [products, setProducts] = useState(INITIAL_PRODUCTS);
   const [customers, setCustomers] = useState(INITIAL_CUSTOMERS);
   const [kitchenOrders, setKitchenOrders] = useState(INITIAL_KITCHEN_ORDERS);
@@ -171,12 +193,17 @@ export default function App() {
     }
   };
 
-  // URL Parameter Detection (NFC & Table Auto-Binding)
+  // URL Parameter Detection (NFC, Tenant Slug & Table Auto-Binding)
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
       const mesaParam = params.get('mesa') || params.get('table');
       const nfcParam = params.get('nfc');
+      const rParam = params.get('r') || params.get('restaurant');
+
+      if (rParam) {
+        setCompany(prev => ({ ...prev, slug: rParam.toLowerCase().replace(/[^a-z0-9-]/g, '-') }));
+      }
 
       if (mesaParam) {
         setTableNumber(mesaParam);
@@ -195,6 +222,99 @@ export default function App() {
     } catch (e) {
       console.error('Error parsing URL parameters:', e);
     }
+  }, []);
+
+  // RBAC: Redirigir al comensal si intenta acceder a vistas de empleados sin login
+  useEffect(() => {
+    if (!isStaffAuthenticated && currentRole !== 'client') {
+      setCurrentRole('client');
+      showToast('Acceso restringido. Inicia sesión como personal 🔒');
+    }
+  }, [isStaffAuthenticated, currentRole]);
+
+  // Sincronización en Tiempo Real con Supabase (WebSockets)
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) return;
+
+    const fetchInitialData = async () => {
+      try {
+        const { data: dbOrders } = await supabase
+          .from('orders')
+          .select('*, order_items(*)')
+          .order('id', { ascending: false })
+          .limit(50);
+
+        if (dbOrders && dbOrders.length) {
+          setKitchenOrders(dbOrders.map(o => ({
+            id: o.id,
+            table: o.table_number,
+            time: new Date(o.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }),
+            status: o.status,
+            items: (o.order_items || []).map(it => ({
+              name: it.name,
+              quantity: it.quantity,
+              price: it.unit_price,
+              selectedOptions: it.selected_options || []
+            }))
+          })));
+        }
+
+        const { data: dbCalls } = await supabase
+          .from('waiter_calls')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(30);
+
+        if (dbCalls && dbCalls.length) {
+          setWaiterCalls(dbCalls.map(c => ({
+            id: c.id,
+            table: c.table_number,
+            reason: c.reason,
+            subOption: c.sub_option,
+            note: c.note,
+            dianData: c.dian_data,
+            time: 'Reciente',
+            status: c.status,
+            waiterName: c.waiter_name,
+            createdAt: new Date(c.created_at).getTime()
+          })));
+        }
+      } catch (err) {
+        console.warn('Supabase fetch notice:', err);
+      }
+    };
+
+    fetchInitialData();
+
+    // Canales WebSockets para Cocina y Meseros
+    const ordersChannel = supabase
+      .channel('realtime_orders')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, (payload) => {
+        showToast(`🔔 ¡Nueva comanda Mesa ${payload.new.table_number}!`);
+        playChime();
+        fetchInitialData();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, (payload) => {
+        setKitchenOrders(prev => prev.map(o => o.id === payload.new.id ? { ...o, status: payload.new.status } : o));
+      })
+      .subscribe();
+
+    const waiterChannel = supabase
+      .channel('realtime_waiter')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'waiter_calls' }, (payload) => {
+        showToast(`🛎️ Llamado de Mesa ${payload.new.table_number}: ${payload.new.reason}`);
+        playChime();
+        fetchInitialData();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'waiter_calls' }, (payload) => {
+        setWaiterCalls(prev => prev.map(c => c.id === payload.new.id ? { ...c, status: payload.new.status, waiterName: payload.new.waiter_name } : c));
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(ordersChannel);
+      supabase.removeChannel(waiterChannel);
+    };
   }, []);
 
   const toggleFavorite = (productId) => {
@@ -242,6 +362,20 @@ export default function App() {
       createdAt: Date.now()
     };
     setWaiterCalls(prev => [newCall, ...prev]);
+
+    // Enviar a Supabase si está activo
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('waiter_calls').insert([{
+        tenant_id: 'a0000000-0000-0000-0000-000000000001',
+        table_number: tableNumber,
+        reason: callData.reason,
+        sub_option: callData.subOption,
+        note: callData.note,
+        dian_data: callData.dianData || null,
+        status: 'pending'
+      }]).then();
+    }
+
     setIsWaiterModalOpen(false);
     showToast(`🛎️ Solicitud enviada: "${callData.reason}" para Mesa ${tableNumber}`);
     playChime();
@@ -256,6 +390,9 @@ export default function App() {
     setWaiterCalls(prev =>
       prev.map(c => (c.id === callId ? { ...c, status: 'attending', waiterName: 'Carlos (Mesero)' } : c))
     );
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('waiter_calls').update({ status: 'attending', waiter_name: 'Carlos (Mesero)' }).eq('id', callId).then();
+    }
     showToast('Has tomado la atención de la mesa. En camino 🏃');
     playChime();
   };
@@ -264,6 +401,9 @@ export default function App() {
     setWaiterCalls(prev =>
       prev.map(c => (c.id === callId ? { ...c, status: 'completed' } : c))
     );
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('waiter_calls').update({ status: 'completed' }).eq('id', callId).then();
+    }
     showToast('Atención de mesa completada ✓');
   };
 
@@ -274,7 +414,8 @@ export default function App() {
     setIsGeoModalOpen(false);
     setCurrentRole('client');
     try {
-      const newUrl = `${window.location.pathname}?mesa=${tNum}&nfc=true`;
+      const slug = company.slug || 'la-trattoria';
+      const newUrl = `${window.location.pathname}?r=${slug}&mesa=${tNum}&nfc=true`;
       window.history.pushState({ path: newUrl }, '', newUrl);
       sessionStorage.setItem('kikes_active_table', tNum);
     } catch (e) {}
@@ -386,6 +527,16 @@ export default function App() {
         posPendingCount={kitchenOrders.filter(o => o.status === 'Por Cobrar').length}
         isNfcConnected={isNfcConnected}
         pendingWaiterCallsCount={waiterCalls.filter(c => c.status === 'pending').length}
+        isStaffAuthenticated={isStaffAuthenticated}
+        onOpenStaffLogin={() => setIsLoginModalOpen(true)}
+        onStaffLogout={() => {
+          try {
+            sessionStorage.removeItem('kikes_staff_auth');
+          } catch (e) {}
+          setIsStaffAuthenticated(false);
+          setCurrentRole('client');
+          showToast('Sesión de personal cerrada 🔒');
+        }}
       />
 
       <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4">
@@ -419,6 +570,9 @@ export default function App() {
             ingredientsStock={ingredientsStock}
             updateOrderStatus={(id, status) => {
               setKitchenOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+              if (isSupabaseConfigured && supabase) {
+                supabase.from('orders').update({ status, updated_at: new Date().toISOString() }).eq('id', id).then();
+              }
               if (status === 'Por Cobrar') showToast(`Comanda #${id} enviada a Caja POS`);
               playChime();
             }}
@@ -500,6 +654,8 @@ export default function App() {
           }}
           activeWaiterCall={waiterCalls.find(c => c.table === tableNumber && c.status !== 'completed')}
           cancelWaiterCall={handleCancelMyWaiterCall}
+          plan={company.plan || 'full'}
+          tableNumber={tableNumber}
         />
       )}
 
@@ -512,6 +668,10 @@ export default function App() {
           setIncludeTip={setIncludeTip}
           onClose={() => setIsCartOpen(false)}
           submitOrder={() => {
+            if (company.plan === 'basic') {
+              showToast('Este restaurante opera bajo el plan Carta Digital. Ordena directamente a tu mesero.');
+              return;
+            }
             if (!isInsidePremises) {
               setIsGeoModalOpen(true);
               return;
@@ -525,19 +685,80 @@ export default function App() {
               showToast(`Se retiraron ${removedCount} producto(s) agotado(s) de tu pedido ⚠️`);
             }
             if (!validCart.length) return;
+
+            // Anti-Tampering & Security Sanitization:
+            // 1. Obtener precio autorizado del catálogo maestro (ignorar manipulaciones de cliente)
+            // 2. Sanitizar texto de opciones personalizadas
+            const sanitizeText = (txt) => {
+              if (typeof txt !== 'string') return '';
+              return txt.replace(/[<>]/g, '').trim().slice(0, 150);
+            };
+
+            const verifiedItems = validCart.map(c => {
+              const catalogProd = products.find(p => p.id === c.product.id) || c.product;
+              const safePrice = typeof catalogProd.price === 'number' && catalogProd.price > 0 
+                ? catalogProd.price 
+                : c.product.price;
+              const safeQty = Math.max(1, Math.min(50, Math.floor(Number(c.quantity) || 1)));
+              const safeOptions = c.optionsText ? [sanitizeText(c.optionsText)] : [];
+
+              return {
+                name: catalogProd.name || c.product.name,
+                quantity: safeQty,
+                price: safePrice,
+                selectedOptions: safeOptions
+              };
+            });
+
+            const orderId = Math.floor(100 + Math.random() * 900);
             const newOrder = {
-              id: Math.floor(100 + Math.random() * 900),
+              id: orderId,
               table: tableNumber,
               time: 'Hace un instante',
               status: 'Pendiente',
-              items: validCart.map(c => ({
-                name: c.product.name,
-                quantity: c.quantity,
-                price: c.product.price,
-                selectedOptions: c.optionsText ? [c.optionsText] : []
-              }))
+              items: verifiedItems
             };
             setKitchenOrders(prev => [newOrder, ...prev]);
+
+            // Persistir comanda en Supabase si la base de datos está conectada
+            if (isSupabaseConfigured && supabase) {
+              (async () => {
+                try {
+                  const subtotal = verifiedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                  const tipAmount = includeTip ? Math.round(subtotal * 0.1) : 0;
+                  const total = subtotal + tipAmount;
+
+                  const { data: dbOrder } = await supabase
+                    .from('orders')
+                    .insert([{
+                      tenant_id: 'a0000000-0000-0000-0000-000000000001',
+                      table_number: tableNumber,
+                      status: 'Pendiente',
+                      subtotal,
+                      tip: tipAmount,
+                      total
+                    }])
+                    .select()
+                    .single();
+
+                  if (dbOrder) {
+                    await supabase.from('order_items').insert(
+                      verifiedItems.map(item => ({
+                        order_id: dbOrder.id,
+                        name: item.name,
+                        quantity: item.quantity,
+                        unit_price: item.price,
+                        total_price: item.price * item.quantity,
+                        selected_options: item.selectedOptions
+                      }))
+                    );
+                  }
+                } catch (err) {
+                  console.error('Error insertando comanda en Supabase:', err);
+                }
+              })();
+            }
+
             setCart([]);
             setIsCartOpen(false);
             playChime();
@@ -553,6 +774,7 @@ export default function App() {
           isFavorite={favorites.includes(selectedProduct.id)}
           onToggleFavorite={toggleFavorite}
           onClose={() => setSelectedProduct(null)}
+          plan={company.plan || 'full'}
           onAddToCart={(cartItem) => {
             const liveProduct = productsWithStock.find(p => p.id === cartItem.product.id);
             if (liveProduct?.soldOut) {
@@ -689,6 +911,16 @@ export default function App() {
           }}
         />
       )}
+
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLoginSuccess={() => {
+          setIsStaffAuthenticated(true);
+          showToast('Acceso de personal autorizado ✓');
+          playChime();
+        }}
+      />
 
       {toast.show && (
         <div className="fixed bottom-16 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 border border-slate-700 text-white text-xs px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-2 max-w-[90vw] truncate animate-bounce">
