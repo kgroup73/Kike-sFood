@@ -290,8 +290,8 @@ export default function ClientView({
       </div>
 
       {/* 4. Products List Rendering based on Layout */}
-
-      {/* Mode A: 3D EDITORIAL FLIPBOOK (Default Experience) */}
+      <div key={clientLayout} className="view-fade-enter">
+        {/* Mode A: 3D EDITORIAL FLIPBOOK (Default Experience) */}
       {clientLayout === 'editorial' && (
         <EditorialSpreadView
           products={filteredProducts}
@@ -631,6 +631,7 @@ export default function ClientView({
           })}
         </div>
       )}
+      </div>
 
       {/* Empty State */}
       {!filteredProducts.length && (

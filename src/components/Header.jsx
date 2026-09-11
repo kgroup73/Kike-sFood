@@ -6,7 +6,9 @@ import {
   Receipt,
   Settings,
   Volume2,
-  VolumeX
+  VolumeX,
+  Bell,
+  Zap
 } from 'lucide-react';
 
 export default function Header({
@@ -19,7 +21,9 @@ export default function Header({
   soundEnabled,
   setSoundEnabled,
   kitchenActiveCount,
-  posPendingCount
+  posPendingCount,
+  isNfcConnected = false,
+  pendingWaiterCallsCount = 0
 }) {
   return (
     <header className="bg-[#1e1b13]/95 backdrop-blur-md border-b border-[#383324] sticky top-0 z-30">
@@ -33,12 +37,19 @@ export default function Header({
             <div className="truncate">
               <h1 className="font-extrabold text-sm sm:text-base leading-tight text-[#fdfcf7] truncate">{company.name}</h1>
               <div className="flex items-center space-x-1.5 text-[11px] text-[#857f5d]">
-                <span className="font-bold">Mesa <strong className="text-[#9b7e09]">{tableNumber}</strong></span>
-                <span>•</span>
-                <button onClick={() => setIsGeoModalOpen(true)} className="hover:underline flex items-center gap-1 font-medium text-[#e9e2ca]">
-                  <span className={`w-1.5 h-1.5 rounded-full ${isInsidePremises ? 'bg-emerald-500' : 'bg-rose-500'} animate-pulse`}></span>
-                  <span>{isInsidePremises ? 'En local' : 'Fuera'}</span>
+                <button
+                  onClick={() => setIsGeoModalOpen(true)}
+                  className="hover:underline flex items-center gap-1 font-bold text-[#e9e2ca] bg-[#14120c] px-2 py-0.5 rounded-md border border-[#383324] transition-all hover:border-[#b8960e]"
+                  title="Cambiar de mesa o simular toque NFC"
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${isNfcConnected ? 'bg-amber-400' : 'bg-emerald-500'} animate-pulse`}></span>
+                  <span>Mesa <strong className="text-[#b8960e]">{tableNumber}</strong></span>
+                  {isNfcConnected && <Zap className="w-3 h-3 text-amber-400 fill-amber-400" />}
                 </button>
+                <span>•</span>
+                <span className="text-[10px] text-[#857f5d]">
+                  {isNfcConnected ? 'NFC Enlazado ⚡' : 'Carta Digital'}
+                </span>
               </div>
             </div>
           </div>
@@ -88,6 +99,11 @@ export default function Header({
               }`}
             >
               <Receipt className="w-3.5 h-3.5" /> <span>Caja POS</span>
+              {pendingWaiterCallsCount > 0 && (
+                <span className="bg-amber-500 text-slate-950 text-[9px] px-1.5 py-0.2 rounded-full font-black ml-1 animate-pulse flex items-center gap-0.5">
+                  <Bell className="w-2.5 h-2.5" /> {pendingWaiterCallsCount}
+                </span>
+              )}
               {posPendingCount > 0 && (
                 <span className="bg-emerald-500 text-white text-[9px] px-1 py-0.2 rounded-full font-bold ml-1">{posPendingCount}</span>
               )}

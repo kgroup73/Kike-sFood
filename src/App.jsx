@@ -43,6 +43,7 @@ export default function App() {
   const [currentRole, setCurrentRole] = useState('client');
   const [clientLayout, setClientLayout] = useState('editorial');
   const [tableNumber, setTableNumber] = useState('4');
+  const [isNfcConnected, setIsNfcConnected] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('Todos');
   const [dietaryFilter, setDietaryFilter] = useState('');
@@ -55,6 +56,21 @@ export default function App() {
   const [kitchenOrders, setKitchenOrders] = useState(INITIAL_KITCHEN_ORDERS);
   const [invoices, setInvoices] = useState([]);
   const [dailyCloseHistory, setDailyCloseHistory] = useState([]);
+
+  // Live Waiter Calls State (Real-time staff alerts)
+  const [waiterCalls, setWaiterCalls] = useState([
+    {
+      id: 'call-101',
+      table: '2',
+      reason: 'Pedir la Cuenta',
+      subOption: 'Datáfono / Tarjeta',
+      note: 'Traer factura electrónica',
+      time: 'Hace 2 min',
+      status: 'pending',
+      waiterName: null,
+      createdAt: Date.now() - 120000
+    }
+  ]);
 
   // Inventario: historial de desabastecimiento reportado por cocina (persistido)
   const [stockEvents, setStockEvents] = useState(() => {
@@ -135,19 +151,6 @@ export default function App() {
     setTimeout(() => setToast({ show: false, message: '' }), 3000);
   };
 
-  const toggleFavorite = (productId) => {
-    setFavorites(prev => {
-      const exists = prev.includes(productId);
-      const updated = exists ? prev.filter(id => id !== productId) : [...prev, productId];
-      try {
-        localStorage.setItem('gourmet_favorites', JSON.stringify(updated));
-      } catch (e) {}
-      showToast(exists ? 'Eliminado de favoritos 💔' : '¡Guardado en tus favoritos! ❤️');
-      playChime();
-      return updated;
-    });
-  };
-
   const playChime = () => {
     if (!soundEnabled) return;
     try {
@@ -166,6 +169,117 @@ export default function App() {
     } catch (e) {
       console.warn('Audio feedback not available', e);
     }
+  };
+
+  // URL Parameter Detection (NFC & Table Auto-Binding)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const mesaParam = params.get('mesa') || params.get('table');
+      const nfcParam = params.get('nfc');
+
+      if (mesaParam) {
+        setTableNumber(mesaParam);
+        sessionStorage.setItem('kikes_active_table', mesaParam);
+        if (nfcParam === 'true' || nfcParam === '1') {
+          setIsNfcConnected(true);
+          showToast(`⚡ ¡Conectado a Mesa ${mesaParam} por sensor NFC!`);
+          playChime();
+        } else {
+          showToast(`📍 Menú vinculado a Mesa ${mesaParam}`);
+        }
+      } else {
+        const saved = sessionStorage.getItem('kikes_active_table');
+        if (saved) setTableNumber(saved);
+      }
+    } catch (e) {
+      console.error('Error parsing URL parameters:', e);
+    }
+  }, []);
+
+  const toggleFavorite = (productId) => {
+    setFavorites(prev => {
+      const exists = prev.includes(productId);
+      const updated = exists ? prev.filter(id => id !== productId) : [...prev, productId];
+      try {
+        localStorage.setItem('gourmet_favorites', JSON.stringify(updated));
+      } catch (e) {}
+      showToast(exists ? 'Eliminado de favoritos 💔' : '¡Guardado en tus favoritos! ❤️');
+      playChime();
+      return updated;
+    });
+  };
+
+  // Waiter Calls Handlers
+  const handleCallWaiter = (callData) => {
+    if (callData.dianData?.nit) {
+      setCustomers(prev => {
+        const exists = prev.some(c => c.nit === callData.dianData.nit);
+        if (exists) return prev;
+        return [
+          ...prev,
+          {
+            id: Date.now(),
+            name: callData.dianData.name,
+            nit: callData.dianData.nit,
+            email: callData.dianData.email,
+            phone: 'Mesa ' + tableNumber
+          }
+        ];
+      });
+    }
+
+    const newCall = {
+      id: `call-${Date.now()}`,
+      table: tableNumber,
+      reason: callData.reason,
+      subOption: callData.subOption,
+      note: callData.note,
+      dianData: callData.dianData || null,
+      time: 'Hace un instante',
+      status: 'pending',
+      waiterName: null,
+      createdAt: Date.now()
+    };
+    setWaiterCalls(prev => [newCall, ...prev]);
+    setIsWaiterModalOpen(false);
+    showToast(`🛎️ Solicitud enviada: "${callData.reason}" para Mesa ${tableNumber}`);
+    playChime();
+  };
+
+  const handleCancelMyWaiterCall = () => {
+    setWaiterCalls(prev => prev.filter(c => !(c.table === tableNumber && c.status !== 'completed')));
+    showToast(`Llamado de mesero para Mesa ${tableNumber} cancelado`);
+  };
+
+  const handleAttendWaiterCall = (callId) => {
+    setWaiterCalls(prev =>
+      prev.map(c => (c.id === callId ? { ...c, status: 'attending', waiterName: 'Carlos (Mesero)' } : c))
+    );
+    showToast('Has tomado la atención de la mesa. En camino 🏃');
+    playChime();
+  };
+
+  const handleCompleteWaiterCall = (callId) => {
+    setWaiterCalls(prev =>
+      prev.map(c => (c.id === callId ? { ...c, status: 'completed' } : c))
+    );
+    showToast('Atención de mesa completada ✓');
+  };
+
+  const handleSimulateTableNfc = (tNum) => {
+    setTableNumber(tNum);
+    setIsNfcConnected(true);
+    setIsInsidePremises(true);
+    setIsGeoModalOpen(false);
+    setCurrentRole('client');
+    try {
+      const newUrl = `${window.location.pathname}?mesa=${tNum}&nfc=true`;
+      window.history.pushState({ path: newUrl }, '', newUrl);
+      sessionStorage.setItem('kikes_active_table', tNum);
+    } catch (e) {}
+    showToast(`⚡ ¡Mesa ${tNum} vinculada por sensor NFC!`);
+    playChime();
   };
 
   // ===== Inventario: agotamiento por Materia Prima (ingrediente) =====
@@ -270,6 +384,8 @@ export default function App() {
         }}
         kitchenActiveCount={kitchenOrders.filter(o => o.status !== 'Por Cobrar').length}
         posPendingCount={kitchenOrders.filter(o => o.status === 'Por Cobrar').length}
+        isNfcConnected={isNfcConnected}
+        pendingWaiterCallsCount={waiterCalls.filter(c => c.status === 'pending').length}
       />
 
       <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4">
@@ -324,6 +440,9 @@ export default function App() {
               setIsTicketModalOpen(true);
             }}
             openDailyCloseModal={() => setIsDailyCloseModalOpen(true)}
+            waiterCalls={waiterCalls}
+            onAttendWaiterCall={handleAttendWaiterCall}
+            onCompleteWaiterCall={handleCompleteWaiterCall}
           />
         )}
 
@@ -365,6 +484,7 @@ export default function App() {
               });
               setIsAdminProductModalOpen(true);
             }}
+            onSimulateTableNfc={handleSimulateTableNfc}
           />
         )}
       </main>
@@ -378,6 +498,8 @@ export default function App() {
             if (!isInsidePremises) setIsGeoModalOpen(true);
             else setIsWaiterModalOpen(true);
           }}
+          activeWaiterCall={waiterCalls.find(c => c.table === tableNumber && c.status !== 'completed')}
+          cancelWaiterCall={handleCancelMyWaiterCall}
         />
       )}
 
@@ -472,26 +594,20 @@ export default function App() {
         <WaiterCallModal
           tableNumber={tableNumber}
           onClose={() => setIsWaiterModalOpen(false)}
-          callWaiter={(reason) => {
-            setIsWaiterModalOpen(false);
-            showToast(`Llamado enviado: "${reason}" 🛎️`);
-          }}
+          callWaiter={handleCallWaiter}
         />
       )}
 
       {isGeoModalOpen && (
         <GeoNfcModal
+          currentTable={tableNumber}
           onClose={() => setIsGeoModalOpen(false)}
-          simulateNfc={(num) => {
-            setTableNumber(num);
-            setIsInsidePremises(true);
-            setIsGeoModalOpen(false);
-            showToast(`¡Mesa ${num} verificada por NFC! ⚡`);
-          }}
+          simulateNfc={(num) => handleSimulateTableNfc(num)}
           confirmGps={() => {
             setIsInsidePremises(true);
             setIsGeoModalOpen(false);
             showToast('Ubicación confirmada en el local 📍');
+            playChime();
           }}
         />
       )}

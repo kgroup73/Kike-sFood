@@ -8,6 +8,12 @@ import {
   Building2,
   ShieldCheck,
   CheckCircle2,
+  Smartphone,
+  QrCode,
+  Copy,
+  ExternalLink,
+  Zap,
+  Sparkles,
   Package,
   PackageX,
   PackageCheck,
@@ -33,9 +39,11 @@ export default function AdminView({
   toggleProductAvailability,
   deleteProduct,
   openEditProduct,
-  openNewProduct
+  openNewProduct,
+  onSimulateTableNfc
 }) {
   const [adminTab, setAdminTab] = useState('products');
+  const [tableCount, setTableCount] = useState(12);
   const [ingredientQuery, setIngredientQuery] = useState('');
 
   const soldOutNow = useMemo(() => productsWithStock.filter(p => p.soldOut), [productsWithStock]);
@@ -67,28 +75,34 @@ export default function AdminView({
 
   return (
     <div className="space-y-6">
-      <div className="flex border-b border-slate-800 space-x-4">
+      <div className="flex border-b border-slate-800 space-x-2 sm:space-x-4 overflow-x-auto hide-scrollbar">
         <button
           onClick={() => setAdminTab('products')}
-          className={`pb-3 text-xs sm:text-sm font-bold transition-all ${adminTab === 'products' ? 'border-b-2 border-orange-500 text-white' : 'text-slate-400 hover:text-white'}`}
+          className={`pb-3 text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${adminTab === 'products' ? 'border-b-2 border-orange-500 text-white' : 'text-slate-400 hover:text-white'}`}
         >
           Platillos del Menú
         </button>
         <button
           onClick={() => setAdminTab('inventory')}
-          className={`pb-3 text-xs sm:text-sm font-bold transition-all ${adminTab === 'inventory' ? 'border-b-2 border-orange-500 text-white' : 'text-slate-400 hover:text-white'}`}
+          className={`pb-3 text-xs sm:text-sm font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${adminTab === 'inventory' ? 'border-b-2 border-orange-500 text-white' : 'text-slate-400 hover:text-white'}`}
         >
-          Inventario & Compras
+          <Package className="w-3.5 h-3.5" /> <span>Inventario & Compras</span>
+        </button>
+        <button
+          onClick={() => setAdminTab('nfc')}
+          className={`pb-3 text-xs sm:text-sm font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${adminTab === 'nfc' ? 'border-b-2 border-amber-500 text-amber-400' : 'text-slate-400 hover:text-white'}`}
+        >
+          <Smartphone className="w-3.5 h-3.5" /> <span>Mesas & Tags NFC</span>
         </button>
         <button
           onClick={() => setAdminTab('company')}
-          className={`pb-3 text-xs sm:text-sm font-bold transition-all ${adminTab === 'company' ? 'border-b-2 border-orange-500 text-white' : 'text-slate-400 hover:text-white'}`}
+          className={`pb-3 text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${adminTab === 'company' ? 'border-b-2 border-orange-500 text-white' : 'text-slate-400 hover:text-white'}`}
         >
           Datos Empresa
         </button>
         <button
           onClick={() => setAdminTab('dian')}
-          className={`pb-3 text-xs sm:text-sm font-bold transition-all ${adminTab === 'dian' ? 'border-b-2 border-orange-500 text-white' : 'text-slate-400 hover:text-white'}`}
+          className={`pb-3 text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${adminTab === 'dian' ? 'border-b-2 border-orange-500 text-white' : 'text-slate-400 hover:text-white'}`}
         >
           Parametrización DIAN
         </button>
@@ -141,6 +155,146 @@ export default function AdminView({
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {adminTab === 'nfc' && (
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-900 p-4 rounded-2xl border border-slate-800 gap-3 shadow-lg">
+            <div>
+              <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                <Smartphone className="w-5 h-5 text-amber-400" />
+                Configuración de Mesas, Tags NFC y Códigos QR
+              </h3>
+              <p className="text-xs text-slate-400">
+                Genera los enlaces directos y códigos para grabar en chips NFC (NTAG213) o imprimir en displays físicos.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-slate-400 font-bold">Total Mesas:</span>
+              <select
+                value={tableCount}
+                onChange={(e) => setTableCount(Number(e.target.value))}
+                className="bg-slate-950 border border-slate-800 text-white font-bold rounded-xl px-3 py-1.5 focus:outline-none focus:border-amber-500"
+              >
+                <option value={8}>8 Mesas</option>
+                <option value={12}>12 Mesas</option>
+                <option value={16}>16 Mesas</option>
+                <option value={20}>20 Mesas</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Table Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            {Array.from({ length: tableCount }, (_, i) => {
+              const tableNum = String(i + 1);
+              const targetUrl = `${window.location.origin}/?mesa=${tableNum}&nfc=true`;
+
+              return (
+                <div
+                  key={tableNum}
+                  className="bg-slate-900 border border-slate-800 hover:border-amber-500/50 rounded-2xl p-4 space-y-3 shadow-md transition-all flex flex-col justify-between group"
+                >
+                  <div className="space-y-2.5">
+                    <div className="flex justify-between items-center pb-2 border-b border-slate-800">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 font-black flex items-center justify-center text-xs border border-amber-500/30">
+                          #{tableNum}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-white text-xs sm:text-sm">Mesa {tableNum}</h4>
+                          <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                            <Zap className="w-2.5 h-2.5 text-amber-400" /> Chip NFC NTAG213
+                          </span>
+                        </div>
+                      </div>
+
+                      <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">
+                        Activa
+                      </span>
+                    </div>
+
+                    {/* URL Snippet */}
+                    <div className="bg-slate-950 p-2 rounded-xl border border-slate-800 text-[10px] text-slate-400 font-mono break-all select-all flex items-center justify-between gap-1">
+                      <span className="truncate">{targetUrl}</span>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="pt-2 border-t border-slate-800 flex items-center gap-2 text-xs">
+                    <button
+                      onClick={() => {
+                        if (navigator?.clipboard?.writeText) {
+                          navigator.clipboard.writeText(targetUrl).catch(() => {});
+                        }
+                        showToast(`Enlace para Mesa ${tableNum} copiado al portapapeles 📋`);
+                      }}
+                      className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl border border-slate-700 flex items-center justify-center gap-1.5 transition-colors"
+                      title="Copiar URL para quemar en el tag NFC"
+                    >
+                      <Copy className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Copiar Enlace</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        if (onSimulateTableNfc) {
+                          onSimulateTableNfc(tableNum);
+                        }
+                      }}
+                      className="py-2 px-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black rounded-xl flex items-center justify-center gap-1 transition-all shadow"
+                      title="Simular cliente escaneando NFC en esta mesa"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Probar</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* B2B Onboarding Hardware Guide */}
+          <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-amber-950/30 border border-amber-500/30 rounded-3xl p-5 sm:p-6 space-y-3 shadow-xl">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-extrabold text-sm sm:text-base text-white">
+                  ¿Cómo instalar y vender los Tags NFC físicos a tus restaurantes?
+                </h4>
+                <p className="text-xs text-slate-400">
+                  Guía paso a paso para que cualquier restaurante implemente el menú de mesa en menos de 10 minutos.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-2 text-xs">
+              <div className="bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800 space-y-1.5">
+                <span className="text-amber-400 font-black text-sm">1. Adquiere los Stickers</span>
+                <p className="text-slate-300 leading-relaxed">
+                  Compra etiquetas adhesivas NFC circulares estándar <strong>NTAG213 o NTAG215</strong> en MercadoLibre o AliExpress (cuestan aprox. <strong>$1.200 a $1.800 COP cada una</strong>).
+                </p>
+              </div>
+
+              <div className="bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800 space-y-1.5">
+                <span className="text-amber-400 font-black text-sm">2. Graba el Enlace en 5 Segundos</span>
+                <p className="text-slate-300 leading-relaxed">
+                  Descarga la app gratuita <strong>NFC Tools</strong> en tu iPhone o Android. Selecciona <em>Escribir &gt; Añadir Registro URL</em>, pega el enlace de la mesa correspondiente y acerca el sticker al teléfono.
+                </p>
+              </div>
+
+              <div className="bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800 space-y-1.5">
+                <span className="text-amber-400 font-black text-sm">3. Fija en Mesa o Soporte</span>
+                <p className="text-slate-300 leading-relaxed">
+                  Pega la etiqueta debajo de la madera de la mesa o dentro de un soporte acrílico/madera de diseño. <strong>No requiere baterías ni mantenimiento de por vida.</strong>
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       )}

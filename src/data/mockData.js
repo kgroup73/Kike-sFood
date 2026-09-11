@@ -375,6 +375,404 @@ export const INITIAL_PRODUCTS = [
         ]
       }
     ]
+  },
+  {
+    id: 9,
+    name: 'Risotto al Tartufo Nero & Funghi Porcini',
+    category: 'Platos Fuertes',
+    price: 48000,
+    image: '/dishes/risotto.jpg',
+    description: 'Arroz Carnaroli mantecado con mantequilla de trufa de Umbría, setas porcini silvestres, láminas de trufa negra fresca y queso Parmigiano Reggiano 24 meses.',
+    isChef: true,
+    isVeg: true,
+    isGf: true,
+    isPopular: true,
+    rating: 5.0,
+    reviewsCount: 168,
+    prepTime: '18-22 min',
+    spicyLevel: 0,
+    calories: '590 kcal',
+    chefNotes: 'Cocinamos el arroz lentamente con caldo de verduras rostizadas y emulsionamos con Parmigiano de 24 meses.',
+    ingredients: ['Arroz Carnaroli', 'Setas Porcini silvestres', 'Mantequilla de Trufa Negra', 'Parmigiano Reggiano 24m', 'Vino Blanco Pinot Grigio'],
+    pairing: {
+      productId: 7,
+      name: 'Sangría Artesanal de Frutos Rojos',
+      price: 16000,
+      description: 'Los taninos y frutos rojos equilibran la untuosidad del queso y la intensidad de la trufa.',
+      image: '/dishes/cocktail.jpg'
+    },
+    available: true,
+    modifiers: [
+      {
+        title: 'Adicional de Lujo',
+        required: false,
+        options: [
+          { name: 'Láminas extra de Trufa Negra', price: 9000 },
+          { name: 'Colas de Langostinos Salteados', price: 12000 }
+        ]
+      }
+    ]
+  },
+  {
+    id: 10,
+    name: 'Salmón Glaseado en Costra de Pistacho',
+    category: 'Platos Fuertes',
+    price: 54000,
+    image: '/dishes/salmon.jpg',
+    description: 'Filete de salmón noruego con costra crocante de pistacho siciliano, puré sedoso de coliflor al azafrán y reducción de cítricos y miel silvestre.',
+    isChef: true,
+    isVeg: false,
+    isGf: true,
+    isPopular: true,
+    rating: 4.9,
+    reviewsCount: 142,
+    prepTime: '16-20 min',
+    spicyLevel: 0,
+    calories: '520 kcal',
+    chefNotes: 'Sellado a fuego vivo para mantener la terneza y jugosidad interior rosada.',
+    ingredients: ['Salmón Noruego Fresco', 'Pistachos de Sicilia', 'Puré de Coliflor al Azafrán', 'Reducción de Cítricos', 'Microvegetales'],
+    pairing: {
+      productId: 18,
+      name: 'Elixir Botánico de Saúco & Pepino',
+      price: 18000,
+      description: 'El frescor floral del saúco resalta la untuosidad de las grasas nobles del salmón.',
+      image: '/dishes/elderflower.jpg'
+    },
+    available: true,
+    modifiers: [
+      {
+        title: 'Término del Salmón',
+        required: true,
+        options: [
+          { name: 'Término Medio Rosado (Recomendado)', price: 0 },
+          { name: 'Bien Cocido', price: 0 }
+        ]
+      }
+    ]
+  },
+  {
+    id: 11,
+    name: 'Ravioli Neri di Aragosta al Zafferano',
+    category: 'Platos Fuertes',
+    price: 52000,
+    image: '/dishes/ravioli.jpg',
+    description: 'Pasta negra artesanal con tinta de calamar, rellena de langosta del Caribe y ricotta fresca en emulsión de mantequilla avellanada al azafrán y caviar Oscietra.',
+    isChef: true,
+    isVeg: false,
+    isGf: false,
+    isPopular: true,
+    rating: 5.0,
+    reviewsCount: 189,
+    prepTime: '15-18 min',
+    spicyLevel: 0,
+    calories: '610 kcal',
+    chefNotes: 'Masa estirada a mano cada mañana, con relleno de colas de langosta flameadas en coñac.',
+    ingredients: ['Pasta fresca con tinta de calamar', 'Langosta caribeña', 'Ricotta de búfala', 'Azafrán en hebras', 'Caviar Oscietra'],
+    pairing: {
+      productId: 17,
+      name: 'Smoked Old Fashioned de Autor',
+      price: 26000,
+      description: 'Aromas a madera ahumada que contrastan soberbiamente con el azafrán.',
+      image: '/dishes/cocktail.jpg'
+    },
+    available: true,
+    modifiers: [
+      {
+        title: 'Topping de Autor',
+        required: false,
+        options: [
+          { name: 'Perlas de Caviar Oscietra Extra', price: 14000 },
+          { name: 'Queso Parmigiano Rallado al Momento', price: 4000 }
+        ]
+      }
+    ]
+  },
+  {
+    id: 12,
+    name: 'Carpaccio di Wagyu A5 con Tartufo',
+    category: 'Entradas',
+    price: 46000,
+    image: '/dishes/carpaccio.jpg',
+    description: 'Finas láminas de res Wagyu A5 japonés marmoleado, lascas de Parmigiano Reggiano, microalbahaca, perlas de balsámico di Modena y aceite de trufa blanca.',
+    isChef: true,
+    isVeg: false,
+    isGf: true,
+    isPopular: true,
+    rating: 4.9,
+    reviewsCount: 215,
+    prepTime: '8-10 min',
+    spicyLevel: 0,
+    calories: '390 kcal',
+    chefNotes: 'Carne cortada a -2°C para conservar su textura de seda que se funde inmediatamente al paladar.',
+    ingredients: ['Corte Wagyu A5 certificado', 'Parmigiano Reggiano 24m', 'Aceite de Trufa Blanca de Alba', 'Perlas de Aceto Balsámico', 'Rúgula selvática'],
+    pairing: {
+      productId: 7,
+      name: 'Sangría Artesanal de Frutos Rojos',
+      price: 16000,
+      description: 'La acidez frutal balancea la grasa intramuscular marmolada del Wagyu.',
+      image: '/dishes/cocktail.jpg'
+    },
+    available: true,
+    modifiers: [
+      {
+        title: 'Pan de Acompañamiento',
+        required: false,
+        options: [
+          { name: 'Focaccia crocante recién horneada', price: 4000 },
+          { name: 'Tostaditas de Centeno y Sal Marina', price: 3500 }
+        ]
+      }
+    ]
+  },
+  {
+    id: 13,
+    name: 'Pulpo Braseado al Carbón de Encina',
+    category: 'Platos Fuertes',
+    price: 58000,
+    image: '/dishes/octopus.jpg',
+    description: 'Tentáculo de pulpo del Pacífico caramelizado a las brasas, sobre crema tibia de papas criollas al pimentón de la Vera, chips de ajo y aceite de oliva virgen extra.',
+    isChef: true,
+    isVeg: false,
+    isGf: true,
+    isPopular: true,
+    rating: 4.9,
+    reviewsCount: 176,
+    prepTime: '15-20 min',
+    spicyLevel: 1,
+    calories: '470 kcal',
+    chefNotes: 'Cocción al vacío a 77°C durante 5 horas antes de terminar en parrilla de hierro al carbón.',
+    ingredients: ['Tentáculo de Pulpo', 'Papa criolla andina', 'Pimentón ahumado de la Vera', 'Ajo confitado', 'Sal Maldón en escamas'],
+    pairing: {
+      productId: 5,
+      name: 'Limonada de Coco Frappé',
+      price: 12000,
+      description: 'El toque cremoso y cítrico refresca las notas ahumadas del carbón de encina.',
+      image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=400&auto=format&fit=crop'
+    },
+    available: true,
+    modifiers: []
+  },
+  {
+    id: 14,
+    name: 'Gnocchi al Pesto di Pistacchio e Gamberi',
+    category: 'Platos Fuertes',
+    price: 49000,
+    image: '/dishes/gnocchi.jpg',
+    description: 'Ñoquis de papa hechos a mano con pesto cremoso de pistacho de Bronte, camarones jumbo sellados al fuego, stracciatella fresca y flores comestibles.',
+    isChef: true,
+    isVeg: false,
+    isGf: false,
+    isPopular: true,
+    rating: 4.8,
+    reviewsCount: 124,
+    prepTime: '12-16 min',
+    spicyLevel: 0,
+    calories: '640 kcal',
+    chefNotes: 'Gnocchi esponjosos como nubes preparados diariamente con papas asadas a la sal.',
+    ingredients: ['Ñoquis caseros de papa', 'Camarones jumbo', 'Pesto de pistacho de Bronte', 'Stracciatella cremosa', 'Flores de borraja'],
+    pairing: {
+      productId: 18,
+      name: 'Elixir Botánico de Saúco & Pepino',
+      price: 18000,
+      description: 'Frescura botánica que complementa el dulzor de los camarones y el pistacho.',
+      image: '/dishes/elderflower.jpg'
+    },
+    available: true,
+    modifiers: [
+      {
+        title: 'Porción Extra',
+        required: false,
+        options: [
+          { name: 'Camarones Jumbo Adicionales (3 uds)', price: 9000 },
+          { name: 'Extra Stracciatella de Búfala', price: 5000 }
+        ]
+      }
+    ]
+  },
+  {
+    id: 15,
+    name: 'Costillar de Cordero en Costra de Hierbas',
+    category: 'Platos Fuertes',
+    price: 68000,
+    image: '/dishes/lamb.jpg',
+    description: 'Chop de cordero lechal asado a término medio con costra dorada de hierbas provenzales, demi-glace al romero fresco, zanahorias baby glaseadas y puré trufado.',
+    isChef: true,
+    isVeg: false,
+    isGf: false,
+    isPopular: true,
+    rating: 5.0,
+    reviewsCount: 198,
+    prepTime: '20-25 min',
+    spicyLevel: 0,
+    calories: '780 kcal',
+    chefNotes: 'Carne tierna y jugosa con demi-glace reducida durante 36 horas con huesos tostados y Oporto.',
+    ingredients: ['Costillar de Cordero', 'Hierbas de Provenza y Panko', 'Demi-glace al Romero', 'Zanahorias glaseadas con miel', 'Puré trufado'],
+    pairing: {
+      productId: 17,
+      name: 'Smoked Old Fashioned de Autor',
+      price: 26000,
+      description: 'El roble y los aromas del bourbon hacen sinergia perfecta con la potencia del cordero.',
+      image: '/dishes/cocktail.jpg'
+    },
+    available: true,
+    modifiers: [
+      {
+        title: 'Término de Cocción',
+        required: true,
+        options: [
+          { name: 'Término Medio Rosado (Sugerido)', price: 0 },
+          { name: 'Tres Cuartos', price: 0 },
+          { name: 'Bien Cocido', price: 0 }
+        ]
+      }
+    ]
+  },
+  {
+    id: 16,
+    name: 'Tartare Nikkei de Atún Bluefin',
+    category: 'Entradas',
+    price: 44000,
+    image: '/dishes/tuna.jpg',
+    description: 'Dados de atún rojo Bluefin grado sashimi marinados en ponzu trufado, mousse de aguacate Hass, mango biche, sésamo tostado y esferas de yuzu cítrico.',
+    isChef: true,
+    isVeg: false,
+    isGf: true,
+    isPopular: true,
+    rating: 4.9,
+    reviewsCount: 153,
+    prepTime: '10 min',
+    spicyLevel: 1,
+    calories: '360 kcal',
+    chefNotes: 'Atún fresco de pesca responsable servido sobre hielo picado para máxima frescura.',
+    ingredients: ['Atún Rojo Bluefin', 'Mousse de Aguacate Hass', 'Mango Biche', 'Salsa Ponzu artesanal', 'Perlas de Yuzu'],
+    pairing: {
+      productId: 18,
+      name: 'Elixir Botánico de Saúco & Pepino',
+      price: 18000,
+      description: 'Maridaje cítrico y refrescante que enaltece el sabor limpio del atún crudo.',
+      image: '/dishes/elderflower.jpg'
+    },
+    available: true,
+    modifiers: [
+      {
+        title: 'Picante Nikkei',
+        required: false,
+        options: [
+          { name: 'Normal (Toque Sutil de Rocoto)', price: 0 },
+          { name: 'Intenso (Con Wasabi y Shichimi)', price: 1000 },
+          { name: 'Sin Picante', price: 0 }
+        ]
+      }
+    ]
+  },
+  {
+    id: 17,
+    name: 'Smoked Old Fashioned de Autor',
+    category: 'Bebidas',
+    price: 26000,
+    image: '/dishes/cocktail.jpg',
+    description: 'Bourbon añejado 12 años, bitter aromático artesanal, sirope de panela orgánica infusionada en pieles de naranja y humo de maderas de cerezo servido bajo campana.',
+    isChef: true,
+    isVeg: true,
+    isGf: true,
+    isPopular: true,
+    rating: 5.0,
+    reviewsCount: 230,
+    prepTime: '5-7 min',
+    spicyLevel: 0,
+    calories: '190 kcal',
+    chefNotes: 'Ahumado al instante frente a la mesa con virutas de cerezo silvestre y hielo cristalino de corte manual.',
+    ingredients: ['Bourbon Single Barrel 12 años', 'Bitter Angostura & Naranja', 'Sirope de Panela & Clavos', 'Cáscara de Naranja flameada', 'Humo de Cerezo'],
+    pairing: null,
+    available: true,
+    modifiers: []
+  },
+  {
+    id: 18,
+    name: 'Elixir Botánico de Saúco & Pepino',
+    category: 'Bebidas',
+    price: 18000,
+    image: '/dishes/elderflower.jpg',
+    description: 'Mocktail premium con destilado botánico sin alcohol, cordial de flor de saúco, láminas de pepino fresco, tónica artesanal y escamas de oro comestible de 24k.',
+    isChef: false,
+    isVeg: true,
+    isGf: true,
+    isPopular: true,
+    rating: 4.8,
+    reviewsCount: 97,
+    prepTime: '5 min',
+    spicyLevel: 0,
+    calories: '120 kcal',
+    chefNotes: 'Bebida elegante, aromática y digestiva servida en copa de cristal tallado.',
+    ingredients: ['Destilado botánico de enebro sin alcohol', 'Cordial de Flor de Saúco Saint-Germain', 'Pepino orgánico', 'Agua Tónica Premium', 'Oro 24k comestible'],
+    pairing: null,
+    available: true,
+    modifiers: []
+  },
+  {
+    id: 19,
+    name: 'Tarta Vasca de Queso & Pistacho de Bronte',
+    category: 'Postres',
+    price: 22000,
+    image: '/dishes/cheesecake.jpg',
+    description: 'Cheesecake horneado al estilo Donostia con corazón fundente y cremoso, pasta pura de pistachos sicilianos tostados, frambuesas silvestres y crumble de mantequilla.',
+    isChef: true,
+    isVeg: false,
+    isGf: false,
+    isPopular: true,
+    rating: 5.0,
+    reviewsCount: 310,
+    prepTime: '5 min',
+    spicyLevel: 0,
+    calories: '490 kcal',
+    chefNotes: 'Horneada a alta temperatura para lograr la superficie tostada caramelizada y un centro líquido y sedoso.',
+    ingredients: ['Queso Crema San Millán', 'Pistachos de Bronte D.O.P.', 'Huevos de campo', 'Frambuesas frescas', 'Crumble artesanal'],
+    pairing: {
+      productId: 17,
+      name: 'Smoked Old Fashioned de Autor',
+      price: 26000,
+      description: 'El ahumado del cóctel potencia el tostado exterior de la tarta vasca.',
+      image: '/dishes/cocktail.jpg'
+    },
+    available: true,
+    modifiers: []
+  },
+  {
+    id: 20,
+    name: 'Volcán de Chocolate Belga 70% & Vainilla',
+    category: 'Postres',
+    price: 24000,
+    image: '/dishes/volcan.jpg',
+    description: 'Coulant tibio de chocolate amargo belga Callebaut con centro de lava derretida, helado artesanal de vainilla Bourbon de Madagascar y tierra crocante de avellanas.',
+    isChef: true,
+    isVeg: false,
+    isGf: false,
+    isPopular: true,
+    rating: 5.0,
+    reviewsCount: 284,
+    prepTime: '10 min',
+    spicyLevel: 0,
+    calories: '540 kcal',
+    chefNotes: 'Servido caliente al instante del horno para asegurar la caída perfecta del chocolate líquido.',
+    ingredients: ['Chocolate Belga Callebaut 70%', 'Mantequilla francesa sin sal', 'Helado de Vainilla Bourbon artesanal', 'Avellanas del Piamonte tostadas'],
+    pairing: {
+      productId: 7,
+      name: 'Sangría Artesanal de Frutos Rojos',
+      price: 16000,
+      description: 'El maridaje de vino tinto y chocolate negro eleva los matices frutales y achocolatados.',
+      image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=400&auto=format&fit=crop'
+    },
+    available: true,
+    modifiers: [
+      {
+        title: 'Bola Extra de Helado',
+        required: false,
+        options: [
+          { name: 'Vainilla Bourbon de Madagascar', price: 4500 },
+          { name: 'Helado de Pistacho Siciliano', price: 5500 }
+        ]
+      }
+    ]
   }
 ];
 
