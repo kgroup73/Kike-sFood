@@ -1,15 +1,38 @@
 import React from 'react';
-import { Bell, ShoppingBag, X, UserCheck, Clock } from 'lucide-react';
+import { Bell, ShoppingBag, X, UserCheck, Clock, Sparkles } from 'lucide-react';
 import { formatCOP } from '../lib/dian';
 
 export default function FloatingClientBar({
-  cart,
-  includeTip,
+  cart = [],
+  includeTip = false,
   setIsCartOpen,
   triggerWaiterCall,
   activeWaiterCall,
-  cancelWaiterCall
+  cancelWaiterCall,
+  plan = 'full',
+  tableNumber = '1'
 }) {
+  if (plan === 'basic') {
+    return (
+      <div className="fixed bottom-3 inset-x-3 sm:inset-x-auto sm:right-6 sm:bottom-6 z-40 max-w-sm mx-auto sm:mx-0 animate-fadeIn">
+        <div className="bg-[#1e1b13]/95 backdrop-blur-xl border border-[#383324] py-2.5 px-3.5 rounded-2xl shadow-2xl flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-[#e9e2ca] min-w-0">
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+            </span>
+            <span className="font-bold shrink-0">Mesa {tableNumber}</span>
+            <span className="text-[#857f5d]">•</span>
+            <span className="text-[#aba489] text-[11px] truncate">Carta Digital de Autor</span>
+          </div>
+          <span className="text-[10px] bg-[#9b7e09]/20 text-[#b8960e] font-black px-2 py-0.5 rounded-lg border border-[#9b7e09]/30 shrink-0">
+            Solo Consulta
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   const totalCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cart.reduce((sum, item) => sum + item.totalPrice, 0);
   const total = subtotal + (includeTip ? subtotal * 0.10 : 0);

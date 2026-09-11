@@ -22,10 +22,15 @@ import {
   Layers,
   History,
   Search,
-  Boxes
+  Boxes,
+  Lock,
+  Database,
+  Printer
 } from 'lucide-react';
 import { formatCOP } from '../lib/dian';
 import { timeAgo, formatEventTimestamp } from '../lib/inventory';
+import { isSupabaseConfigured } from '../lib/supabaseClient';
+import TableStickersModal from './modals/TableStickersModal';
 
 export default function AdminView({
   products,
@@ -44,7 +49,15 @@ export default function AdminView({
 }) {
   const [adminTab, setAdminTab] = useState('products');
   const [tableCount, setTableCount] = useState(12);
+  const [isStickersModalOpen, setIsStickersModalOpen] = useState(false);
   const [ingredientQuery, setIngredientQuery] = useState('');
+  const [staffPin, setStaffPin] = useState(() => {
+    try {
+      return localStorage.getItem('kikes_staff_pin') || '1234';
+    } catch (e) {
+      return '1234';
+    }
+  });
 
   const soldOutNow = useMemo(() => productsWithStock.filter(p => p.soldOut), [productsWithStock]);
   const depletedEvents = useMemo(() => stockEvents.filter(e => e.type === 'AGOTADO'), [stockEvents]);
@@ -172,18 +185,29 @@ export default function AdminView({
                 Genera los enlaces directos y códigos para grabar en chips NFC (NTAG213) o imprimir en displays físicos.
               </p>
             </div>
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-slate-400 font-bold">Total Mesas:</span>
-              <select
-                value={tableCount}
-                onChange={(e) => setTableCount(Number(e.target.value))}
-                className="bg-slate-950 border border-slate-800 text-white font-bold rounded-xl px-3 py-1.5 focus:outline-none focus:border-amber-500"
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <button
+                onClick={() => setIsStickersModalOpen(true)}
+                className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 active:scale-95 text-slate-950 font-black rounded-xl flex items-center gap-1.5 shadow-md transition-all"
+                title="Abrir hoja de stickers listos para imprimir"
               >
-                <option value={8}>8 Mesas</option>
-                <option value={12}>12 Mesas</option>
-                <option value={16}>16 Mesas</option>
-                <option value={20}>20 Mesas</option>
-              </select>
+                <Printer className="w-4 h-4" />
+                <span>Imprimir Stickers (NFC + QR)</span>
+              </button>
+              <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5">
+                <span className="text-slate-400 font-bold">Mesas:</span>
+                <select
+                  value={tableCount}
+                  onChange={(e) => setTableCount(Number(e.target.value))}
+                  className="bg-transparent text-white font-bold focus:outline-none cursor-pointer"
+                >
+                  <option value={6} className="bg-slate-900">6 Mesas</option>
+                  <option value={8} className="bg-slate-900">8 Mesas</option>
+                  <option value={12} className="bg-slate-900">12 Mesas</option>
+                  <option value={16} className="bg-slate-900">16 Mesas</option>
+                  <option value={20} className="bg-slate-900">20 Mesas</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -191,7 +215,8 @@ export default function AdminView({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
             {Array.from({ length: tableCount }, (_, i) => {
               const tableNum = String(i + 1);
-              const targetUrl = `${window.location.origin}/?mesa=${tableNum}&nfc=true`;
+              const slug = company.slug || 'la-trattoria';
+              const targetUrl = `${window.location.origin}/?r=${slug}&mesa=${tableNum}&nfc=true`;
 
               return (
                 <div
@@ -526,9 +551,79 @@ export default function AdminView({
       {adminTab === 'company' && (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 max-w-2xl shadow-xl">
           <h3 className="text-sm sm:text-base font-bold text-white border-b border-slate-800 pb-2 flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-orange-500" /> Datos de Identificación de la Empresa
+            <Building2 className="w-4 h-4 text-orange-500" /> Configuración de Empresa & Plan SaaS
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            {/* SaaS Plan Tier Selector */}
+            <div className="sm:col-span-2 bg-slate-950/80 border border-slate-800 p-3.5 rounded-2xl space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-slate-300 font-bold flex items-center gap-1.5 text-xs">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Plan SaaS Activo
+                </label>
+                <span className="text-[10px] text-slate-400">Escoge el plan del restaurante</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCompany({ ...company, plan: 'basic' })}
+                  className={`p-2.5 rounded-xl border text-left transition-all ${
+                    company.plan === 'basic'
+                      ? 'border-amber-500 bg-amber-500/10 text-white shadow-sm'
+                      : 'border-slate-800 bg-slate-900/50 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between font-black text-xs">
+                    <span>1. Básico</span>
+                    {company.plan === 'basic' && <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" />}
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">Carta Digital NFC (Solo Consulta).</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCompany({ ...company, plan: 'intermedio' })}
+                  className={`p-2.5 rounded-xl border text-left transition-all ${
+                    company.plan === 'intermedio'
+                      ? 'border-orange-500 bg-orange-500/10 text-white shadow-sm'
+                      : 'border-slate-800 bg-slate-900/50 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between font-black text-xs">
+                    <span>2. Intermedio</span>
+                    {company.plan === 'intermedio' && <CheckCircle2 className="w-3.5 h-3.5 text-orange-400" />}
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">+ Mesero & Comandas Cocina KDS.</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCompany({ ...company, plan: 'full' || !company.plan })}
+                  className={`p-2.5 rounded-xl border text-left transition-all ${
+                    company.plan === 'full' || !company.plan
+                      ? 'border-emerald-500 bg-emerald-500/10 text-white shadow-sm'
+                      : 'border-slate-800 bg-slate-900/50 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between font-black text-xs">
+                    <span>3. Full 360°</span>
+                    {(company.plan === 'full' || !company.plan) && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">+ POS, Factura DIAN & Stock.</p>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-slate-400 mb-1 font-medium">Slug del Restaurante (URL)</label>
+              <input
+                type="text"
+                value={company.slug || 'la-trattoria'}
+                onChange={(e) => setCompany({ ...company, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') })}
+                placeholder="ej: la-trattoria"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-mono text-xs focus:outline-none focus:border-orange-500"
+              />
+              <span className="text-[10px] text-slate-500 mt-1 block">URL: ?r={company.slug || 'la-trattoria'}</span>
+            </div>
             <div>
               <label className="block text-slate-400 mb-1 font-medium">Razón Social</label>
               <input
@@ -585,9 +680,51 @@ export default function AdminView({
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-orange-500"
               />
             </div>
+            <div>
+              <label className="block text-slate-400 mb-1 font-medium flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-amber-400" /> PIN de Acceso de Personal
+              </label>
+              <input
+                type="password"
+                maxLength={4}
+                value={staffPin}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                  setStaffPin(val);
+                  try {
+                    localStorage.setItem('kikes_staff_pin', val);
+                  } catch (err) {}
+                }}
+                placeholder="1234"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-mono tracking-widest text-center focus:outline-none focus:border-amber-500"
+              />
+              <span className="text-[10px] text-slate-500 mt-1 block">PIN de 4 dígitos para proteger KDS, POS y Configuración.</span>
+            </div>
           </div>
+
+          {/* Backend & Cloud Status */}
+          <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-white flex items-center gap-2">
+                <Database className="w-4 h-4 text-orange-400" /> Estado de Base de Datos & WebSockets
+              </span>
+              <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
+                isSupabaseConfigured 
+                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' 
+                  : 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+              }`}>
+                {isSupabaseConfigured ? 'Nube Conectada (Supabase)' : 'Modo Piloto Local'}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              {isSupabaseConfigured
+                ? 'Base de datos PostgreSQL en tiempo real sincronizada. Las comandas y llamados se transmiten al instante vía WebSockets.'
+                : 'Operando en modo de demostración seguro sin costo. Para conectar tu base de datos Supabase ($0 COP), coloca tus llaves en el archivo .env.'}
+            </p>
+          </div>
+
           <button
-            onClick={() => showToast('Configuración de empresa guardada')}
+            onClick={() => showToast('Configuración de empresa y PIN guardados')}
             className="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-bold text-xs rounded-xl shadow transition-all"
           >
             Guardar Cambios
@@ -680,6 +817,14 @@ export default function AdminView({
           </button>
         </div>
       )}
+
+      {/* Modal de Impresión de Stickers para Mesas */}
+      <TableStickersModal
+        isOpen={isStickersModalOpen}
+        onClose={() => setIsStickersModalOpen(false)}
+        company={company}
+        tableCount={tableCount}
+      />
     </div>
   );
 }
