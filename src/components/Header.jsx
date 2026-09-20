@@ -1,56 +1,42 @@
 import React from 'react';
 import {
-  Utensils,
   QrCode,
   Flame,
   Receipt,
   Settings,
   Volume2,
-  VolumeX,
-  Zap
+  VolumeX
 } from 'lucide-react';
 
 export default function Header({
   currentRole,
   setCurrentRole,
   company,
-  tableNumber,
-  isInsidePremises,
-  setIsGeoModalOpen,
   soundEnabled,
   setSoundEnabled,
   kitchenActiveCount = 0,
-  posPendingCount = 0,
-  isNfcConnected = false
+  posPendingCount = 0
 }) {
+  const initials = company.name
+    .split(' ')
+    .filter((w) => /[A-Za-zÁÉÍÓÚáéíóúÑñ]/.test(w))
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join('');
+
   return (
     <header className="bg-[#1e1b13]/95 backdrop-blur-md border-b border-[#383324] sticky top-0 z-30">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         
-        {/* Left: Branding & Table details */}
+        {/* Left: Branding & Logo */}
         <div className="flex items-center justify-between sm:justify-start w-full sm:w-auto">
-          <div className="flex items-center space-x-2.5">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-tr from-[#9b7e09] to-[#b8960e] rounded-xl flex items-center justify-center text-[#fdfcf7] shadow-lg shadow-[#9b7e09]/25 shrink-0 border border-[#b8960e]/30">
-              <Utensils className="w-5 h-5" />
+          <div className="flex items-center space-x-3 sm:space-x-4 min-w-0">
+            <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-[#9b7e09] to-[#b8960e] flex items-center justify-center text-[#fdfcf7] shadow-lg shadow-[#9b7e09]/30 shrink-0 border border-[#b8960e]/40">
+              <span className="font-extrabold text-base sm:text-xl tracking-wider leading-none">{initials}</span>
             </div>
-            <div className="truncate">
-              <h1 className="font-extrabold text-sm sm:text-base leading-tight text-[#fdfcf7] truncate">{company.name}</h1>
-              <div className="flex items-center space-x-1.5 text-[11px] text-[#857f5d]">
-                <button
-                  onClick={() => setIsGeoModalOpen(true)}
-                  className="hover:underline flex items-center gap-1 font-bold text-[#e9e2ca] bg-[#14120c] px-2 py-0.5 rounded-md border border-[#383324] transition-all hover:border-[#b8960e]"
-                  title="Cambiar de mesa o simular toque NFC"
-                >
-                  <span className={`w-1.5 h-1.5 rounded-full ${isNfcConnected ? 'bg-amber-400' : 'bg-emerald-500'} animate-pulse`}></span>
-                  <span>Mesa <strong className="text-[#b8960e]">{tableNumber}</strong></span>
-                  {isNfcConnected && <Zap className="w-3 h-3 text-amber-400 fill-amber-400" />}
-                </button>
-                <span>•</span>
-                <span className="text-[10px] text-[#857f5d]">
-                  {isNfcConnected ? 'NFC Enlazado ⚡' : 'Carta Digital'}
-                </span>
-              </div>
-            </div>
+            <h1 className="font-extrabold text-lg sm:text-2xl leading-tight text-[#fdfcf7] truncate">
+              {company.name}
+            </h1>
           </div>
 
           <button
