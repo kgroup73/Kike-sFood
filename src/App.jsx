@@ -28,14 +28,11 @@ import FloatingClientBar from './components/FloatingBar';
 import CartDrawer from './components/modals/CartDrawer';
 import ProductDetailModal from './components/modals/ProductDetailModal';
 import StoryReelModal from './components/modals/StoryReelModal';
-import FoodRouletteModal from './components/modals/FoodRouletteModal';
 import BillingModal from './components/modals/BillingModal';
 import TicketModal from './components/modals/TicketModal';
 import DailyCloseModal from './components/modals/DailyCloseModal';
-import LoginModal from './components/LoginModal';
 import {
   NewCustomerModal,
-  WaiterCallModal,
   GeoNfcModal,
   AdminProductModal
 } from './components/modals/AuxiliaryModals';
@@ -43,15 +40,6 @@ import { supabase, isSupabaseConfigured } from './lib/supabaseClient';
 
 export default function App() {
   const [currentRole, setCurrentRole] = useState('client');
-  const [isStaffAuthenticated, setIsStaffAuthenticated] = useState(() => {
-    try {
-      return sessionStorage.getItem('kikes_staff_auth') === 'true';
-    } catch (e) {
-      return false;
-    }
-  });
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [clientLayout, setClientLayout] = useState('editorial');
   const [tableNumber, setTableNumber] = useState('4');
   const [isNfcConnected, setIsNfcConnected] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -78,21 +66,6 @@ export default function App() {
   const [kitchenOrders, setKitchenOrders] = useState(INITIAL_KITCHEN_ORDERS);
   const [invoices, setInvoices] = useState([]);
   const [dailyCloseHistory, setDailyCloseHistory] = useState([]);
-
-  // Live Waiter Calls State (Real-time staff alerts)
-  const [waiterCalls, setWaiterCalls] = useState([
-    {
-      id: 'call-101',
-      table: '2',
-      reason: 'Pedir la Cuenta',
-      subOption: 'Datáfono / Tarjeta',
-      note: 'Traer factura electrónica',
-      time: 'Hace 2 min',
-      status: 'pending',
-      waiterName: null,
-      createdAt: Date.now() - 120000
-    }
-  ]);
 
   // Inventario: historial de desabastecimiento reportado por cocina (persistido)
   const [stockEvents, setStockEvents] = useState(() => {
@@ -153,8 +126,6 @@ export default function App() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
   const [activeStoryIndex, setActiveStoryIndex] = useState(0);
-  const [isRouletteOpen, setIsRouletteOpen] = useState(false);
-  const [isWaiterModalOpen, setIsWaiterModalOpen] = useState(false);
   const [isGeoModalOpen, setIsGeoModalOpen] = useState(false);
   const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
   const [activeBillingOrder, setActiveBillingOrder] = useState(null);
@@ -224,14 +195,6 @@ export default function App() {
     }
   }, []);
 
-  // RBAC: Redirigir al comensal si intenta acceder a vistas de empleados sin login
-  useEffect(() => {
-    if (!isStaffAuthenticated && currentRole !== 'client') {
-      setCurrentRole('client');
-      showToast('Acceso restringido. Inicia sesión como personal 🔒');
-    }
-  }, [isStaffAuthenticated, currentRole]);
-
   // Sincronización en Tiempo Real con Supabase (WebSockets)
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase) return;
@@ -258,27 +221,6 @@ export default function App() {
             }))
           })));
         }
-
-        const { data: dbCalls } = await supabase
-          .from('waiter_calls')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(30);
-
-        if (dbCalls && dbCalls.length) {
-          setWaiterCalls(dbCalls.map(c => ({
-            id: c.id,
-            table: c.table_number,
-            reason: c.reason,
-            subOption: c.sub_option,
-            note: c.note,
-            dianData: c.dian_data,
-            time: 'Reciente',
-            status: c.status,
-            waiterName: c.waiter_name,
-            createdAt: new Date(c.created_at).getTime()
-          })));
-        }
       } catch (err) {
         console.warn('Supabase fetch notice:', err);
       }
@@ -299,21 +241,8 @@ export default function App() {
       })
       .subscribe();
 
-    const waiterChannel = supabase
-      .channel('realtime_waiter')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'waiter_calls' }, (payload) => {
-        showToast(`🛎️ Llamado de Mesa ${payload.new.table_number}: ${payload.new.reason}`);
-        playChime();
-        fetchInitialData();
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'waiter_calls' }, (payload) => {
-        setWaiterCalls(prev => prev.map(c => c.id === payload.new.id ? { ...c, status: payload.new.status, waiterName: payload.new.waiter_name } : c));
-      })
-      .subscribe();
-
     return () => {
       supabase.removeChannel(ordersChannel);
-      supabase.removeChannel(waiterChannel);
     };
   }, []);
 
@@ -328,83 +257,6 @@ export default function App() {
       playChime();
       return updated;
     });
-  };
-
-  // Waiter Calls Handlers
-  const handleCallWaiter = (callData) => {
-    if (callData.dianData?.nit) {
-      setCustomers(prev => {
-        const exists = prev.some(c => c.nit === callData.dianData.nit);
-        if (exists) return prev;
-        return [
-          ...prev,
-          {
-            id: Date.now(),
-            name: callData.dianData.name,
-            nit: callData.dianData.nit,
-            email: callData.dianData.email,
-            phone: 'Mesa ' + tableNumber
-          }
-        ];
-      });
-    }
-
-    const newCall = {
-      id: `call-${Date.now()}`,
-      table: tableNumber,
-      reason: callData.reason,
-      subOption: callData.subOption,
-      note: callData.note,
-      dianData: callData.dianData || null,
-      time: 'Hace un instante',
-      status: 'pending',
-      waiterName: null,
-      createdAt: Date.now()
-    };
-    setWaiterCalls(prev => [newCall, ...prev]);
-
-    // Enviar a Supabase si está activo
-    if (isSupabaseConfigured && supabase) {
-      supabase.from('waiter_calls').insert([{
-        tenant_id: 'a0000000-0000-0000-0000-000000000001',
-        table_number: tableNumber,
-        reason: callData.reason,
-        sub_option: callData.subOption,
-        note: callData.note,
-        dian_data: callData.dianData || null,
-        status: 'pending'
-      }]).then();
-    }
-
-    setIsWaiterModalOpen(false);
-    showToast(`🛎️ Solicitud enviada: "${callData.reason}" para Mesa ${tableNumber}`);
-    playChime();
-  };
-
-  const handleCancelMyWaiterCall = () => {
-    setWaiterCalls(prev => prev.filter(c => !(c.table === tableNumber && c.status !== 'completed')));
-    showToast(`Llamado de mesero para Mesa ${tableNumber} cancelado`);
-  };
-
-  const handleAttendWaiterCall = (callId) => {
-    setWaiterCalls(prev =>
-      prev.map(c => (c.id === callId ? { ...c, status: 'attending', waiterName: 'Carlos (Mesero)' } : c))
-    );
-    if (isSupabaseConfigured && supabase) {
-      supabase.from('waiter_calls').update({ status: 'attending', waiter_name: 'Carlos (Mesero)' }).eq('id', callId).then();
-    }
-    showToast('Has tomado la atención de la mesa. En camino 🏃');
-    playChime();
-  };
-
-  const handleCompleteWaiterCall = (callId) => {
-    setWaiterCalls(prev =>
-      prev.map(c => (c.id === callId ? { ...c, status: 'completed' } : c))
-    );
-    if (isSupabaseConfigured && supabase) {
-      supabase.from('waiter_calls').update({ status: 'completed' }).eq('id', callId).then();
-    }
-    showToast('Atención de mesa completada ✓');
   };
 
   const handleSimulateTableNfc = (tNum) => {
@@ -526,17 +378,6 @@ export default function App() {
         kitchenActiveCount={kitchenOrders.filter(o => o.status !== 'Por Cobrar').length}
         posPendingCount={kitchenOrders.filter(o => o.status === 'Por Cobrar').length}
         isNfcConnected={isNfcConnected}
-        pendingWaiterCallsCount={waiterCalls.filter(c => c.status === 'pending').length}
-        isStaffAuthenticated={isStaffAuthenticated}
-        onOpenStaffLogin={() => setIsLoginModalOpen(true)}
-        onStaffLogout={() => {
-          try {
-            sessionStorage.removeItem('kikes_staff_auth');
-          } catch (e) {}
-          setIsStaffAuthenticated(false);
-          setCurrentRole('client');
-          showToast('Sesión de personal cerrada 🔒');
-        }}
       />
 
       <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4">
@@ -549,8 +390,6 @@ export default function App() {
             setActiveCategory={setActiveCategory}
             dietaryFilter={dietaryFilter}
             setDietaryFilter={setDietaryFilter}
-            clientLayout={clientLayout}
-            setClientLayout={setClientLayout}
             setSelectedProduct={setSelectedProduct}
             favorites={favorites}
             toggleFavorite={toggleFavorite}
@@ -558,7 +397,6 @@ export default function App() {
               setActiveStoryIndex(idx);
               setIsStoryModalOpen(true);
             }}
-            onOpenRoulette={() => setIsRouletteOpen(true)}
           />
         )}
 
@@ -594,9 +432,6 @@ export default function App() {
               setIsTicketModalOpen(true);
             }}
             openDailyCloseModal={() => setIsDailyCloseModalOpen(true)}
-            waiterCalls={waiterCalls}
-            onAttendWaiterCall={handleAttendWaiterCall}
-            onCompleteWaiterCall={handleCompleteWaiterCall}
           />
         )}
 
@@ -648,12 +483,6 @@ export default function App() {
           cart={cart}
           includeTip={includeTip}
           setIsCartOpen={setIsCartOpen}
-          triggerWaiterCall={() => {
-            if (!isInsidePremises) setIsGeoModalOpen(true);
-            else setIsWaiterModalOpen(true);
-          }}
-          activeWaiterCall={waiterCalls.find(c => c.table === tableNumber && c.status !== 'completed')}
-          cancelWaiterCall={handleCancelMyWaiterCall}
           plan={company.plan || 'full'}
           tableNumber={tableNumber}
         />
@@ -800,26 +629,6 @@ export default function App() {
         />
       )}
 
-      {isRouletteOpen && (
-        <FoodRouletteModal
-          products={productsWithStock.filter(p => !p.soldOut)}
-          onClose={() => setIsRouletteOpen(false)}
-          onOpenProductDetail={(prod) => {
-            setIsRouletteOpen(false);
-            setSelectedProduct(prod);
-          }}
-          playChime={playChime}
-        />
-      )}
-
-      {isWaiterModalOpen && (
-        <WaiterCallModal
-          tableNumber={tableNumber}
-          onClose={() => setIsWaiterModalOpen(false)}
-          callWaiter={handleCallWaiter}
-        />
-      )}
-
       {isGeoModalOpen && (
         <GeoNfcModal
           currentTable={tableNumber}
@@ -911,16 +720,6 @@ export default function App() {
           }}
         />
       )}
-
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        onLoginSuccess={() => {
-          setIsStaffAuthenticated(true);
-          showToast('Acceso de personal autorizado ✓');
-          playChime();
-        }}
-      />
 
       {toast.show && (
         <div className="fixed bottom-16 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 border border-slate-700 text-white text-xs px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-2 max-w-[90vw] truncate animate-bounce">

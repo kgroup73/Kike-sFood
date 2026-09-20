@@ -7,10 +7,7 @@ import {
   Settings,
   Volume2,
   VolumeX,
-  Bell,
-  Zap,
-  Lock,
-  LogOut
+  Zap
 } from 'lucide-react';
 
 export default function Header({
@@ -24,11 +21,7 @@ export default function Header({
   setSoundEnabled,
   kitchenActiveCount = 0,
   posPendingCount = 0,
-  isNfcConnected = false,
-  pendingWaiterCallsCount = 0,
-  isStaffAuthenticated = false,
-  onOpenStaffLogin,
-  onStaffLogout
+  isNfcConnected = false
 }) {
   return (
     <header className="bg-[#1e1b13]/95 backdrop-blur-md border-b border-[#383324] sticky top-0 z-30">
@@ -69,90 +62,61 @@ export default function Header({
           </button>
         </div>
 
-        {/* Right: Staff Protected Switcher OR Guest Clean View */}
+        {/* Right: Role Switcher */}
         <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
-          {isStaffAuthenticated ? (
-            /* Staff Mode Navigation */
-            <div className="flex items-center gap-1.5 w-full sm:w-auto">
-              <div className="flex items-center bg-[#14120c] p-1 rounded-xl border border-[#383324] text-[11px] font-semibold w-full sm:w-auto overflow-x-auto hide-scrollbar">
-                <button
-                  onClick={() => setCurrentRole('client')}
-                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap flex-1 sm:flex-initial justify-center ${
-                    currentRole === 'client'
-                      ? 'bg-gradient-to-r from-[#9b7e09] to-[#b8960e] text-[#fdfcf7] shadow-md shadow-[#9b7e09]/20'
-                      : 'text-[#857f5d] hover:text-[#e9e2ca]'
-                  }`}
-                >
-                  <QrCode className="w-3.5 h-3.5" /> <span>Menú</span>
-                </button>
-
-                <button
-                  onClick={() => setCurrentRole('kitchen')}
-                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap flex-1 sm:flex-initial justify-center relative ${
-                    currentRole === 'kitchen'
-                      ? 'bg-gradient-to-r from-[#9b7e09] to-[#b8960e] text-[#fdfcf7] shadow-md shadow-[#9b7e09]/20'
-                      : 'text-[#857f5d] hover:text-[#e9e2ca]'
-                  }`}
-                >
-                  <Flame className="w-3.5 h-3.5" /> <span>Cocina</span>
-                  {kitchenActiveCount > 0 && (
-                    <span className="bg-rose-500 text-white text-[9px] px-1 py-0.2 rounded-full font-bold ml-1">{kitchenActiveCount}</span>
-                  )}
-                </button>
-
-                <button
-                  onClick={() => setCurrentRole('pos')}
-                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap flex-1 sm:flex-initial justify-center relative ${
-                    currentRole === 'pos'
-                      ? 'bg-gradient-to-r from-[#9b7e09] to-[#b8960e] text-[#fdfcf7] shadow-md shadow-[#9b7e09]/20'
-                      : 'text-[#857f5d] hover:text-[#e9e2ca]'
-                  }`}
-                >
-                  <Receipt className="w-3.5 h-3.5" /> <span>Caja POS</span>
-                  {pendingWaiterCallsCount > 0 && (
-                    <span className="bg-amber-500 text-slate-950 text-[9px] px-1.5 py-0.2 rounded-full font-black ml-1 animate-pulse flex items-center gap-0.5">
-                      <Bell className="w-2.5 h-2.5" /> {pendingWaiterCallsCount}
-                    </span>
-                  )}
-                  {posPendingCount > 0 && (
-                    <span className="bg-emerald-500 text-white text-[9px] px-1 py-0.2 rounded-full font-bold ml-1">{posPendingCount}</span>
-                  )}
-                </button>
-
-                <button
-                  onClick={() => setCurrentRole('config')}
-                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap flex-1 sm:flex-initial justify-center ${
-                    currentRole === 'config'
-                      ? 'bg-gradient-to-r from-[#9b7e09] to-[#b8960e] text-[#fdfcf7] shadow-md shadow-[#9b7e09]/20'
-                      : 'text-[#857f5d] hover:text-[#e9e2ca]'
-                  }`}
-                >
-                  <Settings className="w-3.5 h-3.5" /> <span>Admin</span>
-                </button>
-              </div>
-
-              {/* Logout Button */}
+          <div className="flex items-center gap-1.5 w-full sm:w-auto">
+            <div className="flex items-center bg-[#14120c] p-1 rounded-xl border border-[#383324] text-[11px] font-semibold w-full sm:w-auto overflow-x-auto hide-scrollbar">
               <button
-                onClick={onStaffLogout}
-                className="p-2 bg-[#2c271d] hover:bg-rose-950/40 text-[#857f5d] hover:text-rose-400 rounded-xl border border-[#383324] transition-colors"
-                title="Cerrar sesión de personal"
+                onClick={() => setCurrentRole('client')}
+                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap flex-1 sm:flex-initial justify-center ${
+                  currentRole === 'client'
+                    ? 'bg-gradient-to-r from-[#9b7e09] to-[#b8960e] text-[#fdfcf7] shadow-md shadow-[#9b7e09]/20'
+                    : 'text-[#857f5d] hover:text-[#e9e2ca]'
+                }`}
               >
-                <LogOut className="w-4 h-4" />
+                <QrCode className="w-3.5 h-3.5" /> <span>Menú</span>
+              </button>
+
+              <button
+                onClick={() => setCurrentRole('kitchen')}
+                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap flex-1 sm:flex-initial justify-center relative ${
+                  currentRole === 'kitchen'
+                    ? 'bg-gradient-to-r from-[#9b7e09] to-[#b8960e] text-[#fdfcf7] shadow-md shadow-[#9b7e09]/20'
+                    : 'text-[#857f5d] hover:text-[#e9e2ca]'
+                }`}
+              >
+                <Flame className="w-3.5 h-3.5" /> <span>Cocina</span>
+                {kitchenActiveCount > 0 && (
+                  <span className="bg-rose-500 text-white text-[9px] px-1 py-0.2 rounded-full font-bold ml-1">{kitchenActiveCount}</span>
+                )}
+              </button>
+
+              <button
+                onClick={() => setCurrentRole('pos')}
+                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap flex-1 sm:flex-initial justify-center relative ${
+                  currentRole === 'pos'
+                    ? 'bg-gradient-to-r from-[#9b7e09] to-[#b8960e] text-[#fdfcf7] shadow-md shadow-[#9b7e09]/20'
+                    : 'text-[#857f5d] hover:text-[#e9e2ca]'
+                }`}
+              >
+                <Receipt className="w-3.5 h-3.5" /> <span>Caja POS</span>
+                {posPendingCount > 0 && (
+                  <span className="bg-emerald-500 text-white text-[9px] px-1 py-0.2 rounded-full font-bold ml-1">{posPendingCount}</span>
+                )}
+              </button>
+
+              <button
+                onClick={() => setCurrentRole('config')}
+                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap flex-1 sm:flex-initial justify-center ${
+                  currentRole === 'config'
+                    ? 'bg-gradient-to-r from-[#9b7e09] to-[#b8960e] text-[#fdfcf7] shadow-md shadow-[#9b7e09]/20'
+                    : 'text-[#857f5d] hover:text-[#e9e2ca]'
+                }`}
+              >
+                <Settings className="w-3.5 h-3.5" /> <span>Admin</span>
               </button>
             </div>
-          ) : (
-            /* Guest / Customer Clean View (No admin leaks!) */
-            <div className="flex items-center gap-2">
-              <button
-                onClick={onOpenStaffLogin}
-                className="py-1.5 px-3 bg-[#14120c] hover:bg-[#2c271d] text-[#857f5d] hover:text-[#b8960e] rounded-xl border border-[#383324] transition-all flex items-center gap-1.5 text-xs"
-                title="Acceso exclusivo para empleados del restaurante"
-              >
-                <Lock className="w-3.5 h-3.5" />
-                <span className="text-[11px] font-bold">Personal</span>
-              </button>
-            </div>
-          )}
+          </div>
 
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
