@@ -2,7 +2,6 @@ import React, { useMemo } from 'react';
 import {
   Search,
   Plus,
-  X,
   ArrowLeft,
   ChevronRight,
   Salad,
@@ -16,7 +15,6 @@ import {
   Star,
   Clock,
   Heart,
-  Sparkles,
   PackageX
 } from 'lucide-react';
 import { formatCOP } from '../lib/dian';
@@ -31,6 +29,7 @@ const CATEGORY_META = {
 };
 
 export default function ClientView({
+  company,
   products,
   searchQuery,
   setSearchQuery,
@@ -91,68 +90,57 @@ export default function ClientView({
       ? `Resultados para "${searchQuery}"`
       : 'Todos los platillos';
 
+  const initials = company?.name
+    ? company.name
+        .split(' ')
+        .filter((w) => /[A-Za-zÁÉÍÓÚáéíóúÑñ]/.test(w))
+        .slice(0, 2)
+        .map((w) => w[0].toUpperCase())
+        .join('')
+    : '';
+
   return (
     <div className="space-y-4 sm:space-y-6">
 
-      {/* 1. Gastro Stories & Highlights Bar */}
-      <div className="bg-[#1e1b13]/90 backdrop-blur-md border border-[#383324] rounded-2xl p-2.5 sm:p-3 shadow-lg">
-        <div className="flex items-center justify-between px-1 mb-2">
-          <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#e9e2ca] flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-[#b8960e]" />
-            <span>Historias & Especiales</span>
-          </span>
-          <span className="text-[10px] text-[#9b7e09] font-bold">Toca para ver</span>
+      {/* 0. Branding del Restaurante (Logo + Nombre) */}
+      <header className="flex flex-col items-center text-center gap-2.5 pt-2 sm:pt-4 pb-1">
+        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-[#9b7e09] to-[#b8960e] flex items-center justify-center text-[#fdfcf7] shadow-lg shadow-[#9b7e09]/30 border border-[#b8960e]/40">
+          <span className="font-extrabold text-xl sm:text-2xl tracking-wider leading-none">{initials}</span>
         </div>
+        <div>
+          <h1 className="font-serif font-black text-xl sm:text-2xl text-[#fdfcf7] leading-tight">
+            {company?.name || 'Restaurante'}
+          </h1>
+          <p className="text-[11px] text-[#857f5d] font-bold uppercase tracking-widest mt-0.5">
+            Menú Digital · {company?.address || 'Escanea y descubre'}
+          </p>
+        </div>
+      </header>
 
-        <div className="flex space-x-3 overflow-x-auto hide-scrollbar py-1">
-          {MENU_STORIES.map((story, idx) => (
-            <button
-              key={story.id}
-              onClick={() => onOpenStory && onOpenStory(idx)}
-              className="flex flex-col items-center space-y-1.5 shrink-0 group focus:outline-none"
-            >
-              <div className="relative p-0.5 rounded-2xl bg-gradient-to-tr from-[#9b7e09] via-[#b8960e] to-[#e9e2ca] group-hover:scale-105 transition-transform duration-300 shadow-md">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-[14px] overflow-hidden bg-[#110f0a]">
-                  <img
-                    src={story.image}
-                    alt={story.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    loading="lazy"
-                  />
-                </div>
-                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-[#9b7e09] text-[#fdfcf7] text-[8px] font-black px-1.5 py-0.2 rounded-full uppercase tracking-tighter shadow">
-                  {story.tag.split(' ')[0]}
-                </span>
+      {/* 1. Historias Destacadas (estilo Instagram) */}
+      <div className="flex justify-center">
+        <div className="flex items-center space-x-4 overflow-x-auto hide-scrollbar py-1 px-1 -mx-1">
+        {MENU_STORIES.map((story, idx) => (
+          <button
+            key={story.id}
+            onClick={() => onOpenStory && onOpenStory(idx)}
+            className="flex flex-col items-center space-y-1 shrink-0 group focus:outline-none"
+          >
+            <div className="p-[2.5px] rounded-full bg-gradient-to-tr from-[#9b7e09] via-[#b8960e] to-[#e9e2ca] group-hover:scale-105 transition-transform duration-300 shadow-md">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-[#110f0a] border-2 border-[#14120c]">
+                <img
+                  src={story.image}
+                  alt={story.title}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  loading="lazy"
+                />
               </div>
-              <span className="text-[10px] font-bold text-[#e9e2ca] group-hover:text-[#b8960e] transition-colors truncate max-w-[70px] text-center">
-                {story.title}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 2. Search Bar */}
-      <div className="sticky top-[58px] z-20 bg-[#14120c]/95 backdrop-blur-md -mx-3 px-3 py-2 border-b border-[#383324] sm:static sm:bg-transparent sm:backdrop-blur-none sm:p-0 sm:border-none sm:mx-0">
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-[#857f5d]" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar platillo, ingrediente o antojo..."
-              className="w-full bg-[#1e1b13] border border-[#383324] text-[#fdfcf7] pl-9 pr-8 py-2 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-[#9b7e09] transition-colors shadow-inner placeholder-[#857f5d]"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-2.5 text-[#857f5d] hover:text-[#fdfcf7]"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
+            </div>
+            <span className="text-[10px] font-bold text-[#e9e2ca] group-hover:text-[#b8960e] transition-colors truncate max-w-[72px] text-center">
+              {story.title}
+            </span>
+          </button>
+        ))}
         </div>
       </div>
 

@@ -382,6 +382,7 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4">
         {currentRole === 'client' && (
           <ClientView
+            company={company}
             products={productsWithStock}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
