@@ -161,11 +161,26 @@ CREATE TABLE IF NOT EXISTS stock_events (
 -- 10. ACTIVAR PUBLICACIÓN EN TIEMPO REAL (WEBSOCKETS DE SUPABASE)
 -- ------------------------------------------------------------------------------
 -- Permite que la pantalla de cocina (KDS), el POS y el cliente escuchen cambios
--- sin necesidad de recargar la página:
-ALTER PUBLICATION supabase_realtime ADD TABLE orders;
-ALTER PUBLICATION supabase_realtime ADD TABLE waiter_calls;
-ALTER PUBLICATION supabase_realtime ADD TABLE ingredients_stock;
-ALTER PUBLICATION supabase_realtime ADD TABLE stock_events;
+-- sin necesidad de recargar la página (idempotente):
+DO $$ 
+BEGIN
+    BEGIN
+        ALTER PUBLICATION supabase_realtime ADD TABLE orders;
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END;
+    BEGIN
+        ALTER PUBLICATION supabase_realtime ADD TABLE waiter_calls;
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END;
+    BEGIN
+        ALTER PUBLICATION supabase_realtime ADD TABLE ingredients_stock;
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END;
+    BEGIN
+        ALTER PUBLICATION supabase_realtime ADD TABLE stock_events;
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END;
+END $$;
 
 -- ------------------------------------------------------------------------------
 -- 11. POLÍTICAS DE SEGURIDAD ROW LEVEL SECURITY (RLS)
@@ -179,6 +194,23 @@ ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE waiter_calls ENABLE ROW LEVEL SECURITY;
 ALTER TABLE stock_events ENABLE ROW LEVEL SECURITY;
+
+-- Limpieza preventiva de políticas para permitir re-ejecución del script
+DROP POLICY IF EXISTS "Lectura pública de restaurantes activos" ON tenants;
+DROP POLICY IF EXISTS "Lectura pública de mesas activas" ON restaurant_tables;
+DROP POLICY IF EXISTS "Lectura pública de categorías" ON categories;
+DROP POLICY IF EXISTS "Lectura pública de productos disponibles" ON products;
+DROP POLICY IF EXISTS "Lectura pública de stock de ingredientes" ON ingredients_stock;
+DROP POLICY IF EXISTS "Comensal puede crear pedido" ON orders;
+DROP POLICY IF EXISTS "Comensal puede ver estado de su pedido" ON orders;
+DROP POLICY IF EXISTS "Comensal puede insertar items de pedido" ON order_items;
+DROP POLICY IF EXISTS "Lectura de items de pedidos" ON order_items;
+DROP POLICY IF EXISTS "Comensal puede crear llamado a mesero" ON waiter_calls;
+DROP POLICY IF EXISTS "Lectura de llamados a mesero" ON waiter_calls;
+DROP POLICY IF EXISTS "Staff puede actualizar llamado a mesero" ON waiter_calls;
+DROP POLICY IF EXISTS "Staff puede actualizar órdenes" ON orders;
+DROP POLICY IF EXISTS "Lectura pública de eventos de stock" ON stock_events;
+DROP POLICY IF EXISTS "Staff puede insertar eventos de stock" ON stock_events;
 
 -- Políticas públicas de lectura para comensales en mesa (Menú, productos e insumos):
 CREATE POLICY "Lectura pública de restaurantes activos" ON tenants

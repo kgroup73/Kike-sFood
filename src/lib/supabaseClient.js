@@ -1,7 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const rawUrl = import.meta.env.VITE_SUPABASE_URL || '';
+// Si el usuario copia la URL de Data API con /rest/v1/, lo limpiamos automáticamente
+const supabaseUrl = rawUrl.trim().replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
+const supabaseAnonKey = (
+  import.meta.env.VITE_SUPABASE_ANON_KEY || 
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 
+  ''
+).trim();
 
 export const isSupabaseConfigured = Boolean(
   supabaseUrl && 
