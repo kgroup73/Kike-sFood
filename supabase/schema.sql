@@ -228,36 +228,61 @@ CREATE POLICY "Lectura pública de productos disponibles" ON products
 CREATE POLICY "Lectura pública de stock de ingredientes" ON ingredients_stock
     FOR SELECT USING (true);
 
--- Políticas para pedidos desde mesa (Insertar orden y sus items de forma anónima desde mesa):
+-- Políticas para pedidos desde mesa (Insertar orden y sus items con validación de integridad):
 CREATE POLICY "Comensal puede crear pedido" ON orders
-    FOR INSERT WITH CHECK (true);
+    FOR INSERT WITH CHECK (
+        tenant_id IS NOT NULL 
+        AND length(trim(table_number)) > 0 
+        AND total >= 0 
+        AND subtotal >= 0 
+        AND status IN ('Pendiente', 'En Preparación')
+    );
 
 CREATE POLICY "Comensal puede ver estado de su pedido" ON orders
     FOR SELECT USING (true);
 
 CREATE POLICY "Comensal puede insertar items de pedido" ON order_items
-    FOR INSERT WITH CHECK (true);
+    FOR INSERT WITH CHECK (
+        order_id IS NOT NULL 
+        AND length(trim(name)) > 0 
+        AND quantity > 0 
+        AND unit_price >= 0 
+        AND total_price >= 0
+    );
 
 CREATE POLICY "Lectura de items de pedidos" ON order_items
     FOR SELECT USING (true);
 
 CREATE POLICY "Comensal puede crear llamado a mesero" ON waiter_calls
-    FOR INSERT WITH CHECK (true);
+    FOR INSERT WITH CHECK (
+        tenant_id IS NOT NULL 
+        AND length(trim(table_number)) > 0 
+        AND length(trim(reason)) > 0 
+        AND status = 'pending'
+    );
 
 CREATE POLICY "Lectura de llamados a mesero" ON waiter_calls
     FOR SELECT USING (true);
 
 CREATE POLICY "Staff puede actualizar llamado a mesero" ON waiter_calls
-    FOR UPDATE USING (true);
+    FOR UPDATE 
+    USING (tenant_id IS NOT NULL)
+    WITH CHECK (status IN ('pending', 'attending', 'completed'));
 
 CREATE POLICY "Staff puede actualizar órdenes" ON orders
-    FOR UPDATE USING (true);
+    FOR UPDATE 
+    USING (tenant_id IS NOT NULL)
+    WITH CHECK (status IN ('Pendiente', 'En Preparación', 'Por Cobrar', 'Cobrado', 'Cancelado'));
 
 CREATE POLICY "Lectura pública de eventos de stock" ON stock_events
     FOR SELECT USING (true);
 
 CREATE POLICY "Staff puede insertar eventos de stock" ON stock_events
-    FOR INSERT WITH CHECK (true);
+    FOR INSERT WITH CHECK (
+        tenant_id IS NOT NULL 
+        AND length(trim(ingredient)) > 0 
+        AND type IN ('AGOTADO', 'REPUESTO')
+    );
 
 -- ------------------------------------------------------------------------------
 -- 12. DATOS SEMILLA (SEED DATA) DE PRUEBA: "LA TRATTORIA GOURMET"
