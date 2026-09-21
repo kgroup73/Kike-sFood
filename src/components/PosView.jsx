@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Receipt, Calculator } from 'lucide-react';
+import { Receipt, Calculator, ArrowLeft, LayoutDashboard } from 'lucide-react';
 import { formatCOP } from '../lib/dian';
 
 export default function PosView({
@@ -7,12 +7,20 @@ export default function PosView({
   invoices,
   prepareBilling,
   viewInvoiceTicket,
-  openDailyCloseModal
+  openDailyCloseModal,
+  onBackToAdmin
 }) {
   const pendingBillingOrders = useMemo(() => kitchenOrders.filter(o => o.status === 'Por Cobrar'), [kitchenOrders]);
 
   return (
     <div className="space-y-6">
+      <button
+        onClick={onBackToAdmin}
+        className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-white transition-colors"
+      >
+        <ArrowLeft className="w-3.5 h-3.5" /> <LayoutDashboard className="w-3.5 h-3.5" /> Panel de Administración
+      </button>
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-900 p-4 rounded-2xl border border-slate-800 gap-3">
         <div>
           <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">

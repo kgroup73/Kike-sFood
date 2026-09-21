@@ -2,7 +2,6 @@ import React from 'react';
 import {
   QrCode,
   Flame,
-  Receipt,
   Settings,
   Volume2,
   VolumeX
@@ -14,8 +13,7 @@ export default function Header({
   company,
   soundEnabled,
   setSoundEnabled,
-  kitchenActiveCount = 0,
-  posPendingCount = 0
+  kitchenActiveCount = 0
 }) {
   const initials = company.name
     .split(' ')
@@ -74,20 +72,6 @@ export default function Header({
                 <Flame className="w-3.5 h-3.5" /> <span>Cocina</span>
                 {kitchenActiveCount > 0 && (
                   <span className="bg-rose-500 text-white text-[9px] px-1 py-0.2 rounded-full font-bold ml-1">{kitchenActiveCount}</span>
-                )}
-              </button>
-
-              <button
-                onClick={() => setCurrentRole('pos')}
-                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap flex-1 sm:flex-initial justify-center relative ${
-                  currentRole === 'pos'
-                    ? 'bg-gradient-to-r from-[#9b7e09] to-[#b8960e] text-[#fdfcf7] shadow-md shadow-[#9b7e09]/20'
-                    : 'text-[#857f5d] hover:text-[#e9e2ca]'
-                }`}
-              >
-                <Receipt className="w-3.5 h-3.5" /> <span>Caja POS</span>
-                {posPendingCount > 0 && (
-                  <span className="bg-emerald-500 text-white text-[9px] px-1 py-0.2 rounded-full font-bold ml-1">{posPendingCount}</span>
                 )}
               </button>
 

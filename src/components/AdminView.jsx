@@ -25,7 +25,12 @@ import {
   Boxes,
   Lock,
   Database,
-  Printer
+  Printer,
+  ArrowLeft,
+  UtensilsCrossed,
+  Receipt,
+  ChevronRight,
+  Settings
 } from 'lucide-react';
 import { formatCOP } from '../lib/dian';
 import { timeAgo, formatEventTimestamp } from '../lib/inventory';
@@ -45,9 +50,10 @@ export default function AdminView({
   deleteProduct,
   openEditProduct,
   openNewProduct,
-  onSimulateTableNfc
+  onSimulateTableNfc,
+  onOpenPos
 }) {
-  const [adminTab, setAdminTab] = useState('products');
+  const [adminTab, setAdminTab] = useState('dashboard');
   const [tableCount, setTableCount] = useState(12);
   const [isStickersModalOpen, setIsStickersModalOpen] = useState(false);
   const [ingredientQuery, setIngredientQuery] = useState('');
@@ -88,38 +94,156 @@ export default function AdminView({
 
   return (
     <div className="space-y-6">
-      <div className="flex border-b border-slate-800 space-x-2 sm:space-x-4 overflow-x-auto hide-scrollbar">
+      {/* Volver al panel cuando se está dentro de un módulo */}
+      {adminTab !== 'dashboard' && (
         <button
-          onClick={() => setAdminTab('products')}
-          className={`pb-3 text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${adminTab === 'products' ? 'border-b-2 border-orange-500 text-white' : 'text-slate-400 hover:text-white'}`}
+          onClick={() => setAdminTab('dashboard')}
+          className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-white transition-colors"
         >
-          Platillos del Menú
+          <ArrowLeft className="w-3.5 h-3.5" /> Panel de Administración
         </button>
-        <button
-          onClick={() => setAdminTab('inventory')}
-          className={`pb-3 text-xs sm:text-sm font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${adminTab === 'inventory' ? 'border-b-2 border-orange-500 text-white' : 'text-slate-400 hover:text-white'}`}
-        >
-          <Package className="w-3.5 h-3.5" /> <span>Inventario & Compras</span>
-        </button>
-        <button
-          onClick={() => setAdminTab('nfc')}
-          className={`pb-3 text-xs sm:text-sm font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${adminTab === 'nfc' ? 'border-b-2 border-amber-500 text-amber-400' : 'text-slate-400 hover:text-white'}`}
-        >
-          <Smartphone className="w-3.5 h-3.5" /> <span>Mesas & Tags NFC</span>
-        </button>
-        <button
-          onClick={() => setAdminTab('company')}
-          className={`pb-3 text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${adminTab === 'company' ? 'border-b-2 border-orange-500 text-white' : 'text-slate-400 hover:text-white'}`}
-        >
-          Datos Empresa
-        </button>
-        <button
-          onClick={() => setAdminTab('dian')}
-          className={`pb-3 text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${adminTab === 'dian' ? 'border-b-2 border-orange-500 text-white' : 'text-slate-400 hover:text-white'}`}
-        >
-          Parametrización DIAN
-        </button>
-      </div>
+      )}
+
+      {adminTab === 'dashboard' && (
+        <div className="space-y-8">
+          {/* ===== Sección 1: Personalización ===== */}
+          <section>
+            <div className="flex items-center gap-2.5 mb-4">
+              <div className="w-9 h-9 rounded-xl bg-orange-500/15 text-orange-400 flex items-center justify-center border border-orange-500/30 shrink-0">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-white text-sm sm:text-base">Personalización</h3>
+                <p className="text-[11px] text-slate-400">Parametrización de marca y producto</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Datos de empresa */}
+              <button
+                onClick={() => setAdminTab('company')}
+                className="group bg-slate-900 border border-slate-800 hover:border-orange-500/50 hover:bg-slate-800/60 rounded-2xl p-5 text-left flex items-start justify-between gap-3 shadow-md transition-all active:scale-[0.98]"
+              >
+                <div className="flex items-start gap-3.5 min-w-0">
+                  <div className="w-11 h-11 rounded-xl bg-orange-500/15 text-orange-400 group-hover:bg-orange-500/25 flex items-center justify-center border border-orange-500/25 shrink-0 transition-colors">
+                    <Building2 className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-white text-xs sm:text-sm">Datos de Empresa</h4>
+                    <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">Razón social, NIT, plan SaaS, PIN de acceso y configuración de marca.</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-orange-400 shrink-0 mt-1 transition-colors" />
+              </button>
+
+              {/* Platillos del Menú */}
+              <button
+                onClick={() => setAdminTab('products')}
+                className="group bg-slate-900 border border-slate-800 hover:border-orange-500/50 hover:bg-slate-800/60 rounded-2xl p-5 text-left flex items-start justify-between gap-3 shadow-md transition-all active:scale-[0.98]"
+              >
+                <div className="flex items-start gap-3.5 min-w-0">
+                  <div className="w-11 h-11 rounded-xl bg-orange-500/15 text-orange-400 group-hover:bg-orange-500/25 flex items-center justify-center border border-orange-500/25 shrink-0 transition-colors">
+                    <UtensilsCrossed className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-white text-xs sm:text-sm">Platillos del Menú</h4>
+                    <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">Crear, editar, ocultar y gestionar los platillos del catálogo.</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-orange-400 shrink-0 mt-1 transition-colors" />
+              </button>
+            </div>
+          </section>
+
+          {/* ===== Sección 2: Servicios ===== */}
+          <section>
+            <div className="flex items-center gap-2.5 mb-4">
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center border border-emerald-500/30 shrink-0">
+                <Settings className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-white text-sm sm:text-base">Servicios</h3>
+                <p className="text-[11px] text-slate-400">Módulos operativos y de integración del sistema</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Inventario */}
+              <button
+                onClick={() => setAdminTab('inventory')}
+                className="group bg-slate-900 border border-slate-800 hover:border-orange-500/50 hover:bg-slate-800/60 rounded-2xl p-5 text-left flex items-start justify-between gap-3 shadow-md transition-all active:scale-[0.98]"
+              >
+                <div className="flex items-start gap-3.5 min-w-0">
+                  <div className="w-11 h-11 rounded-xl bg-orange-500/15 text-orange-400 group-hover:bg-orange-500/25 flex items-center justify-center border border-orange-500/25 shrink-0 transition-colors">
+                    <Package className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-white text-xs sm:text-sm">Inventario</h4>
+                    <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">Inventario y compras: trazabilidad de materias primas agotadas y sugerencias de compra.</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-orange-400 shrink-0 mt-1 transition-colors" />
+              </button>
+
+              {/* Mesas / Tags NFC */}
+              <button
+                onClick={() => setAdminTab('nfc')}
+                className="group bg-slate-900 border border-slate-800 hover:border-amber-500/60 hover:bg-slate-800/60 rounded-2xl p-5 text-left flex items-start justify-between gap-3 shadow-md transition-all active:scale-[0.98]"
+              >
+                <div className="flex items-start gap-3.5 min-w-0">
+                  <div className="w-11 h-11 rounded-xl bg-amber-500/15 text-amber-400 group-hover:bg-amber-500/25 flex items-center justify-center border border-amber-500/30 shrink-0 transition-colors">
+                    <Smartphone className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-white text-xs sm:text-sm">Mesas / Tags</h4>
+                    <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">Mesas y tags NFC: configuración de chips, códigos QR y stickers para imprimir.</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-amber-400 shrink-0 mt-1 transition-colors" />
+              </button>
+
+              {/* DIAN */}
+              <button
+                onClick={() => setAdminTab('dian')}
+                className="group bg-slate-900 border border-slate-800 hover:border-emerald-500/60 hover:bg-slate-800/60 rounded-2xl p-5 text-left flex items-start justify-between gap-3 shadow-md transition-all active:scale-[0.98]"
+              >
+                <div className="flex items-start gap-3.5 min-w-0">
+                  <div className="w-11 h-11 rounded-xl bg-emerald-500/15 text-emerald-400 group-hover:bg-emerald-500/25 flex items-center justify-center border border-emerald-500/30 shrink-0 transition-colors">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-white text-xs sm:text-sm">DIAN</h4>
+                    <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">Parametrización DIAN: resolución, prefijo, rango y claves para facturación electrónica.</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-emerald-400 shrink-0 mt-1 transition-colors" />
+              </button>
+
+              {/* Caja POS */}
+              <button
+                onClick={() => onOpenPos && onOpenPos()}
+                className="group bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/40 border border-emerald-500/40 hover:border-emerald-400 rounded-2xl p-5 text-left flex items-start justify-between gap-3 shadow-lg shadow-emerald-950/20 transition-all active:scale-[0.98]"
+              >
+                <div className="flex items-start gap-3.5 min-w-0">
+                  <div className="w-11 h-11 rounded-xl bg-emerald-500/20 text-emerald-400 group-hover:bg-emerald-500/30 flex items-center justify-center border border-emerald-500/40 shrink-0 transition-colors">
+                    <Receipt className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-white text-xs sm:text-sm flex items-center gap-2">
+                      Caja POS
+                      <span className="text-[9px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.5 rounded-full">
+                        ABIERTO
+                      </span>
+                    </h4>
+                    <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">Cobrar comandas, generar facturas y tickets, y realizar el cierre de caja.</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-emerald-500 group-hover:text-emerald-300 shrink-0 mt-1 transition-colors" />
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
 
       {adminTab === 'products' && (
         <div className="space-y-4">

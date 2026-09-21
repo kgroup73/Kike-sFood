@@ -376,7 +376,6 @@ export default function App() {
           showToast(s ? 'Sonido Activado 🔔' : 'Sonido Silenciado 🔇');
         }}
         kitchenActiveCount={kitchenOrders.filter(o => o.status !== 'Por Cobrar').length}
-        posPendingCount={kitchenOrders.filter(o => o.status === 'Por Cobrar').length}
         isNfcConnected={isNfcConnected}
       />
 
@@ -432,6 +431,7 @@ export default function App() {
               setIsTicketModalOpen(true);
             }}
             openDailyCloseModal={() => setIsDailyCloseModalOpen(true)}
+            onBackToAdmin={() => setCurrentRole('config')}
           />
         )}
 
@@ -474,6 +474,7 @@ export default function App() {
               setIsAdminProductModalOpen(true);
             }}
             onSimulateTableNfc={handleSimulateTableNfc}
+            onOpenPos={() => setCurrentRole('pos')}
           />
         )}
       </main>
