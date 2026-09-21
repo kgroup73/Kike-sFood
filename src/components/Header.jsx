@@ -6,22 +6,15 @@ import {
   Volume2,
   VolumeX
 } from 'lucide-react';
+import { PROJECT_NAME, PROJECT_LOGO } from '../config/branding';
 
 export default function Header({
   currentRole,
   setCurrentRole,
-  company,
   soundEnabled,
   setSoundEnabled,
   kitchenActiveCount = 0
 }) {
-  const initials = company.name
-    .split(' ')
-    .filter((w) => /[A-Za-zÁÉÍÓÚáéíóúÑñ]/.test(w))
-    .slice(0, 2)
-    .map((w) => w[0].toUpperCase())
-    .join('');
-
   return (
     <header className="bg-[#1e1b13]/95 backdrop-blur-md border-b border-[#383324] sticky top-0 z-30">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
@@ -29,11 +22,17 @@ export default function Header({
         {/* Left: Branding & Logo */}
         <div className="flex items-center justify-between sm:justify-start w-full sm:w-auto">
           <div className="flex items-center space-x-3 sm:space-x-4 min-w-0">
-            <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-[#9b7e09] to-[#b8960e] flex items-center justify-center text-[#fdfcf7] shadow-lg shadow-[#9b7e09]/30 shrink-0 border border-[#b8960e]/40">
-              <span className="font-extrabold text-base sm:text-xl tracking-wider leading-none">{initials}</span>
+            <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-[#9b7e09] to-[#b8960e] flex items-center justify-center text-[#fdfcf7] shadow-lg shadow-[#9b7e09]/30 shrink-0 border border-[#b8960e]/40 overflow-hidden">
+              <img
+                src={PROJECT_LOGO}
+                alt={PROJECT_NAME}
+                className="w-full h-full object-cover"
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              />
+              <span className="font-extrabold text-base sm:text-xl tracking-wider leading-none">{PROJECT_NAME.charAt(0)}</span>
             </div>
             <h1 className="font-extrabold text-lg sm:text-2xl leading-tight text-[#fdfcf7] truncate">
-              {company.name}
+              {PROJECT_NAME}
             </h1>
           </div>
 
