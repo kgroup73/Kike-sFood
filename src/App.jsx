@@ -51,9 +51,9 @@ export default function App() {
   const [company, setCompany] = useState(() => {
     try {
       const saved = localStorage.getItem('kikes_company');
-      if (saved) return { ...INITIAL_COMPANY, slug: 'la-trattoria', plan: 'full', ...JSON.parse(saved) };
+      if (saved) return { ...INITIAL_COMPANY, slug: 'la-trattoria', plan: 'premium', ...JSON.parse(saved) };
     } catch (e) {}
-    return { ...INITIAL_COMPANY, slug: 'la-trattoria', plan: 'full' };
+    return { ...INITIAL_COMPANY, slug: 'la-trattoria', plan: 'premium' };
   });
 
   useEffect(() => {
@@ -61,6 +61,9 @@ export default function App() {
       localStorage.setItem('kikes_company', JSON.stringify(company));
     } catch (e) {}
   }, [company]);
+
+  // Nivel del plan contratado: 0 Básico, 1 Intermedio, 2 Premium
+  const planLevel = ({ basic: 0, intermedio: 1, premium: 2, full: 2 })[company.plan] ?? 2;
   const [products, setProducts] = useState(INITIAL_PRODUCTS);
   const [customers, setCustomers] = useState(INITIAL_CUSTOMERS);
   const [kitchenOrders, setKitchenOrders] = useState(INITIAL_KITCHEN_ORDERS);
@@ -142,6 +145,19 @@ export default function App() {
   const showToast = (msg) => {
     setToast({ show: true, message: msg });
     setTimeout(() => setToast({ show: false, message: '' }), 3000);
+  };
+
+  const changeRole = (r) => {
+    if (r === 'pos' && planLevel < 1) {
+      showToast('Caja POS disponible en el plan Intermedio o superior.');
+      return;
+    }
+    if (r === 'kitchen' && planLevel < 1) {
+      showToast('Cocina KDS disponible en el plan Intermedio o superior.');
+      return;
+    }
+    setCurrentRole(r);
+    showToast(`Modo: ${r === 'client' ? 'Menú Cliente' : r === 'kitchen' ? 'Monitor KDS' : r === 'pos' ? 'Caja POS' : 'Administración'}`);
   };
 
   const playChime = () => {
@@ -362,10 +378,7 @@ export default function App() {
     <div className="bg-[#14120c] text-[#fdfcf7] font-sans min-h-screen pb-24 selection:bg-[#9b7e09] selection:text-[#fdfcf7]">
       <Header
         currentRole={currentRole}
-        setCurrentRole={(r) => {
-          setCurrentRole(r);
-          showToast(`Modo: ${r === 'client' ? 'Menú Cliente' : r === 'kitchen' ? 'Monitor KDS' : r === 'pos' ? 'Caja POS' : 'Administración'}`);
-        }}
+        setCurrentRole={changeRole}
         company={company}
         tableNumber={tableNumber}
         isInsidePremises={isInsidePremises}
@@ -475,7 +488,7 @@ export default function App() {
               setIsAdminProductModalOpen(true);
             }}
             onSimulateTableNfc={handleSimulateTableNfc}
-            onOpenPos={() => setCurrentRole('pos')}
+            onOpenPos={() => changeRole('pos')}
           />
         )}
       </main>
@@ -485,7 +498,7 @@ export default function App() {
           cart={cart}
           includeTip={includeTip}
           setIsCartOpen={setIsCartOpen}
-          plan={company.plan || 'full'}
+          plan={company.plan || 'premium'}
           tableNumber={tableNumber}
         />
       )}
@@ -605,7 +618,7 @@ export default function App() {
           isFavorite={favorites.includes(selectedProduct.id)}
           onToggleFavorite={toggleFavorite}
           onClose={() => setSelectedProduct(null)}
-          plan={company.plan || 'full'}
+          plan={company.plan || 'premium'}
           onAddToCart={(cartItem) => {
             const liveProduct = productsWithStock.find(p => p.id === cartItem.product.id);
             if (liveProduct?.soldOut) {
@@ -650,6 +663,7 @@ export default function App() {
           order={activeBillingOrder}
           company={company}
           customers={customers}
+          canDian={planLevel >= 2}
           onClose={() => setIsBillingModalOpen(false)}
           openNewCustomer={() => setIsCustomerModalOpen(true)}
           generateInvoice={(invoiceData) => {

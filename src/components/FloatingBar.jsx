@@ -6,7 +6,7 @@ export default function FloatingClientBar({
   cart = [],
   includeTip = false,
   setIsCartOpen,
-  plan = 'full',
+  plan = 'premium',
   tableNumber = '1'
 }) {
   if (plan === 'basic') {

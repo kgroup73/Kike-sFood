@@ -25,6 +25,7 @@ import {
   Boxes,
   Lock,
   Database,
+  Gem,
   Printer,
   ArrowLeft,
   UtensilsCrossed,
@@ -80,6 +81,38 @@ export default function AdminView({
   }, [depletedEvents]);
   const maxIngredientCount = rankedIngredients.length ? rankedIngredients[0][1] : 0;
 
+  const planLabel = company.plan === 'basic'
+    ? 'Básico'
+    : company.plan === 'intermedio'
+      ? 'Intermedio'
+      : 'Premium';
+
+  // Nivel del plan: 0 Básico, 1 Intermedio, 2 Premium
+  const planLevel = ({ basic: 0, intermedio: 1, premium: 2, full: 2 })[company.plan] ?? 2;
+  const canInventory = planLevel >= 1;
+  const canPos = planLevel >= 1;
+  const canDian = planLevel >= 2;
+
+  const LockedPlanNotice = ({ feature, requiredPlan }) => (
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-2.5 max-w-xl shadow-xl">
+      <div className="w-12 h-12 mx-auto rounded-xl bg-slate-800/70 text-slate-400 flex items-center justify-center border border-slate-700">
+        <Lock className="w-5 h-5" />
+      </div>
+      <h3 className="text-sm sm:text-base font-bold text-white">Módulo {feature} bloqueado</h3>
+      <p className="text-xs text-slate-400 leading-relaxed">
+        El módulo de {feature.toLowerCase()} está disponible en el plan{' '}
+        <span className="text-violet-300 font-bold">{requiredPlan}</span> o superior.
+        Actualiza el plan del restaurante para desbloquearlo.
+      </p>
+      <button
+        onClick={() => setAdminTab('plans')}
+        className="px-3.5 py-2 bg-violet-600 hover:bg-violet-500 active:scale-95 text-white font-bold text-xs rounded-xl transition-all shadow"
+      >
+        Ver Planes Disponibles
+      </button>
+    </div>
+  );
+
   const filteredIngredients = useMemo(() => {
     const q = ingredientQuery.trim().toLowerCase();
     if (!q) return masterIngredients.filter(ing => ingredientsStock[ing.key]?.soldOut);
@@ -130,7 +163,7 @@ export default function AdminView({
                   </div>
                   <div className="min-w-0">
                     <h4 className="font-bold text-white text-xs sm:text-sm">Datos de Empresa</h4>
-                    <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">Razón social, NIT, plan SaaS, PIN de acceso y configuración de marca.</p>
+                    <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">Razón social, NIT, PIN de acceso y configuración de marca.</p>
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-orange-400 shrink-0 mt-1 transition-colors" />
@@ -170,8 +203,18 @@ export default function AdminView({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Inventario */}
               <button
-                onClick={() => setAdminTab('inventory')}
-                className="group bg-slate-900 border border-slate-800 hover:border-orange-500/50 hover:bg-slate-800/60 rounded-2xl p-5 text-left flex items-start justify-between gap-3 shadow-md transition-all active:scale-[0.98]"
+                onClick={() => {
+                  if (!canInventory) {
+                    showToast('Inventario disponible en el plan Intermedio o superior.');
+                    return;
+                  }
+                  setAdminTab('inventory');
+                }}
+                className={`group bg-slate-900 border rounded-2xl p-5 text-left flex items-start justify-between gap-3 shadow-md transition-all active:scale-[0.98] ${
+                  canInventory
+                    ? 'border-slate-800 hover:border-orange-500/50 hover:bg-slate-800/60'
+                    : 'border-slate-800/70 opacity-70'
+                }`}
               >
                 <div className="flex items-start gap-3.5 min-w-0">
                   <div className="w-11 h-11 rounded-xl bg-orange-500/15 text-orange-400 group-hover:bg-orange-500/25 flex items-center justify-center border border-orange-500/25 shrink-0 transition-colors">
@@ -182,7 +225,30 @@ export default function AdminView({
                     <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">Inventario y compras: trazabilidad de materias primas agotadas y sugerencias de compra.</p>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-orange-400 shrink-0 mt-1 transition-colors" />
+                {canInventory ? (
+                  <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-orange-400 shrink-0 mt-1 transition-colors" />
+                ) : (
+                  <span className="shrink-0 mt-0.5 text-[9px] font-black bg-slate-800 text-slate-400 border border-slate-700 px-1.5 py-0.5 rounded-full flex items-center gap-1 whitespace-nowrap">
+                    <Lock className="w-2.5 h-2.5" /> Intermedio
+                  </span>
+                )}
+              </button>
+
+              {/* Planes */}
+              <button
+                onClick={() => setAdminTab('plans')}
+                className="group bg-slate-900 border border-slate-800 hover:border-violet-500/60 hover:bg-slate-800/60 rounded-2xl p-5 text-left flex items-start justify-between gap-3 shadow-md transition-all active:scale-[0.98]"
+              >
+                <div className="flex items-start gap-3.5 min-w-0">
+                  <div className="w-11 h-11 rounded-xl bg-violet-500/15 text-violet-400 group-hover:bg-violet-500/25 flex items-center justify-center border border-violet-500/30 shrink-0 transition-colors">
+                    <Gem className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-white text-xs sm:text-sm">Planes</h4>
+                    <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">Nivel de suscripción: Carta, Inventario, Caja POS y facturación DIAN.</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-violet-400 shrink-0 mt-1 transition-colors" />
               </button>
 
               {/* Mesas / Tags NFC */}
@@ -204,8 +270,18 @@ export default function AdminView({
 
               {/* DIAN */}
               <button
-                onClick={() => setAdminTab('dian')}
-                className="group bg-slate-900 border border-slate-800 hover:border-emerald-500/60 hover:bg-slate-800/60 rounded-2xl p-5 text-left flex items-start justify-between gap-3 shadow-md transition-all active:scale-[0.98]"
+                onClick={() => {
+                  if (!canDian) {
+                    showToast('Facturación DIAN disponible en el plan Premium.');
+                    return;
+                  }
+                  setAdminTab('dian');
+                }}
+                className={`group bg-slate-900 border rounded-2xl p-5 text-left flex items-start justify-between gap-3 shadow-md transition-all active:scale-[0.98] ${
+                  canDian
+                    ? 'border-slate-800 hover:border-emerald-500/60 hover:bg-slate-800/60'
+                    : 'border-slate-800/70 opacity-70'
+                }`}
               >
                 <div className="flex items-start gap-3.5 min-w-0">
                   <div className="w-11 h-11 rounded-xl bg-emerald-500/15 text-emerald-400 group-hover:bg-emerald-500/25 flex items-center justify-center border border-emerald-500/30 shrink-0 transition-colors">
@@ -216,13 +292,29 @@ export default function AdminView({
                     <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">Parametrización DIAN: resolución, prefijo, rango y claves para facturación electrónica.</p>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-emerald-400 shrink-0 mt-1 transition-colors" />
+                {canDian ? (
+                  <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-emerald-400 shrink-0 mt-1 transition-colors" />
+                ) : (
+                  <span className="shrink-0 mt-0.5 text-[9px] font-black bg-slate-800 text-slate-400 border border-slate-700 px-1.5 py-0.5 rounded-full flex items-center gap-1 whitespace-nowrap">
+                    <Lock className="w-2.5 h-2.5" /> Premium
+                  </span>
+                )}
               </button>
 
               {/* Caja POS */}
               <button
-                onClick={() => onOpenPos && onOpenPos()}
-                className="group bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/40 border border-emerald-500/40 hover:border-emerald-400 rounded-2xl p-5 text-left flex items-start justify-between gap-3 shadow-lg shadow-emerald-950/20 transition-all active:scale-[0.98]"
+                onClick={() => {
+                  if (!canPos) {
+                    showToast('Caja POS disponible en el plan Intermedio o superior.');
+                    return;
+                  }
+                  onOpenPos && onOpenPos();
+                }}
+                className={`group rounded-2xl p-5 text-left flex items-start justify-between gap-3 shadow-lg shadow-emerald-950/20 transition-all active:scale-[0.98] ${
+                  canPos
+                    ? 'bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/40 border border-emerald-500/40 hover:border-emerald-400'
+                    : 'bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950/40 border border-slate-800/70 opacity-70'
+                }`}
               >
                 <div className="flex items-start gap-3.5 min-w-0">
                   <div className="w-11 h-11 rounded-xl bg-emerald-500/20 text-emerald-400 group-hover:bg-emerald-500/30 flex items-center justify-center border border-emerald-500/40 shrink-0 transition-colors">
@@ -231,14 +323,22 @@ export default function AdminView({
                   <div className="min-w-0">
                     <h4 className="font-bold text-white text-xs sm:text-sm flex items-center gap-2">
                       Caja POS
-                      <span className="text-[9px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.5 rounded-full">
-                        ABIERTO
-                      </span>
+                      {canPos && (
+                        <span className="text-[9px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.5 rounded-full">
+                          ABIERTO
+                        </span>
+                      )}
                     </h4>
                     <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">Cobrar comandas, generar facturas y tickets, y realizar el cierre de caja.</p>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-emerald-500 group-hover:text-emerald-300 shrink-0 mt-1 transition-colors" />
+                {canPos ? (
+                  <ChevronRight className="w-4 h-4 text-emerald-500 group-hover:text-emerald-300 shrink-0 mt-1 transition-colors" />
+                ) : (
+                  <span className="shrink-0 mt-0.5 text-[9px] font-black bg-slate-800 text-slate-400 border border-slate-700 px-1.5 py-0.5 rounded-full flex items-center gap-1 whitespace-nowrap">
+                    <Lock className="w-2.5 h-2.5" /> Intermedio
+                  </span>
+                )}
               </button>
             </div>
           </section>
@@ -448,7 +548,11 @@ export default function AdminView({
         </div>
       )}
 
-      {adminTab === 'inventory' && (
+      {adminTab === 'inventory' && !canInventory && (
+        <LockedPlanNotice feature="Inventario" requiredPlan="Intermedio" />
+      )}
+
+      {adminTab === 'inventory' && canInventory && (
         <div className="space-y-4">
           {/* Encabezado del módulo */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center justify-between gap-3">
@@ -675,68 +779,9 @@ export default function AdminView({
       {adminTab === 'company' && (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 max-w-2xl shadow-xl">
           <h3 className="text-sm sm:text-base font-bold text-white border-b border-slate-800 pb-2 flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-orange-500" /> Configuración de Empresa & Plan SaaS
+            <Building2 className="w-4 h-4 text-orange-500" /> Configuración de Empresa
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-            {/* SaaS Plan Tier Selector */}
-            <div className="sm:col-span-2 bg-slate-950/80 border border-slate-800 p-3.5 rounded-2xl space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-slate-300 font-bold flex items-center gap-1.5 text-xs">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Plan SaaS Activo
-                </label>
-                <span className="text-[10px] text-slate-400">Escoge el plan del restaurante</span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCompany({ ...company, plan: 'basic' })}
-                  className={`p-2.5 rounded-xl border text-left transition-all ${
-                    company.plan === 'basic'
-                      ? 'border-amber-500 bg-amber-500/10 text-white shadow-sm'
-                      : 'border-slate-800 bg-slate-900/50 text-slate-400 hover:border-slate-700'
-                  }`}
-                >
-                  <div className="flex items-center justify-between font-black text-xs">
-                    <span>1. Básico</span>
-                    {company.plan === 'basic' && <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" />}
-                  </div>
-                  <p className="text-[10px] text-slate-400 mt-1">Carta Digital NFC (Solo Consulta).</p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setCompany({ ...company, plan: 'intermedio' })}
-                  className={`p-2.5 rounded-xl border text-left transition-all ${
-                    company.plan === 'intermedio'
-                      ? 'border-orange-500 bg-orange-500/10 text-white shadow-sm'
-                      : 'border-slate-800 bg-slate-900/50 text-slate-400 hover:border-slate-700'
-                  }`}
-                >
-                  <div className="flex items-center justify-between font-black text-xs">
-                    <span>2. Intermedio</span>
-                    {company.plan === 'intermedio' && <CheckCircle2 className="w-3.5 h-3.5 text-orange-400" />}
-                  </div>
-                  <p className="text-[10px] text-slate-400 mt-1">+ Mesero & Comandas Cocina KDS.</p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setCompany({ ...company, plan: 'full' || !company.plan })}
-                  className={`p-2.5 rounded-xl border text-left transition-all ${
-                    company.plan === 'full' || !company.plan
-                      ? 'border-emerald-500 bg-emerald-500/10 text-white shadow-sm'
-                      : 'border-slate-800 bg-slate-900/50 text-slate-400 hover:border-slate-700'
-                  }`}
-                >
-                  <div className="flex items-center justify-between font-black text-xs">
-                    <span>3. Full 360°</span>
-                    {(company.plan === 'full' || !company.plan) && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
-                  </div>
-                  <p className="text-[10px] text-slate-400 mt-1">+ POS, Factura DIAN & Stock.</p>
-                </button>
-              </div>
-            </div>
-
             <div>
               <label className="block text-slate-400 mb-1 font-medium">Slug del Restaurante (URL)</label>
               <input
@@ -856,7 +901,102 @@ export default function AdminView({
         </div>
       )}
 
-      {adminTab === 'dian' && (
+      {adminTab === 'plans' && (
+        <div className="space-y-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 max-w-2xl shadow-xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-4">
+              <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                <Gem className="w-4 h-4 text-violet-400" /> Planes & Suscripción
+              </h3>
+              <span className="text-[10px] bg-violet-500/20 text-violet-300 font-bold px-2 py-0.5 rounded border border-violet-500/30 whitespace-nowrap">
+                Plan activo: {planLabel}
+              </span>
+            </div>
+
+            <div className="bg-slate-950/80 border border-slate-800 p-4 rounded-2xl space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-slate-300 font-bold flex items-center gap-1.5 text-xs">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Plan SaaS Activo
+                </label>
+                <span className="text-[10px] text-slate-400">Escoge el plan del restaurante</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCompany({ ...company, plan: 'basic' })}
+                  className={`p-2.5 rounded-xl border text-left transition-all ${
+                    company.plan === 'basic'
+                      ? 'border-amber-500 bg-amber-500/10 text-white shadow-sm'
+                      : 'border-slate-800 bg-slate-900/50 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between font-black text-xs">
+                    <span>1. Básico</span>
+                    {company.plan === 'basic' && <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" />}
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">Carta Digital NFC y mesas/tags (solo consulta).</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCompany({ ...company, plan: 'intermedio' })}
+                  className={`p-2.5 rounded-xl border text-left transition-all ${
+                    company.plan === 'intermedio'
+                      ? 'border-orange-500 bg-orange-500/10 text-white shadow-sm'
+                      : 'border-slate-800 bg-slate-900/50 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between font-black text-xs">
+                    <span>2. Intermedio</span>
+                    {company.plan === 'intermedio' && <CheckCircle2 className="w-3.5 h-3.5 text-orange-400" />}
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">+ Pedidos, Cocina KDS, Inventario y Caja POS.</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCompany({ ...company, plan: 'premium' })}
+                  className={`p-2.5 rounded-xl border text-left transition-all ${
+                    company.plan === 'premium' || company.plan === 'full' || !company.plan
+                      ? 'border-emerald-500 bg-emerald-500/10 text-white shadow-sm'
+                      : 'border-slate-800 bg-slate-900/50 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between font-black text-xs">
+                    <span>3. Premium</span>
+                    {(company.plan === 'premium' || company.plan === 'full' || !company.plan) && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">+ Facturación electrónica DIAN (UBL 2.1).</p>
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 bg-violet-500/10 border border-violet-500/20 rounded-2xl p-3.5 space-y-2">
+              <p className="text-xs font-bold text-violet-300 flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5" /> ¿Qué incluye cada plan?
+              </p>
+              <ul className="text-[11px] text-slate-400 space-y-1">
+                <li><span className="text-amber-300 font-bold">Básico:</span> Carta Digital NFC de consulta y configuración de mesas/tags. El cliente ve el menú y pide directo al mesero.</li>
+                <li><span className="text-orange-300 font-bold">Intermedio:</span> Añade pedidos desde la mesa, monitor de cocina (KDS), módulo de inventario y Caja POS.</li>
+                <li><span className="text-emerald-300 font-bold">Premium:</span> Todo lo anterior + facturación electrónica DIAN (UBL 2.1).</li>
+              </ul>
+            </div>
+
+            <button
+              onClick={() => showToast(`Plan ${planLabel} activado para ${company.name || 'el restaurante'}`)}
+              className="mt-4 px-4 py-2.5 bg-violet-600 hover:bg-violet-500 active:scale-95 text-white font-bold text-xs rounded-xl transition-all shadow"
+            >
+              Guardar Plan
+            </button>
+          </div>
+        </div>
+      )}
+
+      {adminTab === 'dian' && !canDian && (
+        <LockedPlanNotice feature="DIAN" requiredPlan="Premium" />
+      )}
+
+      {adminTab === 'dian' && canDian && (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 max-w-2xl shadow-xl">
           <div className="flex items-center justify-between border-b border-slate-800 pb-2">
             <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">

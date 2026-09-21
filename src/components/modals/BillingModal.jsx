@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
-import { Receipt, X } from 'lucide-react';
+import { Lock, Receipt, X } from 'lucide-react';
 import { formatCOP, generateCUFE } from '../../lib/dian';
 
 export default function BillingModal({
   order,
   company,
   customers,
+  canDian = true,
   onClose,
   openNewCustomer,
   generateInvoice
 }) {
-  const [invoiceType, setInvoiceType] = useState('electronic');
+  const [invoiceType, setInvoiceType] = useState(canDian ? 'electronic' : 'pos');
   const [selectedCustId, setSelectedCustId] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState('Efectivo');
 
@@ -32,15 +33,22 @@ export default function BillingModal({
 
         <div className="space-y-3 text-xs">
           <div>
-            <label className="block text-slate-400 mb-1">Tipo de Comprobante DIAN</label>
+            <label className="block text-slate-400 mb-1">Tipo de Comprobante</label>
             <select
               value={invoiceType}
               onChange={(e) => setInvoiceType(e.target.value)}
               className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500"
             >
-              <option value="electronic">Factura Electrónica de Venta (DIAN)</option>
-              <option value="pos">Tiquete POS Electrónico</option>
+              <option value="pos">Tiquete POS</option>
+              <option value="electronic" disabled={!canDian}>
+                Factura Electrónica de Venta (DIAN) {!canDian ? '— Plan Premium' : ''}
+              </option>
             </select>
+            {!canDian && (
+              <p className="text-[10px] text-amber-400/80 mt-1 flex items-center gap-1">
+                <Lock className="w-3 h-3" /> La facturación electrónica DIAN requiere el plan Premium.
+              </p>
+            )}
           </div>
 
           <div>
@@ -104,7 +112,7 @@ export default function BillingModal({
           }}
           className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 transition-all"
         >
-          Emitir Comprobante y Enviar a DIAN
+          {canDian ? 'Emitir Comprobante y Enviar a DIAN' : 'Emitir Comprobante'}
         </button>
       </div>
     </div>
