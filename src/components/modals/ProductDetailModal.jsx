@@ -24,7 +24,7 @@ export default function ProductDetailModal({
   isFavorite = false,
   onToggleFavorite,
   allProducts = [],
-  plan = 'full'
+  plan = 'premium'
 }) {
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState({});

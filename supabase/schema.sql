@@ -3,7 +3,7 @@
 -- ==============================================================================
 -- Este script crea la arquitectura completa para operar como un SaaS:
 -- 1. Soporte Multi-restaurante (Multi-tenancy por tenant_id y slug de URL)
--- 2. Diferenciación de Planes SaaS (Básico, KDS, Full POS/DIAN)
+-- 2. Diferenciación de Planes SaaS (Básico, Intermedio, Premium)
 -- 3. Sincronización en tiempo real (WebSockets para Cocina KDS y Meseros)
 -- 4. Políticas de Seguridad RLS (Row Level Security)
 -- ==============================================================================
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS tenants (
     city VARCHAR(60) DEFAULT 'Medellín',
     phone VARCHAR(30),
     email VARCHAR(100),
-    plan VARCHAR(20) NOT NULL DEFAULT 'basic' CHECK (plan IN ('basic', 'kds', 'full')),
+    plan VARCHAR(20) NOT NULL DEFAULT 'basic' CHECK (plan IN ('basic', 'intermedio', 'premium')),
     dian_prefix VARCHAR(10) DEFAULT 'SETP',
     dian_resolution VARCHAR(80) DEFAULT 'Resolución DIAN No. 18764000001',
     currency VARCHAR(10) DEFAULT 'COP',
@@ -241,7 +241,7 @@ VALUES (
     'Medellín',
     '+57 (4) 444-8899',
     'info@trattoriagourmet.com',
-    'full'
+    'premium'
 ) ON CONFLICT (slug) DO NOTHING;
 
 -- Crear 12 mesas iniciales para la Trattoria
