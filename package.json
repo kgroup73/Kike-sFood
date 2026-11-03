@@ -1,26 +1,42 @@
 {
-  "name": "gourmet-pos-kds",
+  "name": "kikes-food",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Sistema POS para Restaurantes con Menú QR Digital, Cocina KDS y Facturación Electrónica DIAN",
+  "description": "Kike's Food: menú digital QR/NFC, cocina KDS, caja POS y facturación para restaurantes",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:db": "node scripts/test-db.mjs",
+    "create-owner": "node scripts/create-owner.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.109.0",
     "lucide-react": "^0.475.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.18.5"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.3",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.5.7",
+    "globals": "^17.14.0",
+    "jsdom": "^29.1.1",
     "postcss": "^8.5.1",
     "tailwindcss": "^3.4.17",
-    "vite": "^6.1.0"
+    "vite": "^6.1.0",
+    "vitest": "^4.1.12"
   },
   "keywords": [
     "pos",
@@ -33,5 +49,8 @@
     "tailwind"
   ],
   "author": "Keder",
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  }
 }
