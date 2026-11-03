@@ -1,143 +1,168 @@
-# 🍽️ Gourmet POS & KDS - Sistema para Restaurantes con Facturación Electrónica DIAN
+# Kike's — Carta digital, cocina y caja para restaurantes
 
-[![React](https://img.shields.io/badge/React-18.3.1-blue.svg?logo=react)](https://reactjs.org/)
-[![Vite](https://img.shields.io/badge/Vite-6.1-646CFF.svg?logo=vite)](https://vitejs.dev/)
-[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-38B2AC.svg?logo=tailwind-css)](https://tailwindcss.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+SaaS multi-restaurante con:
 
-Sistema web integral y moderno para restaurantes y locales gastronómicos que unifica en una sola aplicación interactiva:
-1. 📱 **Menú QR Digital para Clientes** con geolocalización, simulación NFC, propina voluntaria y llamado a meseros.
-2. 🍳 **Monitor KDS (Kitchen Display System)** en tiempo real para cocina con flujo de preparación de comandas y timbres sonoros.
-3. 💳 **Caja POS & Facturación Electrónica DIAN** con generación de CUFE, código QR, tickets térmicos imprimibles y arqueo/cierre de caja (Reporte Z).
-4. ⚙️ **Panel de Administración** para gestión de menú/platillos, configuración fiscal de la empresa y parametrización de resolución DIAN (Resolución 000165 de 2023 / UBL 2.1).
+1. **Carta digital QR/NFC** para el comensal: categorías, filtros, modificadores, maridajes, historias destacadas y pedidos desde la mesa.
+2. **Cocina KDS** en tiempo real: flujo `Pendiente → En Preparación → Listo → Por Cobrar` y control de materias primas agotadas.
+3. **Caja POS**: tiquete POS, factura electrónica (*simulada por ahora*), impuesto al consumo desglosado, propina voluntaria y cierre de caja (Reporte Z).
+4. **Administración**: datos de la empresa, carta, personal con PIN, mesas con QR/NFC, inventario, numeración de facturación y plan.
+
+Stack: React 18 · Vite 6 · Tailwind 3 · react-router 7 · Supabase (Postgres + RLS + Realtime + Edge Functions).
 
 ---
 
-## 🚀 Características Principales
+## Arranque rápido (modo demo, sin Supabase)
 
-### 📱 1. Experiencia del Cliente (Menú Digital)
-- **Vista interactiva**: Alternancia entre modo Lista y Cuadrícula.
-- **Filtros por categoría y dietéticos**: Vegano, Sin Gluten, Especialidad del Chef.
-- **Buscador predictivo**: Búsqueda instantánea por nombre o ingredientes.
-- **Personalización de platillos**: Modificadores (término de la carne, adicionales con precio extra).
-- **Control de presencia**: Verificación mediante GPS y simulación de escaneo NFC en mesa.
-- **Botón de llamado a mesero**: Con motivos predefinidos (servilletas, agua, atención presencial).
-- **Carrito de compras**: Cálculo automático de subtotal y sugerencia de propina voluntaria del 10%.
-
-### 🍳 2. Monitor KDS de Cocina
-- **Flujo de preparación por estados**: `Pendiente` ➔ `En Preparación` ➔ `Listo` ➔ `Pasar a Caja POS`.
-- **Alertas sonoras**: Notificaciones mediante Web Audio API al recibir o actualizar pedidos.
-- **Detalle de comandas**: Desglose de modificadores por ítem, tiempo transcurrido y número de mesa.
-
-### 💳 3. Caja POS & Facturación DIAN (Colombia)
-- **Facturación de comandas**: Emisión de Factura Electrónica de Venta o Tiquete POS.
-- **Algoritmo de CUFE**: Generación de hash SHA-style simulado para validación DIAN.
-- **Tiquetes térmicos imprimibles**: Formato de 80mm con código QR, desglose de impuestos (INC 8% o IVA 19%) y pie de página legal.
-- **Arqueo y Cierre Z**: Cuadre de caja comparando ventas del sistema (efectivo, tarjeta, transferencias) contra efectivo físico contado con cálculo de faltante/sobrante.
-
-### ⚙️ 4. Administración & Parametrización
-- **CRUD de platillos**: Creación, edición, visibilidad (ocultar/mostrar) y eliminación de productos.
-- **Datos de la empresa**: Razón social, NIT, dirección, teléfono y tipo de régimen fiscal.
-- **Parámetros DIAN**: Prefijo autorizado, resolución de facturación (Formulario 1876), rangos numéricos, Clave Técnica, Software ID y SetTestID.
-
----
-
-## 🛠️ Tecnologías Utilizadas
-
-- **Frontend**: React 18 (Hooks, Context/State, Memoization)
-- **Bundler & Dev Server**: Vite 6
-- **Estilos**: Tailwind CSS con diseño Glassmorphism & Dark Mode
-- **Iconografía**: Lucide React
-- **Audio Feedback**: Web Audio API sintetizado (sin dependencias externas de audio)
-- **Control de Versiones & CI**: Git + GitHub Actions
-
----
-
-## 📂 Estructura del Proyecto
-
-```text
-├── .github/
-│   └── workflows/
-│       └── ci.yml                 # Pipeline automatizado de CI (Build & Lint)
-├── public/
-│   └── favicon.svg                # Ícono oficial del restaurante
-├── src/
-│   ├── components/
-│   │   ├── modals/
-│   │   │   ├── AuxiliaryModals.jsx   # Modales (Cliente nuevo, Mesero, NFC, Platillos)
-│   │   │   ├── BillingModal.jsx      # Modal de Facturación DIAN y POS
-│   │   │   ├── CartDrawer.jsx        # Drawer lateral del pedido
-│   │   │   ├── DailyCloseModal.jsx   # Arqueo de caja y Reporte Z
-│   │   │   ├── ProductDetailModal.jsx# Personalización de ingredientes
-│   │   │   └── TicketModal.jsx       # Tique térmico con QR y CUFE
-│   │   ├── AdminView.jsx          # Panel de configuración y DIAN
-│   │   ├── ClientView.jsx         # Menú interactivo para clientes
-│   │   ├── FloatingBar.jsx        # Barra flotante de llamado y carrito
-│   │   ├── Header.jsx             # Selector de roles y estado de conexión
-│   │   ├── KitchenView.jsx        # Monitor KDS de cocina
-│   │   └── PosView.jsx            # Caja y arqueo diario
-│   ├── data/
-│   │   └── mockData.js            # Datos iniciales y catálogo
-│   ├── lib/
-│   │   └── dian.js                # Utilidades de CUFE, impuestos y formato COP
-│   ├── App.jsx                    # Orquestador principal de estado
-│   ├── index.css                  # Directivas Tailwind y estilos de impresión
-│   └── main.jsx                   # Punto de entrada React
-├── .env.example                   # Variables de entorno de ejemplo
-├── .gitignore                     # Archivos ignorados por Git
-├── index.html                     # HTML5 con fuentes y SEO
-├── LICENSE                        # Licencia MIT
-├── package.json                   # Dependencias y scripts
-├── postcss.config.js              # Configuración PostCSS
-├── tailwind.config.js             # Configuración TailwindCSS
-└── vite.config.js                 # Configuración de Vite
-```
-
----
-
-## 📦 Instalación y Uso Local
-
-### 1. Clonar el repositorio
-```bash
-git clone https://github.com/TU_USUARIO/TU_REPOSITORIO.git
-cd TU_REPOSITORIO
-```
-
-### 2. Instalar dependencias
 ```bash
 npm install
+npm run dev        # http://localhost:3000
 ```
 
-### 3. Iniciar servidor de desarrollo
-```bash
-npm run dev
-```
-La aplicación se abrirá en `http://localhost:3000`.
+Sin variables de Supabase la app funciona en **modo demo**. Los datos viven en el navegador y se sincronizan entre pestañas. Puedes abrir la carta en una pestaña y la cocina en otra.
 
-### 4. Compilar para producción
-```bash
-npm run build
+| Ruta | Qué es |
+|---|---|
+| `/r/la-trattoria/m/demo-mesa-4` | Carta del comensal en la Mesa 4 |
+| `/staff/la-trattoria/login` | Ingreso del personal. PIN demo: dueño `1234`, cocina `1111`, caja `2222` |
+
+> El modo demo no es seguro (cualquiera puede editar `localStorage`). Úsalo solo para demostraciones y desarrollo.
+
+## Scripts
+
+| Comando | Qué hace |
+|---|---|
+| `npm run dev` | Servidor de desarrollo |
+| `npm run build` | Compilación de producción en `dist/` |
+| `npm run lint` | ESLint (incluye `react-hooks/exhaustive-deps`) |
+| `npm test` | Pruebas unitarias y de integración (Vitest + Testing Library) |
+| `npm run test:db` | Prueba la migración, el seed y las políticas RLS en un Postgres embebido (PGlite) |
+| `node scripts/generate-seed.mjs` | Regenera `supabase/seed.sql` a partir de los datos demo |
+
+El CI (`.github/workflows/ci.yml`) ejecuta lint, test, test:db y build en cada PR.
+
+---
+
+## Arquitectura
+
+```text
+Navegador del comensal ── anon key ──► create_order() / resolve_table()   (RPC, SECURITY DEFINER)
+                                     └► SELECT carta pública                 (RLS: solo lectura)
+
+Tablet de cocina / caja ── PIN ──► Edge Function staff-login ──► sesión Supabase Auth
+                                     └► tablas del restaurante (RLS por tenant y rol)
+                                     └► issue_invoice() / close_cash_register() / set_ingredient_stock()
+```
+
+**Principio:** el navegador nunca decide precios, totales, plan ni numeración. Todo eso se calcula en la base de datos.
+
+- **Pedidos:** `create_order` valida el token de la mesa, recalcula los precios desde el catálogo (incluidos los adicionales), exige los modificadores obligatorios, rechaza los platillos agotados y limita a 6 pedidos por mesa cada 10 minutos.
+- **Mesas:** cada una tiene un token secreto (`restaurant_tables.token`) que va en el QR o NFC. Sin el token se puede ver la carta, pero no pedir. Si un enlace se filtra, se regenera desde *Admin → Mesas*.
+- **Personal:** cada empleado tiene un PIN propio (bcrypt) y uno de estos roles: `owner`, `admin`, `cocina`, `caja` o `mesero`. Tras 5 intentos fallidos el usuario queda bloqueado 15 minutos.
+- **Facturación:** `issue_invoice` toma el consecutivo con bloqueo de fila, valida el rango y la vigencia de la resolución, desglosa el impuesto del precio de carta y marca el pedido como `Cobrado` en la misma transacción.
+- **Planes:** `tenants.plan` no se puede editar desde el navegador (GRANT por columna). Lo cambia la plataforma.
+
+### Impuesto al consumo (INC)
+
+Los restaurantes en Colombia cobran normalmente el **INC del 8 %** en lugar del IVA. El precio que ve el cliente en la carta **ya incluye el impuesto**, así que el tiquete lo **desglosa** (`base = total / 1,08`) en vez de sumarlo. La propina es voluntaria, va aparte y no hace parte de la base gravable. El tipo de impuesto y la tarifa se configuran en *Admin → Datos de Empresa*.
+
+### Estructura
+
+```text
+src/
+├── App.jsx                  # Rutas
+├── pages/                   # HomePage, MenuPage (comensal) y staff/ (cocina, caja, admin, login)
+├── components/
+│   ├── client/              # Carta, carrito, detalle de platillo, historias
+│   ├── staff/               # KDS, POS, cobro, tiquete, cierre Z
+│   ├── admin/               # Un módulo por sección de administración
+│   └── ui/                  # Modal, QR, pantallas de carga/error
+├── hooks/                   # useMenu, useOrders, useTenant, useStaffSession, useToast, useSound
+├── services/
+│   ├── api.js               # Elige Supabase o demo
+│   ├── supabaseApi.js       # Implementación real
+│   └── demo/                # Backend demo + datos de ejemplo
+└── lib/                     # Lógica pura con tests: money, pricing, orderStatus, plans, roles, inventory
+supabase/
+├── migrations/              # Esquema, RLS, RPCs
+├── functions/staff-login/   # Login con PIN → sesión de Supabase Auth
+├── seed.sql                 # Restaurante demo (generado)
+└── config.toml
+scripts/                     # generate-seed.mjs, test-db.mjs
 ```
 
 ---
 
-## 🚀 Despliegue en la Nube
+## Configurar Supabase
 
-### Despliegue en Vercel
-1. Conecta tu repositorio de GitHub en [Vercel](https://vercel.com).
-2. Framework Preset: **Vite**.
-3. Build Command: `npm run build`
-4. Output Directory: `dist`
-5. Haz clic en **Deploy**.
+Requiere la [Supabase CLI](https://supabase.com/docs/guides/cli).
 
-### Despliegue en Netlify
-1. Crea un nuevo sitio desde Git en [Netlify](https://netlify.com).
-2. Build command: `npm run build`
-3. Publish directory: `dist`
-4. Haz clic en **Deploy Site**.
+```bash
+supabase link --project-ref <tu-proyecto>
+
+# 1. Esquema (la migración elimina las tablas del prototipo anterior, que no tenía datos)
+supabase db push
+
+# 2. (Opcional) restaurante demo: ejecuta supabase/seed.sql en el SQL Editor
+
+# 3. Secreto del login con PIN (64+ caracteres aleatorios; no lo cambies a la ligera)
+supabase secrets set STAFF_AUTH_PEPPER="$(openssl rand -hex 48)"
+#    Opcional: restringe CORS a tu dominio
+supabase secrets set ALLOWED_ORIGIN=https://tu-dominio.com
+
+# 4. Edge Function
+supabase functions deploy staff-login --no-verify-jwt
+```
+
+En el panel de Supabase, en **Authentication → Sign In / Providers**, desactiva **"Allow new users to sign up"**. Las cuentas del personal las crea la Edge Function.
+
+Variables del frontend (en `.env` local y en Vercel):
+
+```bash
+VITE_SUPABASE_URL=https://<tu-proyecto>.supabase.co
+VITE_SUPABASE_ANON_KEY=<anon o publishable key>
+```
+
+### Dar de alta un restaurante y su dueño
+
+Ejecuta en el SQL Editor (como `postgres`):
+
+```sql
+insert into tenants (slug, name, nit, plan) values ('mi-restaurante', 'Mi Restaurante S.A.S.', '900123456-7', 'intermedio');
+select create_staff_member('mi-restaurante', 'Nombre del dueño', 'owner', '123456');
+```
+
+El dueño entra en `/staff/mi-restaurante/login` y desde *Admin → Personal* crea al resto del equipo. Las mesas y sus QR se crean en *Admin → Mesas*.
+
+Para cambiar el plan: `update tenants set plan = 'premium' where slug = 'mi-restaurante';`
+
+### Al agregar tablas o funciones nuevas
+
+La migración revoca los privilegios por defecto de `anon` y `authenticated`. Cada tabla o función nueva debe:
+
+1. Hacer `GRANT` explícito de lo que necesita.
+2. Activar RLS (`enable row level security`) con políticas que usen `has_staff_role(tenant_id, ...)`.
+3. Tener su caso en `scripts/test-db.mjs`.
 
 ---
 
-## 📄 Licencia
+## Facturación electrónica DIAN: estado actual
 
-Este proyecto está bajo la Licencia [MIT](./LICENSE).
+La factura electrónica está **simulada**. Se genera numeración real, el desglose de impuestos y un CUFE de prueba, pero **no se envía a la DIAN**. El tiquete y la caja lo indican como *"SIMULADO — sin validez fiscal"*.
+
+El proveedor tecnológico está pendiente de decisión (**Factus** o **Siigo**). La integración prevista es:
+
+1. Una Edge Function `emit-invoice` que reciba el `invoice_id`, arme el documento desde la BD y lo envíe al proveedor.
+2. Credenciales del proveedor y clave técnica como **secretos del servidor** (`supabase secrets set ...`), nunca en el navegador ni en tablas legibles.
+3. Guardar el CUFE real, el QR, el PDF y el estado (`pendiente` / `aceptada` / `rechazada`) en `invoices.dian_status`.
+
+`billing_settings.provider` ya admite `factus` y `siigo`.
+
+---
+
+## Despliegue (Vercel)
+
+El preset es **Vite**: build `npm run build` y salida `dist`. `vercel.json` ya incluye el rewrite para la SPA, la caché de los assets y los headers de seguridad. `Referrer-Policy` evita que el token de la mesa se filtre a sitios externos.
+
+## Licencia
+
+[MIT](./LICENSE)
