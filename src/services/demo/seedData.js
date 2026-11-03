@@ -1,97 +1,54 @@
-export const INITIAL_COMPANY = {
+/**
+ * Datos de ejemplo del restaurante demo "La Trattoria Gourmet".
+ * Se usan en dos lugares:
+ *   1. El modo demo del frontend (sin Supabase configurado).
+ *   2. scripts/generate-seed.mjs → supabase/seed.sql
+ * Los ids numéricos se convierten a UUID deterministas con demoUuid().
+ */
+
+export const DEMO_TENANT = {
+  id: 'a0000000-0000-4000-8000-000000000001',
+  slug: 'la-trattoria',
   name: 'La Trattoria Gourmet S.A.S.',
   nit: '901.234.567-8',
-  address: 'Calle 10 # 43-22, El Poblado, Medellín',
+  address: 'Calle 10 # 43-22, El Poblado',
+  city: 'Medellín',
   phone: '+57 (604) 444-5566',
   email: 'facturacion@latrattoria.com',
-  taxType: 'INC', // 'INC' (8%) o 'IVA' (19%)
+  plan: 'premium',
+  taxType: 'INC',
   taxRate: 8,
-  footerText: '¡Gracias por su compra! Régimen Común / Factura Electrónica DIAN',
-  // Campos exigidos por la DIAN (Resolución 000165 de 2023)
-  dianResolution: '187600000001',
-  dianPrefix: 'FE',
-  dianRangeFrom: 1,
-  dianRangeTo: 10000,
-  dianResolutionDate: '2025-01-15',
-  dianExpirationDate: '2026-01-15',
-  dianTechKey: 'c3f29a01e84741b29a1d2e3f40516273849501a2',
-  dianSoftwareId: 'b7a892c1-3d4e-4f5a-8b1c-901234567890',
-  dianTestSetId: 'd4e5f6a7-8b9c-0d1e-2f3a-4b5c6d7e8f9a'
+  tipRate: 10,
+  footerText: '¡Gracias por su visita! Propina voluntaria. Precios con impuesto incluido.'
 };
 
-export const INITIAL_CUSTOMERS = [
-  { id: 1, name: 'Consumidor Final', nit: '222222222222', email: 'ventas@latrattoria.com', phone: '0000000000' },
-  { id: 2, name: 'Juan Carlos Pérez', nit: '1020304050', email: 'juan.perez@gmail.com', phone: '3001234567' },
-  { id: 3, name: 'Inversiones Tech S.A.S.', nit: '800.999.111-2', email: 'contabilidad@ytech.com', phone: '6042221100' }
+// Resolución de ejemplo (ficticia). Las claves técnicas NO van en el frontend.
+export const DEMO_INVOICE_SEQUENCES = [
+  { kind: 'pos', prefix: 'POS', nextNumber: 1, rangeFrom: 1, rangeTo: null, resolutionNumber: null, resolutionDate: null, validUntil: null },
+  { kind: 'electronica', prefix: 'FE', nextNumber: 1, rangeFrom: 1, rangeTo: 10000, resolutionNumber: '18760000001', resolutionDate: '2026-01-15', validUntil: '2028-01-15' }
 ];
 
-export const CATEGORIES = ['Todos', 'Entradas', 'Platos Fuertes', 'Hamburguesas', 'Bebidas', 'Postres'];
+export const DEMO_TABLE_COUNT = 12;
 
-export const MENU_STORIES = [
-  {
-    id: 'story-1',
-    title: 'Top Estrella ⭐',
-    subtitle: 'Burger Trufada Gourmet',
-    productId: 1,
-    tag: 'MÁS PEDIDO',
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800&auto=format&fit=crop',
-    storyText: 'Nuestra icónica hamburguesa con 200g de carne Angus madurada, bañada en crema de trufas negras de Umbría.',
-    badgeColor: 'from-amber-500 to-orange-600',
-    duration: 5000
-  },
-  {
-    id: 'story-2',
-    title: 'Especial Chef 👨‍🍳',
-    subtitle: 'Ojo de Bife 300g Importado',
-    productId: 4,
-    tag: 'SELECCIÓN PREMIUM',
-    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=800&auto=format&fit=crop',
-    storyText: 'Maduración de 28 días y sellado a 400°C en brasas de roble y quebracho blanco. Una explosión de sabor.',
-    badgeColor: 'from-rose-500 to-red-600',
-    duration: 5000
-  },
-  {
-    id: 'story-3',
-    title: 'Maridaje Perfecto 🍷',
-    subtitle: 'Sangría Artesanal & Trufas',
-    productId: 7,
-    tag: 'RECOMENDADO',
-    image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=800&auto=format&fit=crop',
-    storyText: 'Cosecha seleccionada con notas a frutos rojos silvestres macerados con especias de temporada.',
-    badgeColor: 'from-purple-500 to-indigo-600',
-    duration: 5000
-  },
-  {
-    id: 'story-4',
-    title: 'Green & Healthy 🌿',
-    subtitle: 'Bowl Mediterráneo Vegano',
-    productId: 3,
-    tag: '100% PLANT BASED',
-    image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&auto=format&fit=crop',
-    storyText: 'Superalimentos orgánicos cosechados en huertos locales de Santa Elena con aderezo artesanal de sésamo.',
-    badgeColor: 'from-emerald-500 to-teal-600',
-    duration: 5000
-  },
-  {
-    id: 'story-5',
-    title: 'Final Dulce 🍨',
-    subtitle: 'Tiramisú Tradicional Artesanal',
-    productId: 6,
-    tag: 'POSTRE DEL MES',
-    image: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=800&auto=format&fit=crop',
-    storyText: 'Receta veneciana con café de origen tostado en casa y queso mascarpone importado.',
-    badgeColor: 'from-amber-600 to-yellow-500',
-    duration: 5000
-  }
+// Personal de demostración (solo modo demo; en Supabase se crea con create_staff_member).
+export const DEMO_STAFF = [
+  { id: 'b0000000-0000-4000-8000-000000000001', displayName: 'Kike (Dueño)', role: 'owner', pin: '1234' },
+  { id: 'b0000000-0000-4000-8000-000000000002', displayName: 'Cocina', role: 'cocina', pin: '1111' },
+  { id: 'b0000000-0000-4000-8000-000000000003', displayName: 'Caja', role: 'caja', pin: '2222' }
 ];
 
-export const ROULETTE_MOODS = [
-  { id: 'all', label: '🎲 Sorpréndeme', icon: 'Sparkles', color: 'from-orange-500 to-amber-500' },
-  { id: 'carnes', label: '🥩 Antojo de Carne / Gourmet', filter: p => p.category === 'Hamburguesas' || p.category === 'Platos Fuertes', color: 'from-rose-500 to-orange-600' },
-  { id: 'light', label: '🌿 Ligero / Saludable', filter: p => p.isVeg || p.isGf, color: 'from-emerald-500 to-teal-600' },
-  { id: 'entradas', label: '🌮 Para Compartir / Entradas', filter: p => p.category === 'Entradas', color: 'from-indigo-500 to-blue-600' },
-  { id: 'dulce', label: '🍰 Postres & Bebidas', filter: p => p.category === 'Postres' || p.category === 'Bebidas', color: 'from-purple-500 to-pink-600' }
+export const DEMO_CUSTOMERS = [
+  { id: 'c0000000-0000-4000-8000-000000000002', name: 'Juan Carlos Pérez', docType: 'CC', docNumber: '1020304050', email: 'juan.perez@example.com', phone: '3001234567' },
+  { id: 'c0000000-0000-4000-8000-000000000003', name: 'Inversiones Tech S.A.S.', docType: 'NIT', docNumber: '800999111', email: 'contabilidad@example.com', phone: '6042221100' }
 ];
+
+export const DEMO_CATEGORIES = ['Entradas', 'Platos Fuertes', 'Hamburguesas', 'Bebidas', 'Postres'];
+
+/** UUID determinista para los datos demo: demoUuid('p', 7) → 00000000-0000-4000-8000-000000000007 */
+export function demoUuid(kind, n) {
+  const prefix = { p: '00000000', c: '00000001', t: '00000002' }[kind] || '0000000f';
+  return `${prefix}-0000-4000-8000-${String(n).padStart(12, '0')}`;
+}
 
 export const INITIAL_PRODUCTS = [
   {

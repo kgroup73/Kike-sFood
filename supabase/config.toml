@@ -1,0 +1,10 @@
+# Configuración mínima para Supabase CLI (los valores omitidos usan los defaults).
+project_id = "kikes-food"
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+# El login con PIN se llama antes de tener sesión: no exige JWT de usuario.
+[functions.staff-login]
+verify_jwt = false
