@@ -8,6 +8,17 @@ export default defineConfig({
     port: 3000,
     open: false
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Librerías en archivos propios: cambian poco y el navegador las mantiene en caché.
+        manualChunks: {
+          react: ['react', 'react-dom', 'react-router-dom'],
+          supabase: ['@supabase/supabase-js']
+        }
+      }
+    }
+  },
   test: {
     environment: 'jsdom',
     include: ['src/**/*.test.{js,jsx}'],

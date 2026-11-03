@@ -26,9 +26,17 @@ export default {
           surface: '#1a1711',
           card: '#221e16',
           border: '#332d20',
-          muted: '#857f5d'
+          muted: '#857f5d',
+          // Tokens usados en la interfaz (antes eran colores hex sueltos en el JSX)
+          night: '#14120c',
+          panel: '#1e1b13',
+          line: '#383324',
+          raised: '#2c271d',
+          hover: '#242017',
+          mute: '#aba489'
         },
-        // Mapeo armonizado con la paleta de marca Trattoria
+        // Las escalas orange/amber/slate se re-mapean a la paleta de marca para que las
+        // vistas del personal compartan los tonos cálidos sin reescribir cada clase.
         orange: {
           50: '#fdfcf7',
           100: '#f7f4ed',

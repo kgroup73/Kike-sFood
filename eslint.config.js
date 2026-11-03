@@ -29,6 +29,11 @@ export default [
     }
   },
   {
+    // Proveedor + hook en el mismo archivo (patrón de contexto): no afecta a producción.
+    files: ['src/hooks/**'],
+    rules: { 'react-refresh/only-export-components': 'off' }
+  },
+  {
     files: ['**/*.test.{js,jsx}', 'scripts/**', '*.config.js'],
     languageOptions: { globals: { ...globals.node, ...globals.browser } }
   }
