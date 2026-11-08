@@ -33,6 +33,7 @@ export const tenantToRow = (t) => ({
 export const orderFromRow = (o) => ({
   id: o.id,
   tenantId: o.tenant_id,
+  tableId: o.table_id,
   tableLabel: o.table_label,
   status: o.status,
   subtotal: o.subtotal,
@@ -51,7 +52,7 @@ export const orderFromRow = (o) => ({
 
 export const invoiceFromRow = (r) => ({
   id: r.id,
-  orderId: r.order_id,
+  orderIds: r.order_ids || [],
   dailyCloseId: r.daily_close_id,
   kind: r.kind,
   number: r.full_number || `${r.prefix}-${r.number}`,

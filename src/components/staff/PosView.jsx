@@ -1,4 +1,4 @@
-import { Receipt, Calculator, History } from 'lucide-react';
+import { Receipt, Calculator, History, ChefHat } from 'lucide-react';
 import { formatCOP } from '../../lib/money';
 import { PAYMENT_METHODS, INVOICE_KINDS, DIAN_STATUS } from '../../lib/billing';
 
@@ -9,7 +9,7 @@ const TONE = {
   danger: 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
 };
 
-export default function PosView({ ordersToPay, invoices, closes, onCharge, onViewTicket, onOpenClose }) {
+export default function PosView({ tablesToPay, invoices, closes, onCharge, onViewTicket, onOpenClose }) {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-900 p-4 rounded-2xl border border-slate-800 gap-3">
@@ -17,7 +17,7 @@ export default function PosView({ ordersToPay, invoices, closes, onCharge, onVie
           <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
             <Receipt className="w-5 h-5 text-emerald-400" aria-hidden="true" /> Caja POS
           </h2>
-          <p className="text-xs text-slate-400">Cobro de comandas, comprobantes y cierre de caja</p>
+          <p className="text-xs text-slate-400">Cobro por mesa, comprobantes y cierre de caja</p>
         </div>
         <button onClick={onOpenClose} className="w-full md:w-auto px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl border border-slate-700 flex items-center justify-center gap-1.5 transition-all shadow">
           <Calculator className="w-4 h-4 text-amber-400" aria-hidden="true" /> Cierre de caja (Z)
@@ -25,38 +25,51 @@ export default function PosView({ ordersToPay, invoices, closes, onCharge, onVie
       </div>
 
       <section className="space-y-3">
-        <h3 className="text-sm font-bold text-slate-300">Comandas listas para cobrar ({ordersToPay.length})</h3>
+        <h3 className="text-sm font-bold text-slate-300">Mesas por cobrar ({tablesToPay.length})</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {ordersToPay.map((order) => (
-            <div key={order.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-lg flex flex-col justify-between">
+          {tablesToPay.map((group) => (
+            <div key={group.key} className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-lg flex flex-col justify-between">
               <div className="space-y-3">
                 <div className="flex justify-between items-center pb-2 border-b border-slate-800">
-                  <span className="text-xs font-bold text-orange-500">Comanda #{order.id}</span>
-                  <span className="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-bold">Mesa {order.tableLabel}</span>
+                  <span className="text-sm font-bold text-white">Mesa {group.tableLabel}</span>
+                  <span className="text-[11px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-bold">
+                    {group.orders.length} {group.orders.length === 1 ? 'comanda' : 'comandas'}
+                  </span>
                 </div>
-                <ul className="text-xs space-y-1.5 text-slate-300">
-                  {order.items.map((it, idx) => (
-                    <li key={idx} className="flex justify-between gap-2">
-                      <span>{it.quantity}x {it.name}</span>
-                      <span className="text-slate-400">{formatCOP(it.totalPrice)}</span>
-                    </li>
-                  ))}
-                </ul>
+                {group.orders.map((order) => (
+                  <div key={order.id} className="space-y-1">
+                    <p className="text-[11px] font-bold text-orange-500">Comanda #{order.id}</p>
+                    <ul className="text-xs space-y-1 text-slate-300">
+                      {order.items.map((it, idx) => (
+                        <li key={idx} className="flex justify-between gap-2">
+                          <span>{it.quantity}x {it.name}</span>
+                          <span className="text-slate-400">{formatCOP(it.totalPrice)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+                {group.inKitchen > 0 && (
+                  <p className="text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-lg px-2 py-1.5 flex items-center gap-1.5">
+                    <ChefHat className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    {group.inKitchen === 1 ? '1 comanda sigue en cocina' : `${group.inKitchen} comandas siguen en cocina`} y no entra en este cobro.
+                  </p>
+                )}
               </div>
               <div className="pt-3 border-t border-slate-800 space-y-2.5">
                 <div className="flex justify-between items-center text-xs text-slate-400">
                   <span>Consumo + propina:</span>
-                  <span className="text-sm font-black text-white">{formatCOP(order.total)}</span>
+                  <span className="text-sm font-black text-white">{formatCOP(group.total)}</span>
                 </div>
-                <button onClick={() => onCharge(order)} className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all shadow">
-                  <Receipt className="w-4 h-4" aria-hidden="true" /> Facturar / Cobrar
+                <button onClick={() => onCharge(group)} className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all shadow">
+                  <Receipt className="w-4 h-4" aria-hidden="true" /> Facturar mesa {group.tableLabel}
                 </button>
               </div>
             </div>
           ))}
-          {!ordersToPay.length && (
+          {!tablesToPay.length && (
             <div className="col-span-full py-6 text-center text-slate-500 text-xs bg-slate-900/40 border border-slate-800/60 rounded-2xl">
-              Sin comandas pendientes por cobrar.
+              Sin mesas pendientes por cobrar.
             </div>
           )}
         </div>

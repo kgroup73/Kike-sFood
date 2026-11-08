@@ -58,7 +58,7 @@ Tablet de cocina / caja ── PIN ──► Edge Function staff-login ──►
 - **Pedidos:** `create_order` valida el token de la mesa, recalcula los precios desde el catálogo (incluidos los adicionales), exige los modificadores obligatorios, rechaza los platillos agotados y limita a 6 pedidos por mesa cada 10 minutos.
 - **Mesas:** cada una tiene un token secreto (`restaurant_tables.token`) que va en el QR o NFC. Sin el token se puede ver la carta, pero no pedir. Si un enlace se filtra, se regenera desde *Admin → Mesas*.
 - **Personal:** cada empleado tiene un PIN propio (bcrypt) y uno de estos roles: `owner`, `admin`, `cocina`, `caja` o `mesero`. Tras 5 intentos fallidos el usuario queda bloqueado 15 minutos.
-- **Facturación:** `issue_invoice` toma el consecutivo con bloqueo de fila, valida el rango y la vigencia de la resolución, desglosa el impuesto del precio de carta y marca el pedido como `Cobrado` en la misma transacción.
+- **Facturación (una por mesa):** la caja agrupa por mesa las comandas en `Por Cobrar`. `issue_invoice(p_order_ids[])` exige que todas sean de la misma mesa y estén en `Por Cobrar`, suma consumo y propinas, une las líneas iguales, toma el consecutivo con bloqueo de fila, valida el rango y la vigencia de la resolución, desglosa el impuesto y marca todas las comandas como `Cobrado` en la misma transacción. `invoice_orders.order_id` es único, así que una comanda no se puede cobrar dos veces. Las comandas que siguen en cocina se cobran aparte cuando pasan a caja.
 - **Planes:** `tenants.plan` no se puede editar desde el navegador (GRANT por columna). Lo cambia la plataforma.
 
 ### Impuesto al consumo (INC)

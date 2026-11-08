@@ -74,6 +74,12 @@ describe('flujo del restaurante (modo demo)', () => {
     fireEvent.click(await within(card).findByRole('button', { name: 'Pasar a Caja POS' }));
     expect(await screen.findByText('Comanda #3 enviada a caja')).toBeInTheDocument();
 
+    // Comanda anterior de la misma Mesa 4 (datos demo, ya en preparación)
+    const earlier = (await screen.findByText(/#2 ·/)).closest('div.rounded-2xl');
+    fireEvent.click(within(earlier).getByRole('button', { name: 'Marcar como Listo' }));
+    fireEvent.click(await within(earlier).findByRole('button', { name: 'Pasar a Caja POS' }));
+    expect(await screen.findByText('Comanda #2 enviada a caja')).toBeInTheDocument();
+
     renderAt(`/staff/${SLUG}/caja`);
     expect(await screen.findByText('Sin acceso a esta sección')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }));
@@ -84,23 +90,32 @@ describe('flujo del restaurante (modo demo)', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('PIN incorrecto');
   });
 
-  it('caja factura con el INC desglosado y hace el cierre Z', async () => {
+  it('caja factura las dos comandas de la mesa en un solo comprobante y hace el cierre Z', async () => {
     await loginAs('Caja', '2222');
-    expect(await screen.findByText('Comandas listas para cobrar (1)')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Facturar \/ Cobrar/ }));
+    expect(await screen.findByText('Mesas por cobrar (1)')).toBeInTheDocument();
+    expect(screen.getByText('2 comandas')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Facturar mesa 4/ }));
 
     const modal = await screen.findByRole('dialog');
-    expect(within(modal).getByText('$24.074')).toBeInTheDocument(); // base gravable 26.000 / 1,08
-    expect(within(modal).getByText('$1.926')).toBeInTheDocument(); // INC 8 %
-    expect(within(modal).getByText('$28.600')).toBeInTheDocument(); // con propina
+    // #2: 85.000 + 8.500 de propina; #3: 26.000 + 2.600
+    expect(within(modal).getByText('$102.778')).toBeInTheDocument(); // base gravable 111.000 / 1,08
+    expect(within(modal).getByText('$8.222')).toBeInTheDocument(); // INC 8 %
+    expect(within(modal).getByText('$122.100')).toBeInTheDocument(); // con propina
+
+    // Al quitar una comanda, el total se recalcula
+    const totalRow = within(modal).getByText('TOTAL A COBRAR:').parentElement;
+    fireEvent.click(within(modal).getByRole('checkbox', { name: /Comanda #2/ }));
+    expect(totalRow).toHaveTextContent('$28.600');
+    fireEvent.click(within(modal).getByRole('checkbox', { name: /Comanda #2/ }));
     fireEvent.click(within(modal).getByRole('button', { name: /Emitir factura electrónica/ }));
 
     expect(await screen.findByText('Nº FE-1')).toBeInTheDocument();
+    expect(screen.getByText('Comandas: #2, #3')).toBeInTheDocument();
     expect(screen.getByText(/DOCUMENTO SIMULADO/)).toBeInTheDocument();
     fireEvent.click(screen.getAllByRole('button', { name: 'Cerrar' })[0]);
 
     fireEvent.click(await screen.findByRole('button', { name: /Cierre de caja \(Z\)/ }));
-    fireEvent.change(await screen.findByLabelText(/Efectivo físico contado/), { target: { value: '28600' } });
+    fireEvent.change(await screen.findByLabelText(/Efectivo físico contado/), { target: { value: '122100' } });
     expect(screen.getByText('Caja cuadrada (físico − sistema):')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Procesar cierre Z/ }));
     expect(await screen.findByText(/Cierre Z-\d{8}-01/)).toBeInTheDocument();

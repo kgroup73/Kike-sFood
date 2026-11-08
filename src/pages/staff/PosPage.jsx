@@ -4,7 +4,7 @@ import { useOrders } from '../../hooks/useOrders';
 import { useToast } from '../../hooks/useToast';
 import { playChime } from '../../hooks/useSound';
 import { api } from '../../services/api';
-import { ORDER_STATUS } from '../../lib/orderStatus';
+import { groupOrdersByTable } from '../../lib/billing';
 import { hasFeature } from '../../lib/plans';
 import { formatCOP } from '../../lib/money';
 import { InlineError } from '../../components/ui/Screens';
@@ -59,7 +59,11 @@ export default function PosPage() {
     return api.subscribeBilling?.(reloadBilling) || undefined;
   }, [reloadBilling]);
 
-  const ordersToPay = useMemo(() => orders.filter((o) => o.status === ORDER_STATUS.TO_PAY), [orders]);
+  const tablesToPay = useMemo(() => groupOrdersByTable(orders), [orders]);
+  // Se guarda la mesa, no la foto del grupo: así el modal ve las comandas que llegan en tiempo real.
+  const chargingGroup = charging ? tablesToPay.find((g) => g.key === charging) : null;
+  // Si la mesa deja de tener comandas por cobrar (p. ej. se cancelan), se descarta el cobro en curso.
+  if (charging && !chargingGroup) setCharging(null);
   const electronicSeq = billing?.sequences?.find((s) => s.kind === 'electronica');
   const canDian = hasFeature(tenant.plan, 'dian') && isSequenceUsable(electronicSeq);
 
@@ -104,17 +108,18 @@ export default function PosPage() {
     <div className="space-y-4">
       {(ordersError || error) && <InlineError message={ordersError || error} onRetry={() => { reloadOrders(); reloadBilling(); }} />}
       <PosView
-        ordersToPay={ordersToPay}
+        tablesToPay={tablesToPay}
         invoices={invoices}
         closes={closes}
-        onCharge={setCharging}
+        onCharge={(group) => setCharging(group.key)}
         onViewTicket={setTicket}
         onOpenClose={() => setCloseOpen(true)}
       />
 
-      {charging && (
+      {chargingGroup && (
         <BillingModal
-          order={charging}
+          key={chargingGroup.key}
+          group={chargingGroup}
           tenant={tenant}
           customers={customers}
           canDian={canDian}

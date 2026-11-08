@@ -2,30 +2,60 @@ import { useState } from 'react';
 import { Lock, Receipt, Loader2 } from 'lucide-react';
 import Modal from '../ui/Modal';
 import { formatCOP, splitTaxIncluded, effectiveTaxRate } from '../../lib/money';
-import { PAYMENT_METHODS, INVOICE_KINDS, CONSUMIDOR_FINAL } from '../../lib/billing';
+import { PAYMENT_METHODS, INVOICE_KINDS, CONSUMIDOR_FINAL, sumOrders } from '../../lib/billing';
 
-export default function BillingModal({ order, tenant, customers, canDian, onClose, onNewCustomer, onIssue }) {
+export default function BillingModal({ group, tenant, customers, canDian, onClose, onNewCustomer, onIssue }) {
   const [kind, setKind] = useState(canDian ? 'electronica' : 'pos');
+  // Se guardan las comandas excluidas: si llega otra comanda de la mesa mientras el modal está abierto, entra marcada.
+  const [excluded, setExcluded] = useState(() => new Set());
   const [customerId, setCustomerId] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('efectivo');
   const [submitting, setSubmitting] = useState(false);
 
   // Vista previa: el cálculo definitivo lo hace issue_invoice() en el servidor.
+  const selected = group.orders.filter((o) => !excluded.has(o.id));
+  const { subtotal, tip, total } = sumOrders(selected);
   const rate = effectiveTaxRate(tenant);
-  const { base, tax } = splitTaxIncluded(order.subtotal, rate);
-  const total = order.subtotal + order.tip;
+  const { base, tax } = splitTaxIncluded(subtotal, rate);
+
+  const toggle = (id) =>
+    setExcluded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   const submit = async () => {
     setSubmitting(true);
     try {
-      await onIssue({ orderId: order.id, kind, customerId: customerId || null, paymentMethod });
+      await onIssue({ orderIds: selected.map((o) => o.id), kind, customerId: customerId || null, paymentMethod });
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <Modal title={`Cobrar comanda #${order.id} · Mesa ${order.tableLabel}`} icon={<Receipt className="w-5 h-5 text-emerald-400" />} onClose={onClose}>
+    <Modal title={`Cobrar mesa ${group.tableLabel}`} icon={<Receipt className="w-5 h-5 text-emerald-400" />} onClose={onClose}>
+      <fieldset className="space-y-1.5 text-xs">
+        <legend className="text-slate-400 mb-1">Comandas incluidas</legend>
+        {group.orders.map((o) => (
+          <label key={o.id} className="flex items-center justify-between gap-2 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 cursor-pointer">
+            <span className="flex items-center gap-2 text-slate-200">
+              <input type="checkbox" checked={!excluded.has(o.id)} onChange={() => toggle(o.id)} className="accent-emerald-500" />
+              Comanda #{o.id}
+              <span className="text-slate-500">· {o.items.reduce((n, it) => n + it.quantity, 0)} ítems</span>
+            </span>
+            <span className="text-slate-300">{formatCOP(o.total)}</span>
+          </label>
+        ))}
+        {group.inKitchen > 0 && (
+          <p className="text-[10px] text-amber-300/90">
+            {group.inKitchen === 1 ? 'Hay 1 comanda' : `Hay ${group.inKitchen} comandas`} de esta mesa en cocina. Se cobrará{group.inKitchen === 1 ? '' : 'n'} aparte cuando pase{group.inKitchen === 1 ? '' : 'n'} a caja.
+          </p>
+        )}
+      </fieldset>
+
       <div className="space-y-3 text-xs">
         <label className="block text-slate-400">
           Tipo de comprobante
@@ -68,17 +98,17 @@ export default function BillingModal({ order, tenant, customers, canDian, onClos
       </div>
 
       <dl className="bg-slate-950 p-3.5 rounded-xl border border-slate-800/80 space-y-1.5 text-xs">
-        <div className="flex justify-between text-slate-300"><dt>Consumo (impuesto incluido):</dt><dd>{formatCOP(order.subtotal)}</dd></div>
+        <div className="flex justify-between text-slate-300"><dt>Consumo (impuesto incluido):</dt><dd>{formatCOP(subtotal)}</dd></div>
         <div className="flex justify-between text-slate-500 pl-3"><dt>Base gravable:</dt><dd>{formatCOP(base)}</dd></div>
         <div className="flex justify-between text-slate-500 pl-3"><dt>{tenant.taxType === 'NINGUNO' ? 'Impuesto' : tenant.taxType} ({rate}%):</dt><dd>{formatCOP(tax)}</dd></div>
-        <div className="flex justify-between text-slate-300"><dt>Propina voluntaria:</dt><dd>{formatCOP(order.tip)}</dd></div>
+        <div className="flex justify-between text-slate-300"><dt>Propina voluntaria:</dt><dd>{formatCOP(tip)}</dd></div>
         <div className="flex justify-between font-bold text-white text-sm pt-1.5 border-t border-slate-800">
           <dt>TOTAL A COBRAR:</dt>
           <dd className="text-emerald-400">{formatCOP(total)}</dd>
         </div>
       </dl>
 
-      <button onClick={submit} disabled={submitting} className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+      <button onClick={submit} disabled={submitting || !selected.length} className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
         {submitting && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
         {kind === 'electronica' ? 'Emitir factura electrónica (simulada)' : 'Emitir tiquete POS'}
       </button>

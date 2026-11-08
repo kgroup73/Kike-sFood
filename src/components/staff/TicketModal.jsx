@@ -32,6 +32,7 @@ export default function TicketModal({ invoice, tenant, onClose }) {
         <div className="border-t border-b border-dashed border-slate-300 py-2 space-y-0.5 text-[11px]">
           <p>Fecha: {date}</p>
           {invoice.tableLabel && <p>Mesa: {invoice.tableLabel}</p>}
+          {invoice.orderIds?.length > 0 && <p>{invoice.orderIds.length === 1 ? 'Comanda' : 'Comandas'}: {invoice.orderIds.map((id) => `#${id}`).join(', ')}</p>}
           <p>Cliente: {invoice.customer?.name}</p>
           <p>{invoice.customer?.docType || 'Doc'}: {invoice.customer?.docNumber}</p>
           <p>Pago: {PAYMENT_METHODS[invoice.paymentMethod] || invoice.paymentMethod}</p>

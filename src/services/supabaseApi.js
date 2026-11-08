@@ -179,10 +179,10 @@ export const supabaseApi = {
     return customerFromRow(row);
   },
 
-  async issueInvoice({ orderId, kind, customerId, paymentMethod }) {
+  async issueInvoice({ orderIds, kind, customerId, paymentMethod }) {
     const row = unwrap(
       await supabase.rpc('issue_invoice', {
-        p_order_id: orderId,
+        p_order_ids: orderIds,
         p_kind: kind,
         p_customer_id: customerId || null,
         p_payment_method: paymentMethod

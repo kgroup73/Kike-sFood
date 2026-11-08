@@ -15,7 +15,7 @@ import { normalizeIngredient, getAffectedProducts } from '../../lib/inventory';
 import { splitTaxIncluded, computeTip, effectiveTaxRate } from '../../lib/money';
 import { canTransition, ORDER_STATUS, OPEN_STATUSES } from '../../lib/orderStatus';
 import { hasFeature } from '../../lib/plans';
-import { CONSUMIDOR_FINAL } from '../../lib/billing';
+import { CONSUMIDOR_FINAL, sumOrders, mergeInvoiceItems } from '../../lib/billing';
 
 const DB_KEY = 'kikes_demo_db_v2';
 const SESSION_KEY = 'kikes_demo_session';
@@ -408,14 +408,20 @@ export const demoApi = {
     return delay(customer);
   },
 
-  async issueInvoice({ orderId, kind, customerId, paymentMethod }) {
+  async issueInvoice({ orderIds, kind, customerId, paymentMethod }) {
     const s = requireStaff(['owner', 'admin', 'caja']);
     const db = load();
     if (!hasFeature(db.tenant.plan, 'pos')) return fail('La Caja POS requiere el plan Intermedio o superior');
     if (kind === 'electronica' && !hasFeature(db.tenant.plan, 'dian')) return fail('La facturación electrónica requiere el plan Premium');
-    const order = db.orders.find((o) => o.id === orderId);
-    if (!order) return fail('Pedido no encontrado');
-    if (order.status !== ORDER_STATUS.TO_PAY) return fail(`El pedido #${order.id} no está listo para cobrar (estado: ${order.status})`);
+    const ids = [...new Set((orderIds || []).filter((x) => x != null))].sort((a, b) => a - b);
+    if (!ids.length) return fail('Selecciona al menos una comanda para cobrar');
+    const orders = ids.map((id) => db.orders.find((o) => o.id === id));
+    if (orders.some((o) => !o)) return fail('Pedido no encontrado');
+    const notReady = orders.find((o) => o.status !== ORDER_STATUS.TO_PAY);
+    if (notReady) return fail(`El pedido #${notReady.id} no está listo para cobrar (estado: ${notReady.status})`);
+    if (new Set(orders.map((o) => o.tableId || `label:${o.tableLabel}`)).size > 1) {
+      return fail('Todas las comandas de un comprobante deben ser de la misma mesa');
+    }
     const seq = db.sequences.find((x) => x.kind === kind);
     if (!seq) return fail(`Configura primero la numeración de ${kind} en Administración`);
     if (seq.rangeTo && seq.nextNumber > seq.rangeTo) return fail(`Se agotó el rango autorizado (${seq.rangeFrom} a ${seq.rangeTo}). Solicita una nueva resolución.`);
@@ -424,8 +430,9 @@ export const demoApi = {
     }
     const customer = customerId ? db.customers.find((c) => c.id === customerId) : CONSUMIDOR_FINAL;
     if (!customer) return fail('Cliente no encontrado');
+    const { subtotal, tip } = sumOrders(orders);
     const rate = effectiveTaxRate(db.tenant);
-    const { base, tax } = splitTaxIncluded(order.subtotal, rate);
+    const { base, tax } = splitTaxIncluded(subtotal, rate);
 
     const invoice = commit(
       (d) => {
@@ -434,33 +441,33 @@ export const demoApi = {
         sq.nextNumber += 1;
         const inv = {
           id: `inv-${Date.now()}`,
-          orderId: order.id,
+          orderIds: ids,
           dailyCloseId: null,
           kind,
           number: `${sq.prefix}-${number}`,
           customer: { ...customer },
           paymentMethod,
-          tableLabel: order.tableLabel,
-          items: order.items,
-          itemsTotal: order.subtotal,
+          tableLabel: orders[0].tableLabel,
+          items: mergeInvoiceItems(orders),
+          itemsTotal: subtotal,
           taxBase: base,
           tax,
           taxType: d.tenant.taxType,
           taxRate: rate,
-          tip: order.tip,
-          total: order.subtotal + order.tip,
+          tip,
+          total: subtotal + tip,
           cufe: kind === 'electronica' ? Array.from({ length: 96 }, () => '0123456789abcdef'[Math.floor(Math.random() * 16)]).join('') : null,
           dianStatus: kind === 'electronica' ? 'simulado' : 'no_aplica',
           issuedByName: s.displayName,
           createdAt: new Date().toISOString()
         };
         d.invoices.unshift(inv);
-        d.orders.find((o) => o.id === order.id).status = ORDER_STATUS.PAID;
+        for (const o of d.orders) if (ids.includes(o.id)) o.status = ORDER_STATUS.PAID;
         return inv;
       },
       ['billing']
     );
-    emit('orders', { type: 'update', order: { ...order, status: ORDER_STATUS.PAID } });
+    for (const order of orders) emit('orders', { type: 'update', order: { ...order, status: ORDER_STATUS.PAID } });
     return delay(invoice);
   },
 

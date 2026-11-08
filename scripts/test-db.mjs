@@ -166,11 +166,11 @@ await test('no puede saltarse estados ni marcar Cobrado a mano', async () => {
 await test('no puede modificar totales', () =>
   asStaff('cocina', () => rejects(rows(`update orders set total = 1 where id = $1`, [orderId]), /permission denied/)));
 await test('no puede facturar', () =>
-  asStaff('cocina', () => rejects(rows(`select issue_invoice($1, 'pos')`, [orderId]), /rol/)));
+  asStaff('cocina', () => rejects(rows(`select issue_invoice(array[$1::bigint], 'pos')`, [orderId]), /rol/)));
 
 console.log('\nCaja y facturación');
 await test('emite factura con el INC desglosado (no sumado) y la propina aparte', async () => {
-  const inv = await asStaff('caja', () => one(`select * from issue_invoice($1, 'electronica', null, 'efectivo')`, [orderId]));
+  const inv = await asStaff('caja', () => one(`select * from issue_invoice(array[$1::bigint], 'electronica', null, 'efectivo')`, [orderId]));
   assert.equal(inv.full_number, 'FE-1');
   assert.equal(inv.items_total, 78000);
   assert.equal(inv.tax_base, 72222); // 78.000 / 1,08
@@ -179,18 +179,19 @@ await test('emite factura con el INC desglosado (no sumado) y la propina aparte'
   assert.equal(inv.total, 85800);
   assert.equal(inv.dian_status, 'simulado');
   assert.equal(inv.cufe.length, 96);
+  assert.deepEqual(inv.order_ids.map(Number), [Number(orderId)]);
   assert.equal((await one(`select status from orders where id = $1`, [orderId])).status, 'Cobrado');
 });
 await test('no permite cobrar dos veces el mismo pedido', () =>
-  asStaff('caja', () => rejects(rows(`select issue_invoice($1, 'pos')`, [orderId]), /no está listo/)));
+  asStaff('caja', () => rejects(rows(`select issue_invoice(array[$1::bigint], 'pos')`, [orderId]), /no está listo/)));
 await test('rechaza facturar con la resolución vencida', async () => {
   const { r } = await anon(() => createOrder([{ productId: SANGRIA, quantity: 1 }]));
   await db.query(`update orders set status = 'En Preparación' where id = $1`, [r.orderId]);
   await db.query(`update orders set status = 'Listo' where id = $1`, [r.orderId]);
   await db.query(`update orders set status = 'Por Cobrar' where id = $1`, [r.orderId]);
   await db.query(`update invoice_sequences set valid_until = current_date - 1 where tenant_id = $1 and kind = 'electronica'`, [TENANT]);
-  await asStaff('caja', () => rejects(rows(`select issue_invoice($1, 'electronica')`, [r.orderId]), /vencida/));
-  const pos = await asStaff('caja', () => one(`select * from issue_invoice($1, 'pos', null, 'tarjeta')`, [r.orderId]));
+  await asStaff('caja', () => rejects(rows(`select issue_invoice(array[$1::bigint], 'electronica')`, [r.orderId]), /vencida/));
+  const pos = await asStaff('caja', () => one(`select * from issue_invoice(p_order_id => $1::bigint, p_kind => 'pos', p_payment_method => 'tarjeta')`, [r.orderId]));
   assert.equal(pos.full_number, 'POS-1');
   await db.query(`update invoice_sequences set valid_until = current_date + 365 where tenant_id = $1 and kind = 'electronica'`, [TENANT]);
 });
@@ -204,6 +205,62 @@ await test('cierre Z suma por método de pago y numera por día', async () => {
   const z2 = await asStaff('caja', () => one(`select * from close_cash_register(0)`));
   assert.match(z2.code, /-02$/);
   assert.equal(z2.invoice_count, 0);
+});
+
+console.log('\nUna factura por mesa');
+const table2 = await one(`select token from restaurant_tables where tenant_id = $1 and label = '2'`, [TENANT]);
+const table3 = await one(`select token from restaurant_tables where tenant_id = $1 and label = '3'`, [TENANT]);
+async function toPay(id) {
+  for (const status of ['En Preparación', 'Listo', 'Por Cobrar']) {
+    await db.query(`update orders set status = $1 where id = $2`, [status, id]);
+  }
+}
+await test('une varias comandas de la mesa en un solo comprobante', async () => {
+  const a = (await anon(() => createOrder([burgerItem({ quantity: 1 })], table2.token))).r;
+  const b = (await anon(() => createOrder([burgerItem({ quantity: 1 }), { productId: SANGRIA, quantity: 1 }], table2.token, false))).r;
+  await toPay(a.orderId);
+  await toPay(b.orderId);
+  const inv = await asStaff('caja', () => one(`select * from issue_invoice($1::bigint[], 'pos')`, [[a.orderId, b.orderId]]));
+  assert.equal(inv.items_total, a.subtotal + b.subtotal);
+  assert.equal(inv.tip, a.tip + b.tip);
+  assert.equal(inv.total, a.subtotal + b.subtotal + a.tip + b.tip);
+  assert.equal(inv.table_label, '2');
+  assert.deepEqual(inv.order_ids.map(Number), [a.orderId, b.orderId].map(Number).sort((x, y) => x - y));
+  // La burger de las dos comandas queda en una sola línea con cantidad 2
+  const burger = inv.items.find((it) => it.name === 'Burger Trufada Gourmet');
+  assert.equal(burger.quantity, 2);
+  assert.equal(burger.totalPrice, 78000);
+  assert.equal(inv.items.length, 2);
+  const links = await rows(`select order_id from invoice_orders where invoice_id = $1`, [inv.id]);
+  assert.equal(links.length, 2);
+  const st = await rows(`select status from orders where id = any($1::bigint[])`, [[a.orderId, b.orderId]]);
+  assert.ok(st.every((o) => o.status === 'Cobrado'));
+});
+await test('no mezcla comandas de mesas distintas', async () => {
+  const a = (await anon(() => createOrder([{ productId: SANGRIA, quantity: 1 }], table2.token))).r;
+  const b = (await anon(() => createOrder([{ productId: SANGRIA, quantity: 1 }], table3.token))).r;
+  await toPay(a.orderId);
+  await toPay(b.orderId);
+  await asStaff('caja', () => rejects(rows(`select issue_invoice($1::bigint[], 'pos')`, [[a.orderId, b.orderId]]), /misma mesa/));
+  assert.equal((await one(`select status from orders where id = $1`, [a.orderId])).status, 'Por Cobrar');
+  await asStaff('caja', () => rows(`select issue_invoice($1::bigint[], 'pos')`, [[a.orderId]]));
+  await asStaff('caja', () => rows(`select issue_invoice($1::bigint[], 'pos')`, [[b.orderId]]));
+});
+await test('rechaza todo el cobro si una comanda sigue en cocina', async () => {
+  const a = (await anon(() => createOrder([{ productId: SANGRIA, quantity: 1 }], table3.token))).r;
+  const b = (await anon(() => createOrder([{ productId: SANGRIA, quantity: 1 }], table3.token))).r;
+  await toPay(a.orderId);
+  const before = await one(`select next_number from invoice_sequences where tenant_id = $1 and kind = 'pos'`, [TENANT]);
+  await asStaff('caja', () => rejects(rows(`select issue_invoice($1::bigint[], 'pos')`, [[a.orderId, b.orderId]]), new RegExp(`#${b.orderId} no está listo`)));
+  const after = await one(`select next_number from invoice_sequences where tenant_id = $1 and kind = 'pos'`, [TENANT]);
+  assert.equal(after.next_number, before.next_number); // no consume consecutivo
+  assert.equal((await one(`select status from orders where id = $1`, [a.orderId])).status, 'Por Cobrar');
+});
+await test('rechaza una lista vacía de comandas', () =>
+  asStaff('caja', () => rejects(rows(`select issue_invoice('{}'::bigint[], 'pos')`), /al menos una/)));
+await test('caja no puede escribir en invoice_orders; anon no lo puede leer', async () => {
+  await asStaff('caja', () => rejects(rows(`insert into invoice_orders (invoice_id, order_id, tenant_id) values (gen_random_uuid(), 1, $1)`, [TENANT]), /permission denied/));
+  await anon(() => rejects(rows(`select * from invoice_orders`), /permission denied/));
 });
 
 console.log('\nInventario');
@@ -240,7 +297,7 @@ await test('el personal de otro restaurante no ve ni cobra pedidos ajenos', asyn
   await db.query(`update staff_members set user_id = $1 where id = $2`, [uid, staffId]);
   const seen = await as('authenticated', uid, () => rows(`select id from orders`));
   assert.equal(seen.length, 0);
-  await as('authenticated', uid, () => rejects(rows(`select issue_invoice($1, 'pos')`, [orderId]), /no encontrado/));
+  await as('authenticated', uid, () => rejects(rows(`select issue_invoice(array[$1::bigint], 'pos')`, [orderId]), /no encontrado/));
   const upd = await as('authenticated', uid, () => db.query(`update orders set notes = 'x'`));
   assert.equal(upd.affectedRows ?? 0, 0);
 });
