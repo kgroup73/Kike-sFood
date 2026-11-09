@@ -1,108 +1,50 @@
-import { X, Printer, QrCode, Zap } from 'lucide-react';
+import { X, Printer, Nfc } from 'lucide-react';
 import QrCodeImage from '../ui/QrCode';
 import { tableUrl } from './tableLinks';
 
+/** Hoja de stickers para imprimir: uno por mesa, con QR y aviso de NFC. Pensada para blanco y negro. */
 export default function TableStickersModal({ onClose, tenant, tables }) {
-  const handlePrint = () => {
-    window.print();
-  };
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn overflow-y-auto">
-      <div className="bg-brand-panel border border-brand-line text-brand-ivory w-full max-w-4xl rounded-3xl p-5 sm:p-7 shadow-2xl relative space-y-5 my-auto max-h-[92vh] flex flex-col">
-        
-        {/* Header (No imprimible) */}
-        <div className="flex items-start justify-between border-b border-brand-line pb-4 print-hidden">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-6 bg-tinta/40 animate-fadeIn">
+      <div role="dialog" aria-modal="true" aria-label="Stickers de las mesas" className="bg-plato w-full max-w-5xl rounded-t-[28px] sm:rounded-[28px] max-h-[94vh] flex flex-col overflow-hidden animate-sheet">
+        <div className="flex items-start justify-between gap-4 px-5 sm:px-7 py-5 border-b border-linea print-hidden">
           <div className="space-y-1">
-            <h3 className="font-serif font-black text-lg sm:text-xl text-brand-ivory flex items-center gap-2">
-              <QrCode className="w-5 h-5 text-brand-gold-light" />
-              Stickers Híbridos para Mesas (NFC + QR)
-            </h3>
-            <p className="text-xs text-brand-khaki">
-              Listos para imprimir en papel adhesivo o acrílicos de mesa. Cada sticker incluye el código QR y la guía de toque NFC.
-            </p>
+            <h2 className="block-title">Stickers de las mesas</h2>
+            <p className="text-suave">Imprímelos en papel adhesivo y pégalos sobre cada mesa. {tables.length} listos.</p>
           </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handlePrint}
-              className="px-4 py-2 bg-gradient-to-r from-brand-gold to-brand-gold-light hover:from-brand-gold-light hover:to-brand-gold active:scale-95 text-brand-ivory text-xs font-black rounded-xl shadow-lg flex items-center gap-1.5 transition-all"
-            >
-              <Printer className="w-4 h-4" />
-              <span>Imprimir Stickers</span>
+          <div className="flex items-center gap-2 shrink-0">
+            <button onClick={() => window.print()} className="btn btn-primary">
+              <Printer className="w-4 h-4" aria-hidden="true" /> Imprimir
             </button>
-            <button
-              onClick={onClose}
-              aria-label="Cerrar"
-              className="p-2 rounded-full bg-brand-raised text-brand-khaki hover:text-brand-ivory transition-colors"
-            >
-              <X className="w-4 h-4" />
+            <button onClick={onClose} aria-label="Cerrar" className="icon-btn">
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Printable Grid of Table Stickers */}
-        <div className="print-area overflow-y-auto flex-1 pr-1 print:overflow-visible print:p-0">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 print:grid-cols-2 print:gap-6">
-            {tables.map((table) => {
-              const tableNum = table.label;
-              const targetUrl = tableUrl(tenant.slug, table.token);
-
-              return (
-                <div
-                  key={table.id}
-                  className="bg-brand-ivory text-brand-surface rounded-3xl p-5 border-2 border-brand-gold-light shadow-xl flex flex-col items-center justify-between text-center relative overflow-hidden print:border-2 print:border-black print:break-inside-avoid print:shadow-none"
-                  style={{ minHeight: '340px' }}
-                >
-                  {/* Decorative Corner Accents */}
-                  <div className="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-brand-gold-light" />
-                  <div className="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-brand-gold-light" />
-                  <div className="absolute bottom-2 left-2 w-3 h-3 border-b-2 border-l-2 border-brand-gold-light" />
-                  <div className="absolute bottom-2 right-2 w-3 h-3 border-b-2 border-r-2 border-brand-gold-light" />
-
-                  {/* Top Branding */}
-                  <div className="space-y-0.5">
-                    <span className="text-[9px] font-black tracking-widest text-brand-gold uppercase block">
-                      {tenant.name}
-                    </span>
-                    <h4 className="font-serif font-black text-xl text-brand-surface tracking-tight">
-                      MESA {tableNum}
-                    </h4>
-                  </div>
-
-                  {/* QR Code Graphic */}
-                  <div className="p-2 bg-white rounded-2xl border border-brand-cream shadow-sm my-2">
-                    <QrCodeImage value={targetUrl} size={144} label={`QR Mesa ${tableNum}`} className="w-36 h-36 object-contain" />
-                  </div>
-
-                  {/* Bottom NFC Instruction */}
-                  <div className="space-y-1.5 w-full">
-                    <div className="bg-brand-night text-brand-ivory py-1.5 px-3 rounded-xl flex items-center justify-center gap-1.5 shadow-sm">
-                      <Zap className="w-3.5 h-3.5 text-brand-gold-light animate-pulse" />
-                      <span className="text-[10px] font-black tracking-wider uppercase">
-                        Toca aquí con tu celular (NFC)
-                      </span>
-                    </div>
-                    <span className="text-[8px] font-bold text-brand-khaki block uppercase tracking-wider">
-                      O abre la cámara y escanea el QR
-                    </span>
-                  </div>
+        <div className="print-area overflow-y-auto flex-1 bg-mantel p-5 sm:p-7 print:overflow-visible print:p-0 print:bg-white">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 print:grid-cols-2 print:gap-6">
+            {tables.map((table) => (
+              <div
+                key={table.id}
+                className="bg-white text-black rounded-3xl border-2 border-black p-6 flex flex-col items-center text-center gap-4 print:break-inside-avoid"
+              >
+                <p className="font-display font-bold text-base leading-tight">{tenant.name}</p>
+                <p className="font-display font-extrabold leading-none tracking-tight">
+                  <span className="block text-lg">Mesa</span>
+                  <span className="block text-7xl">{table.label}</span>
+                </p>
+                <QrCodeImage value={tableUrl(tenant.slug, table.token)} size={144} label={`QR de la mesa ${table.label}`} className="w-36 h-36 object-contain" />
+                <div className="w-full border-t-2 border-dashed border-black pt-3 space-y-1">
+                  <p className="font-bold flex items-center justify-center gap-1.5">
+                    <Nfc className="w-5 h-5" aria-hidden="true" /> Acerca tu celular aquí
+                  </p>
+                  <p className="text-sm">o escanea el código para ver la carta y pedir</p>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         </div>
-
-        {/* Footer info (No imprimible) */}
-        <div className="text-center pt-2 border-t border-brand-line text-[11px] text-brand-khaki flex flex-col sm:flex-row items-center justify-between gap-2 print-hidden">
-          <span>
-            💡 <strong>Consejo Pro:</strong> Puedes imprimir esta hoja en papel adhesivo fotográfico y recortar los stickers para pegarlos sobre las mesas.
-          </span>
-          <span className="font-mono text-brand-gold-light font-bold">
-            {tables.length} stickers listos
-          </span>
-        </div>
-
       </div>
     </div>
   );

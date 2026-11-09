@@ -19,9 +19,9 @@ export const canTransition = (from, to) => (TRANSITIONS[from] || []).includes(to
 
 /** Siguiente paso del flujo de cocina (botón principal de cada comanda). */
 export const KITCHEN_NEXT_STEP = Object.freeze({
-  [ORDER_STATUS.PENDING]: { to: ORDER_STATUS.PREPARING, label: 'Tomar Orden' },
-  [ORDER_STATUS.PREPARING]: { to: ORDER_STATUS.READY, label: 'Marcar como Listo' },
-  [ORDER_STATUS.READY]: { to: ORDER_STATUS.TO_PAY, label: 'Pasar a Caja POS' }
+  [ORDER_STATUS.PENDING]: { to: ORDER_STATUS.PREPARING, label: 'Tomar orden' },
+  [ORDER_STATUS.PREPARING]: { to: ORDER_STATUS.READY, label: 'Marcar lista' },
+  [ORDER_STATUS.READY]: { to: ORDER_STATUS.TO_PAY, label: 'Pasar a caja' }
 });
 
 export const KITCHEN_STATUSES = [ORDER_STATUS.PENDING, ORDER_STATUS.PREPARING, ORDER_STATUS.READY];

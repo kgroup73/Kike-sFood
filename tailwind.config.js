@@ -11,64 +11,22 @@ export default {
         'xs': '475px',
       },
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
+        sans: ['"Atkinson Hyperlegible"', 'system-ui', 'sans-serif'],
+        display: ['"Bricolage Grotesque"', 'system-ui', 'sans-serif'],
       },
       colors: {
-        brand: {
-          cream: '#e9e2ca',
-          ivory: '#fdfcf7',
-          sand: '#e7e1c9',
-          khaki: '#857f5d',
-          gold: '#9b7e09',
-          'gold-light': '#b8960e',
-          'gold-dark': '#7d6507',
-          dark: '#110f0a',
-          surface: '#1a1711',
-          card: '#221e16',
-          border: '#332d20',
-          muted: '#857f5d',
-          // Tokens usados en la interfaz (antes eran colores hex sueltos en el JSX)
-          night: '#14120c',
-          panel: '#1e1b13',
-          line: '#383324',
-          raised: '#2c271d',
-          hover: '#242017',
-          mute: '#aba489'
-        },
-        // Las escalas orange/amber/slate se re-mapean a la paleta de marca para que las
-        // vistas del personal compartan los tonos cálidos sin reescribir cada clase.
-        orange: {
-          50: '#fdfcf7',
-          100: '#f7f4ed',
-          200: '#e9e2ca',
-          300: '#e7e1c9',
-          400: '#b8960e',
-          500: '#9b7e09', // Oro Imperial Principal
-          600: '#857f5d', // Khaki Oliva de Marca
-          700: '#6e5a06',
-          800: '#524305',
-          900: '#2e281b',
-          950: '#1a1711'
-        },
-        amber: {
-          300: '#e9e2ca',
-          400: '#b8960e',
-          500: '#9b7e09',
-          600: '#857f5d'
-        },
-        slate: {
-          950: '#110f0a', // Fondo noche gourmet de lujo
-          900: '#1a1711', // Superficie de tarjeta
-          800: '#2c271d', // Bordes sutiles
-          700: '#423b2d',
-          600: '#5e5541',
-          500: '#857f5d', // Khaki oliva
-          400: '#aba489',
-          300: '#d7d0b8',
-          200: '#e7e1c9', // Arena suave
-          100: '#e9e2ca', // Crema cálido
-          50: '#fdfcf7'   // Marfil puro
-        }
+        // Sistema de color de toda la app. Los valores viven en variables CSS
+        // (src/index.css) para el modo oscuro de la carta y el acento de cada restaurante.
+        mantel: 'rgb(var(--c-mantel) / <alpha-value>)',
+        plato: 'rgb(var(--c-plato) / <alpha-value>)',
+        tinta: 'rgb(var(--c-tinta) / <alpha-value>)',
+        suave: 'rgb(var(--c-suave) / <alpha-value>)',
+        linea: 'rgb(var(--c-linea) / <alpha-value>)',
+        hoja: 'rgb(var(--c-hoja) / <alpha-value>)',
+        'sobre-hoja': 'rgb(var(--c-sobre-hoja) / <alpha-value>)',
+        aji: 'rgb(var(--c-aji) / <alpha-value>)',
+        maracuya: 'rgb(var(--c-maracuya) / <alpha-value>)',
+        acero: 'rgb(var(--c-acero) / <alpha-value>)',
       }
     },
   },

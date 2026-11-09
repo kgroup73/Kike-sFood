@@ -1,24 +1,19 @@
 import { useState, useMemo } from 'react';
-import {
-  Flame,
-  PackageX,
-  PackageCheck,
-  UtensilsCrossed,
-  Boxes,
-  Layers,
-  ChevronDown,
-  ChevronRight
-} from 'lucide-react';
-import { formatCOP } from '../../lib/money';
+import { PackageX, PackageCheck, ChevronDown, Clock, BellRing } from 'lucide-react';
 import { timeAgo, INGREDIENT_CATEGORIES } from '../../lib/inventory';
 import { ORDER_STATUS, KITCHEN_NEXT_STEP, KITCHEN_STATUSES } from '../../lib/orderStatus';
 import { useNow } from '../../hooks/useNow';
 
-const STATUS_STYLE = {
-  [ORDER_STATUS.PENDING]: { card: 'border-amber-500/60 shadow-amber-500/5', badge: 'bg-amber-500/20 text-amber-400', button: 'bg-blue-600 hover:bg-blue-500' },
-  [ORDER_STATUS.PREPARING]: { card: 'border-blue-500/60 shadow-blue-500/5', badge: 'bg-blue-500/20 text-blue-400', button: 'bg-emerald-600 hover:bg-emerald-500' },
-  [ORDER_STATUS.READY]: { card: 'border-emerald-500/60 shadow-emerald-500/5', badge: 'bg-emerald-500/20 text-emerald-400', button: 'bg-purple-600 hover:bg-purple-500' }
+// Cada estado tiene un color fijo (el mismo en caja). Ver .chip-* en src/index.css.
+const STATUS = {
+  [ORDER_STATUS.PENDING]: { chip: 'chip-pendiente', label: 'Nueva', button: 'btn-dark' },
+  [ORDER_STATUS.PREPARING]: { chip: 'chip-preparando', label: 'En preparación', button: 'btn-primary' },
+  [ORDER_STATUS.READY]: { chip: 'chip-listo', label: 'Lista', button: 'btn-quiet !border-tinta' }
 };
+
+// Minutos desde que llegó la comanda: a partir de 15 se avisa, a partir de 25 está atrasada.
+const LATE_WARN = 15;
+const LATE = 25;
 
 export default function KitchenView({
   kitchenOrders: allOrders,
@@ -30,7 +25,7 @@ export default function KitchenView({
 }) {
   const [activeTab, setActiveTab] = useState('orders');
   const [busy, setBusy] = useState(null);
-  useNow(30000); // refresca los "hace X min"
+  const now = useNow(30000); // refresca los minutos de espera
   const kitchenOrders = useMemo(() => allOrders.filter(o => KITCHEN_STATUSES.includes(o.status)), [allOrders]);
 
   const run = async (key, fn) => {
@@ -71,215 +66,184 @@ export default function KitchenView({
   }, [masterIngredients]);
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center bg-slate-900 p-4 rounded-2xl border border-slate-800 gap-3">
-        <div>
-          <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-            <Flame className="w-5 h-5 text-orange-500" /> Monitor KDS de Cocina
-          </h2>
-          <p className="text-xs text-slate-400">Comandas en tiempo real e inventario de materias primas</p>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div className="space-y-1.5">
+          <h1 className="page-title">Cocina</h1>
+          <p className="text-suave">
+            {activeTab === 'orders'
+              ? activeOrdersCount
+                ? `${activeOrdersCount} ${activeOrdersCount === 1 ? 'comanda en el riel' : 'comandas en el riel'}`
+                : 'Sin comandas pendientes'
+              : soldOutIngredients.length
+                ? `${soldOutIngredients.length} ${soldOutIngredients.length === 1 ? 'ingrediente agotado' : 'ingredientes agotados'}`
+                : 'Todos los ingredientes disponibles'}
+          </p>
         </div>
-
-        <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-[11px] font-bold w-full sm:w-auto">
-          <button
-            onClick={() => setActiveTab('orders')}
-            className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
-              activeTab === 'orders' ? 'bg-orange-500 text-white shadow' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <UtensilsCrossed className="w-3.5 h-3.5" /> Comandas
-            <span className={`px-1.5 py-0.2 rounded-full text-[9px] ${activeTab === 'orders' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-300'}`}>
-              {activeOrdersCount}
-            </span>
-          </button>
-          <button
-            onClick={() => setActiveTab('inventory')}
-            className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-all relative ${
-              activeTab === 'inventory' ? 'bg-orange-500 text-white shadow' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Boxes className="w-3.5 h-3.5" /> Inventario
-            {soldOutIngredients.length > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[9px] px-1.5 py-0.2 rounded-full font-bold shadow">
-                {soldOutIngredients.length}
-              </span>
-            )}
-          </button>
+        <div className="inline-flex p-1 rounded-full bg-linea/60 self-start sm:self-auto" role="tablist" aria-label="Vista de cocina">
+          {[
+            ['orders', 'Comandas', activeOrdersCount],
+            ['inventory', 'Ingredientes', soldOutIngredients.length]
+          ].map(([key, label, count]) => (
+            <button
+              key={key}
+              role="tab"
+              aria-selected={activeTab === key}
+              onClick={() => setActiveTab(key)}
+              className={`h-10 px-4 rounded-full font-bold flex items-center gap-2 transition-colors ${activeTab === key ? 'bg-plato text-tinta shadow-sm' : 'text-suave hover:text-tinta'}`}
+            >
+              {label}
+              {count > 0 && (
+                <span className={`precio text-sm min-w-6 h-6 px-1.5 rounded-full flex items-center justify-center ${key === 'inventory' ? 'bg-aji text-white' : 'bg-tinta text-mantel'}`}>{count}</span>
+              )}
+            </button>
+          ))}
         </div>
       </div>
 
       {activeTab === 'orders' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {kitchenOrders.map(order => (
-            <div
-              key={order.id}
-              className={`bg-slate-900 border rounded-2xl p-4 space-y-3 flex flex-col justify-between shadow-xl transition-all ${STATUS_STYLE[order.status]?.card || 'border-slate-700'}`}
-            >
-              <div>
-                <div className="flex justify-between items-center pb-2.5 border-b border-slate-800">
-                  <div>
-                    <span className="text-xs font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-300">
-                      Mesa <strong className="text-orange-500 text-sm">{order.tableLabel}</strong>
-                    </span>
-                    <span className="text-[11px] text-slate-400 ml-1.5">#{order.id} · {timeAgo(order.createdAt)}</span>
-                  </div>
-                  <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${STATUS_STYLE[order.status]?.badge || ''}`}>
-                    {order.status}
-                  </span>
-                </div>
-
-                <div className="space-y-2 mt-3">
-                  {order.items.map((item, idx) => (
-                    <div key={idx} className="bg-slate-950 p-2.5 rounded-xl text-xs space-y-1 border border-slate-800/40">
-                      <div className="flex justify-between font-bold text-slate-200">
-                        <span><strong className="text-orange-500">{item.quantity}x</strong> {item.name}</span>
-                        <span>{formatCOP(item.totalPrice)}</span>
-                      </div>
-                      {item.selectedOptions && item.selectedOptions.length > 0 && (
-                        <div className="text-[11px] text-slate-400">
-                          • {item.selectedOptions.join(', ')}
+        <section aria-label="Riel de comandas" className="bg-acero rounded-[28px] p-4 sm:p-6 min-h-[420px] relative">
+          {/* El riel de acero del que cuelgan las comandas */}
+          <div className="h-2.5 rounded-full bg-gradient-to-b from-white/25 to-white/5 mb-5" aria-hidden="true" />
+          {kitchenOrders.length ? (
+            <div className="grid gap-4 sm:gap-5 [grid-template-columns:repeat(auto-fill,minmax(250px,1fr))] items-start">
+              {kitchenOrders.map((order) => {
+                const st = STATUS[order.status] || {};
+                const mins = Math.max(0, Math.floor((now - new Date(order.createdAt).getTime()) / 60000));
+                const late = mins >= LATE;
+                const step = KITCHEN_NEXT_STEP[order.status];
+                return (
+                  <article key={order.id} aria-label={`Comanda ${order.id}, mesa ${order.tableLabel}`} className="animate-ticket drop-shadow-[0_10px_14px_rgb(0_0_0/0.4)]">
+                    <div className="tiquete">
+                    <div className="px-5 pt-6 pb-4 space-y-4">
+                      <header className="flex items-start justify-between gap-3">
+                        <div className="leading-none">
+                          <p className="text-sm text-suave mb-1">Mesa</p>
+                          <p className="precio font-extrabold text-5xl tracking-tight">{order.tableLabel}</p>
                         </div>
-                      )}
+                        <div className="text-right space-y-2">
+                          <p
+                            className={`precio inline-flex items-center gap-1 font-bold text-lg ${late ? 'text-aji' : mins >= LATE_WARN ? 'text-[#9A6B00]' : 'text-tinta'}`}
+                            title={timeAgo(order.createdAt)}
+                          >
+                            <Clock className="w-4 h-4" aria-hidden="true" />
+                            {mins} min
+                          </p>
+                          <div>
+                            <span className={`chip ${late ? 'chip-alerta' : st.chip}`}>{late ? 'Atrasada' : st.label}</span>
+                          </div>
+                        </div>
+                      </header>
+                      <p className="text-sm text-suave -mt-1">Comanda {order.id}</p>
+
+                      <ul className="border-t-2 border-dashed border-linea pt-3 space-y-2.5">
+                        {order.items.map((item, idx) => (
+                          <li key={idx} className="flex gap-3">
+                            <span className="precio font-extrabold text-xl leading-6 w-7 shrink-0 text-right">{item.quantity}</span>
+                            <div className="min-w-0">
+                              <p className="font-bold text-[17px] leading-6">{item.name}</p>
+                              {item.selectedOptions?.length > 0 && <p className="text-suave leading-snug">{item.selectedOptions.join(', ')}</p>}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                  ))}
-                </div>
-              </div>
 
-              <div className="pt-2 border-t border-slate-800 flex gap-2">
-                {KITCHEN_NEXT_STEP[order.status] && (
-                  <button
-                    disabled={busy === order.id}
-                    onClick={() => run(order.id, () => updateOrderStatus(order.id, KITCHEN_NEXT_STEP[order.status].to))}
-                    className={`w-full py-2.5 ${STATUS_STYLE[order.status]?.button} active:scale-95 text-white font-bold text-xs rounded-xl transition-all disabled:opacity-50`}
-                  >
-                    {busy === order.id ? 'Guardando…' : KITCHEN_NEXT_STEP[order.status].label}
-                  </button>
-                )}
-              </div>
+                    {step && (
+                      <div className="px-4 pb-4">
+                        <button
+                          disabled={busy === order.id}
+                          onClick={() => run(order.id, () => updateOrderStatus(order.id, step.to))}
+                          className={`btn w-full h-12 ${st.button}`}
+                        >
+                          {busy === order.id ? 'Guardando…' : step.label}
+                        </button>
+                      </div>
+                    )}
+                    </div>
+                  </article>
+                );
+              })}
             </div>
-          ))}
-
-          {!kitchenOrders.length && (
-            <div className="col-span-full py-12 text-center text-slate-500 text-xs">
-              No hay comandas activas en la cocina.
+          ) : (
+            <div className="py-24 text-center space-y-2 text-white/70">
+              <BellRing className="w-8 h-8 mx-auto text-white/40" aria-hidden="true" />
+              <p className="font-display font-bold text-2xl text-white">El riel está vacío</p>
+              <p>Las comandas nuevas aparecen aquí con un sonido.</p>
             </div>
           )}
-        </div>
+        </section>
       )}
 
       {activeTab === 'inventory' && (
-        <div className="space-y-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-start gap-3">
-            <PackageX className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Marca manualmente una <strong className="text-rose-300">materia prima</strong> como <strong className="text-rose-300">Agotada</strong>.
-              El cambio se refleja al instante en la carta del cliente: <strong>todos los platillos que la usan</strong> quedarán como <em>No Disponible</em> y no podrán pedirse. El faltante se registra en el reporte del administrador para prevenir futuros desabastecimientos.
-            </p>
-          </div>
+        <section className="space-y-4 max-w-4xl">
+          <p className="text-suave leading-relaxed max-w-2xl">
+            Si se acaba un ingrediente, márcalo como agotado: los platos que lo usan dejan de poder pedirse en la carta al instante, y el faltante queda en el reporte de inventario.
+          </p>
 
-          {/* Clasificaciones desplegables */}
           {groupedByCategory.length ? (
-            <div className="space-y-2">
-              {groupedByCategory.map(group => {
+            <div className="surface divide-y divide-linea overflow-hidden">
+              {groupedByCategory.map((group) => {
                 const isExpanded = !!expandedCategories[group.id];
-                const groupSoldOut = group.ingredients.filter(ing => ingredientsStock[ing.key]?.soldOut).length;
-                const anySoldOut = groupSoldOut > 0;
+                const groupSoldOut = group.ingredients.filter((ing) => ingredientsStock[ing.key]?.soldOut).length;
                 return (
-                  <div key={group.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-md">
+                  <div key={group.id}>
                     <button
                       aria-expanded={isExpanded}
                       onClick={() => toggleCategory(group.id)}
-                      className="w-full flex items-center justify-between gap-3 px-4 py-3.5 transition-all hover:bg-slate-800/40"
+                      className="w-full flex items-center justify-between gap-3 px-5 py-4 hover:bg-mantel transition-colors text-left"
                     >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0">
-                          <Layers className="w-5 h-5 text-orange-400" />
-                        </div>
-                        <div className="text-left min-w-0">
-                          <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2 truncate">
-                            {group.label}
-                            {anySoldOut && (
-                              <span className="text-[9px] font-black px-2 py-0.5 rounded-full border bg-rose-500/15 text-rose-300 border-rose-500/30 shrink-0">
-                                {groupSoldOut} agotada(s)
-                              </span>
-                            )}
-                          </h3>
-                          <p className="text-[11px] text-slate-500">
-                            {group.ingredients.length} {group.ingredients.length === 1 ? 'materia prima' : 'materias primas'}
-                          </p>
-                        </div>
-                      </div>
-                      {isExpanded
-                        ? <ChevronDown className="w-5 h-5 text-slate-400 shrink-0 transition-transform" />
-                        : <ChevronRight className="w-5 h-5 text-slate-400 shrink-0 transition-transform" />}
+                      <span className="min-w-0">
+                        <span className="block font-display font-bold text-lg">{group.label}</span>
+                        <span className="block text-sm text-suave">
+                          {group.ingredients.length} {group.ingredients.length === 1 ? 'ingrediente' : 'ingredientes'}
+                        </span>
+                      </span>
+                      <span className="flex items-center gap-3 shrink-0">
+                        {groupSoldOut > 0 && <span className="chip chip-alerta">{groupSoldOut} {groupSoldOut === 1 ? 'agotado' : 'agotados'}</span>}
+                        <ChevronDown className={`w-5 h-5 text-suave transition-transform ${isExpanded ? 'rotate-180' : ''}`} aria-hidden="true" />
+                      </span>
                     </button>
 
                     {isExpanded && (
-                      <div className="px-3 pb-3 pt-1 space-y-1.5">
-                        {group.ingredients.map(ing => {
+                      <ul className="border-t border-linea divide-y divide-linea bg-mantel/50">
+                        {group.ingredients.map((ing) => {
                           const info = ingredientsStock[ing.key];
                           const isSoldOut = !!info?.soldOut;
                           return (
-                            <div
-                              key={ing.key}
-                              className={`flex flex-wrap md:flex-nowrap items-center gap-2 px-3 py-2 rounded-xl border transition-all ${isSoldOut ? 'bg-rose-500/5 border-rose-500/30' : 'bg-slate-950 border-slate-800'}`}
-                            >
-                              <div className="flex items-center gap-2 min-w-0 flex-1">
-                                <Layers className={`w-4 h-4 shrink-0 ${isSoldOut ? 'text-rose-400' : 'text-orange-400'}`} />
-                                <div className="min-w-0 leading-tight">
-                                  <h4 className="font-bold text-white text-xs truncate">{ing.name}</h4>
-                                  <p className="text-[10px] text-slate-500 truncate">
-                                    Usado en {ing.usedBy.join(', ') || '—'}
+                            <li key={ing.key} className={`flex flex-wrap sm:flex-nowrap items-center gap-3 px-5 py-3 ${isSoldOut ? 'border-l-4 border-aji pl-4' : ''}`}>
+                              <div className="min-w-0 flex-1">
+                                <p className="font-bold">{ing.name}</p>
+                                <p className="text-sm text-suave truncate">Lo usan: {ing.usedBy.join(', ') || 'ningún plato'}</p>
+                                {isSoldOut && (
+                                  <p className="text-sm font-bold text-aji">
+                                    Agotado {timeAgo(info.at)}
+                                    {info.note ? `: “${info.note}”` : ''}
                                   </p>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-2 shrink-0">
-                                {isSoldOut ? (
-                                  <>
-                                    <span className="text-[10px] text-rose-300 font-semibold whitespace-nowrap" title={info.note || `Agotado ${timeAgo(info.at)}`}>
-                                      Agotado {info.note ? `· “${info.note}”` : `· ${timeAgo(info.at)}`}
-                                    </span>
-                                    <button
-                                      disabled={busy === ing.key}
-                                      onClick={() => run(ing.key, () => onRestockIngredient(ing.name))}
-                                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-[11px] rounded-lg transition-all flex items-center gap-1"
-                                    >
-                                      <PackageCheck className="w-3.5 h-3.5" /> Reponer
-                                    </button>
-                                  </>
-                                ) : (
-                                  <>
-                                    <span className="hidden sm:inline text-[10px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">
-                                      Disponible
-                                    </span>
-                                    <button
-                                      disabled={busy === ing.key}
-                                      onClick={() => run(ing.key, () => onMarkIngredientSoldOut(ing.name))}
-                                      className="px-3 py-1.5 bg-rose-600/90 hover:bg-rose-500 active:scale-95 text-white font-bold text-[11px] rounded-lg transition-all flex items-center gap-1"
-                                    >
-                                      <PackageX className="w-3.5 h-3.5" /> Agotar
-                                    </button>
-                                  </>
                                 )}
                               </div>
-                            </div>
+                              {isSoldOut ? (
+                                <button disabled={busy === ing.key} onClick={() => run(ing.key, () => onRestockIngredient(ing.name))} className="btn btn-sm btn-primary">
+                                  <PackageCheck className="w-4 h-4" aria-hidden="true" /> Reponer
+                                </button>
+                              ) : (
+                                <button disabled={busy === ing.key} onClick={() => run(ing.key, () => onMarkIngredientSoldOut(ing.name))} className="btn btn-sm btn-danger">
+                                  <PackageX className="w-4 h-4" aria-hidden="true" /> Agotar
+                                </button>
+                              )}
+                            </li>
                           );
                         })}
-                      </div>
+                      </ul>
                     )}
                   </div>
                 );
               })}
             </div>
           ) : (
-            <div className="py-12 text-center text-slate-500 text-xs border border-dashed border-slate-800 rounded-xl">
-              {masterIngredients.length
-                ? 'No hay materias primas en esta categoría.'
-                : 'No hay materias primas registradas en el catálogo.'}
-            </div>
+            <p className="py-12 text-center text-suave">No hay ingredientes registrados. Agrégalos a los platos en Administración → Platillos.</p>
           )}
-        </div>
+        </section>
       )}
     </div>
   );

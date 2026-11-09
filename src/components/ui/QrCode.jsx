@@ -13,6 +13,6 @@ export default function QrCode({ value, size = 144, className = '', label }) {
       cancelled = true;
     };
   }, [value, size]);
-  if (!src) return <div style={{ width: size, height: size }} className={`bg-slate-200 animate-pulse rounded ${className}`} />;
+  if (!src) return <div style={{ width: size, height: size }} className={`bg-linea animate-pulse rounded ${className}`} />;
   return <img src={src} width={size} height={size} alt={label || 'Código QR'} className={className} />;
 }

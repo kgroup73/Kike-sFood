@@ -16,7 +16,7 @@ export default function KitchenPage() {
   const onNewOrder = useCallback(
     (row) => {
       playChime();
-      showToast(`🔔 ¡Nueva comanda Mesa ${row?.table_label ?? ''}!`);
+      showToast(`Nueva comanda de la mesa ${row?.table_label ?? ''}`);
     },
     [showToast]
   );
@@ -26,7 +26,7 @@ export default function KitchenPage() {
     try {
       await updateStatus(orderId, status);
       playChime();
-      if (status === 'Por Cobrar') showToast(`Comanda #${orderId} enviada a caja`, 'success');
+      if (status === 'Por Cobrar') showToast(`Comanda ${orderId} enviada a caja`, 'success');
     } catch (err) {
       showToast(err.message, 'error');
     }
@@ -39,9 +39,9 @@ export default function KitchenPage() {
       playChime();
       const affected = res?.affectedProducts || [];
       if (soldOut) {
-        showToast(affected.length ? `"${name}" agotado. Se desactivó: ${affected.join(', ')} 📦` : `"${name}" agotado 📦`);
+        showToast(affected.length ? `${name} agotado. Ya no se pueden pedir: ${affected.join(', ')}` : `${name} agotado`);
       } else {
-        showToast(`"${name}" repuesto ✅`, 'success');
+        showToast(`${name} disponible otra vez`, 'success');
       }
     } catch (err) {
       showToast(err.message, 'error');
@@ -49,7 +49,7 @@ export default function KitchenPage() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {error && <InlineError message={`No se pudieron cargar las comandas: ${error}`} onRetry={reload} />}
       <KitchenView
         kitchenOrders={orders}

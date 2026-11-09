@@ -20,38 +20,35 @@ export default function HomePage() {
   }, [params, navigate]);
 
   return (
-    <main className="min-h-screen max-w-3xl mx-auto px-4 py-10 space-y-8">
-      <header className="space-y-3">
+    <main className="min-h-screen max-w-5xl mx-auto px-6 sm:px-10 py-10 sm:py-16 flex flex-col gap-12">
+      <header>
         <BrandMark />
-        <p className="text-sm text-brand-mute">{PROJECT_TAGLINE}</p>
       </header>
 
+      <section className="space-y-4 max-w-2xl">
+        <h1 className="font-display font-extrabold text-5xl sm:text-7xl tracking-tight leading-[0.92]">De la mesa a la cocina, sin papel.</h1>
+        <p className="text-lg text-suave max-w-xl">{PROJECT_TAGLINE}: el comensal pide desde su mesa, la cocina lo ve al instante y la caja cobra la cuenta completa.</p>
+      </section>
+
       {isDemoMode ? (
-        <section className="space-y-4">
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 text-xs text-amber-200 leading-relaxed">
-            <strong>Modo demo:</strong> no hay Supabase configurado, así que los datos viven en este navegador.
-            Abre el menú y la cocina en pestañas distintas para ver la sincronización en tiempo real.
-          </div>
-          <div className="grid sm:grid-cols-2 gap-3">
-            <Link
-              to={`/r/${DEMO_TENANT.slug}/m/${demoTableToken(4)}`}
-              className="bg-brand-panel border border-brand-line hover:border-brand-gold rounded-2xl p-5 space-y-2 transition-colors"
-            >
-              <QrCode className="w-6 h-6 text-brand-gold-light" aria-hidden="true" />
-              <h2 className="font-bold text-sm">Carta del comensal (Mesa 4)</h2>
-              <p className="text-[11px] text-brand-khaki">Lo que ve el cliente al escanear el QR o tocar el NFC de la mesa.</p>
+        <section className="space-y-5">
+          <p className="border-l-4 border-maracuya pl-4 text-suave max-w-2xl">
+            <strong className="text-tinta">Modo demostración.</strong> Los datos viven en este navegador. Abre la carta y la cocina en pestañas distintas para ver cómo llegan los pedidos.
+          </p>
+          <div className="grid sm:grid-cols-2 gap-px bg-linea border border-linea rounded-3xl overflow-hidden">
+            <Link to={`/r/${DEMO_TENANT.slug}/m/${demoTableToken(4)}`} className="group bg-plato p-6 sm:p-8 space-y-3 hover:bg-mantel transition-colors">
+              <QrCode className="w-7 h-7 text-hoja" aria-hidden="true" />
+              <h2 className="block-title group-hover:underline underline-offset-4">Abrir la carta de la Mesa 4</h2>
+              <p className="text-suave">Lo que ve el cliente al escanear el QR o tocar el NFC de su mesa.</p>
             </Link>
-            <Link
-              to={`/staff/${DEMO_TENANT.slug}/login`}
-              className="bg-brand-panel border border-brand-line hover:border-brand-gold rounded-2xl p-5 space-y-2 transition-colors"
-            >
-              <LogIn className="w-6 h-6 text-brand-gold-light" aria-hidden="true" />
-              <h2 className="font-bold text-sm">Ingreso del personal</h2>
-              <ul className="text-[11px] text-brand-khaki space-y-0.5">
+            <Link to={`/staff/${DEMO_TENANT.slug}/login`} className="group bg-plato p-6 sm:p-8 space-y-3 hover:bg-mantel transition-colors">
+              <LogIn className="w-7 h-7 text-hoja" aria-hidden="true" />
+              <h2 className="block-title group-hover:underline underline-offset-4">Entrar como personal</h2>
+              <ul className="text-suave space-y-1">
                 {DEMO_STAFF.map((s) => (
-                  <li key={s.id}>
-                    {s.role === 'owner' ? <Settings className="inline w-3 h-3 mr-1" /> : s.role === 'cocina' ? <ChefHat className="inline w-3 h-3 mr-1" /> : <Receipt className="inline w-3 h-3 mr-1" />}
-                    {ROLES[s.role]}: PIN <code className="text-brand-cream">{s.pin}</code>
+                  <li key={s.id} className="flex items-center gap-2">
+                    {s.role === 'owner' ? <Settings className="w-4 h-4" aria-hidden="true" /> : s.role === 'cocina' ? <ChefHat className="w-4 h-4" aria-hidden="true" /> : <Receipt className="w-4 h-4" aria-hidden="true" />}
+                    {ROLES[s.role]}: PIN <span className="precio font-bold text-tinta">{s.pin}</span>
                   </li>
                 ))}
               </ul>
@@ -59,34 +56,26 @@ export default function HomePage() {
           </div>
         </section>
       ) : (
-        <section className="space-y-4">
-          <div className="bg-brand-panel border border-brand-line rounded-2xl p-5 space-y-2">
-            <QrCode className="w-6 h-6 text-brand-gold-light" aria-hidden="true" />
-            <h2 className="font-bold text-sm">¿Eres comensal?</h2>
-            <p className="text-xs text-brand-khaki">Escanea el código QR o toca la etiqueta NFC de tu mesa para ver la carta y pedir.</p>
+        <section className="grid sm:grid-cols-2 gap-px bg-linea border border-linea rounded-3xl overflow-hidden">
+          <div className="bg-plato p-6 sm:p-8 space-y-3">
+            <QrCode className="w-7 h-7 text-hoja" aria-hidden="true" />
+            <h2 className="block-title">¿Vienes a comer?</h2>
+            <p className="text-suave">Escanea el código QR o toca la etiqueta NFC de tu mesa para ver la carta y pedir.</p>
           </div>
           <form
-            className="bg-brand-panel border border-brand-line rounded-2xl p-5 space-y-3"
+            className="bg-plato p-6 sm:p-8 space-y-4"
             onSubmit={(e) => {
               e.preventDefault();
               if (slug.trim()) navigate(`/staff/${slug.trim().toLowerCase()}/login`);
             }}
           >
-            <h2 className="font-bold text-sm flex items-center gap-2">
-              <LogIn className="w-4 h-4 text-brand-gold-light" aria-hidden="true" /> Ingreso del personal
-            </h2>
-            <label className="block text-xs text-brand-mute">
-              Código del restaurante
-              <input
-                value={slug}
-                onChange={(e) => setSlug(e.target.value)}
-                placeholder="ej: la-trattoria"
-                className="mt-1 w-full bg-brand-night border border-brand-line rounded-xl p-2.5 text-white font-mono focus:outline-none focus:border-brand-gold"
-              />
+            <LogIn className="w-7 h-7 text-hoja" aria-hidden="true" />
+            <h2 className="block-title">Entrar como personal</h2>
+            <label className="block">
+              <span className="label">Código del restaurante</span>
+              <input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="ej: la-trattoria" className="field" />
             </label>
-            <button className="px-4 py-2.5 bg-brand-gold hover:bg-brand-gold-light text-brand-ivory font-bold text-xs rounded-xl">
-              Continuar
-            </button>
+            <button className="btn btn-primary">Continuar</button>
           </form>
         </section>
       )}

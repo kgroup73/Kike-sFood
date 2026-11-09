@@ -2,18 +2,150 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==============================================================================
+   Sistema visual de Kike's: "de la sala a la cocina".
+   Un solo juego de tokens para toda la app. Los colores van en RGB para poder
+   usar opacidad (bg-hoja/10). Solo la carta del comensal tiene modo oscuro.
+   ============================================================================== */
 @layer base {
+  :root {
+    --c-mantel: 246 247 243;     /* #F6F7F3 fondo */
+    --c-plato: 255 255 255;      /* #FFFFFF superficies */
+    --c-tinta: 30 43 36;         /* #1E2B24 texto */
+    --c-suave: 86 101 92;        /* #56655C texto secundario */
+    --c-linea: 218 224 215;      /* #DAE0D7 bordes */
+    --c-hoja: 47 107 63;         /* #2F6B3F acción principal / listo */
+    --c-sobre-hoja: 255 255 255;
+    --c-aji: 200 50 60;          /* #C8323C error / eliminar / atrasado */
+    --c-maracuya: 243 198 75;    /* #F3C64B en preparación / aviso */
+    --c-acero: 37 43 40;         /* #252B28 solo el riel de la cocina */
+    color-scheme: light;
+  }
+
   html,
   body {
-    background-color: theme('colors.brand.night');
-    color: theme('colors.brand.ivory');
+    background-color: rgb(var(--c-mantel));
+    color: rgb(var(--c-tinta));
+    font-family: 'Atkinson Hyperlegible', system-ui, -apple-system, sans-serif;
     scroll-behavior: smooth;
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   }
 
   :focus-visible {
-    outline: 2px solid theme('colors.brand.gold-light');
+    outline: 2px solid rgb(var(--c-hoja));
     outline-offset: 2px;
+  }
+
+  ::selection {
+    background: rgb(var(--c-hoja) / 0.2);
+  }
+}
+
+/* Carta del comensal: sigue el modo oscuro del celular. MenuPage pone .carta en <html>. */
+@media (prefers-color-scheme: dark) {
+  .carta {
+    --c-mantel: 17 24 20;
+    --c-plato: 26 35 30;
+    --c-tinta: 232 237 231;
+    --c-suave: 160 175 166;
+    --c-linea: 46 59 51;
+    --c-hoja: 120 196 140;
+    --c-sobre-hoja: 14 26 18;
+    --c-aji: 240 110 116;
+    color-scheme: dark;
+  }
+}
+.carta {
+  background-color: rgb(var(--c-mantel));
+  color: rgb(var(--c-tinta));
+}
+html.carta body {
+  background-color: transparent;
+  color: inherit;
+}
+
+@layer components {
+  /* Precios, cantidades y números grandes: Bricolage con cifras de ancho fijo. */
+  .precio {
+    font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Botones */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 h-11 px-5 rounded-full font-bold text-[15px] whitespace-nowrap transition-colors disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+  .btn-sm {
+    @apply h-9 px-4 text-sm;
+  }
+  .btn-primary {
+    @apply bg-hoja text-sobre-hoja enabled:hover:bg-hoja/90;
+  }
+  .btn-dark {
+    @apply bg-tinta text-mantel enabled:hover:bg-tinta/90;
+  }
+  .btn-quiet {
+    @apply bg-plato border border-linea text-tinta enabled:hover:border-tinta;
+  }
+  .btn-danger {
+    @apply bg-plato border border-aji/40 text-aji enabled:hover:bg-aji enabled:hover:text-white enabled:hover:border-aji;
+  }
+  .icon-btn {
+    @apply inline-flex items-center justify-center w-10 h-10 rounded-full text-suave hover:text-tinta hover:bg-linea/60 transition-colors disabled:opacity-40;
+  }
+
+  /* Formularios */
+  .field {
+    @apply w-full h-11 px-3.5 rounded-xl border border-linea bg-plato text-tinta placeholder:text-suave/70 focus:outline-none focus:border-hoja focus:ring-2 focus:ring-hoja/20 disabled:bg-mantel disabled:text-suave;
+  }
+  textarea.field {
+    @apply h-auto py-2.5;
+  }
+  .label {
+    @apply block text-sm font-bold text-tinta mb-1.5;
+  }
+  .help {
+    @apply block text-sm text-suave mt-1.5;
+  }
+
+  /* Títulos de página y de bloque */
+  .page-title {
+    @apply font-display font-extrabold text-3xl sm:text-4xl tracking-tight leading-none;
+  }
+  .block-title {
+    @apply font-display font-bold text-xl tracking-tight;
+  }
+
+  /* Superficie blanca: solo para lo que de verdad es un objeto aparte. */
+  .surface {
+    @apply bg-plato border border-linea rounded-2xl;
+  }
+
+  /* Estados de comanda: el mismo color significa lo mismo en cocina y en caja. */
+  .chip {
+    @apply inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-sm font-bold whitespace-nowrap;
+  }
+  .chip-pendiente {
+    @apply bg-plato border border-tinta text-tinta;
+  }
+  .chip-preparando {
+    @apply bg-maracuya text-tinta;
+  }
+  .chip-listo {
+    @apply bg-hoja text-sobre-hoja;
+  }
+  .chip-cobrar {
+    @apply bg-tinta text-mantel;
+  }
+  .chip-alerta {
+    @apply bg-aji text-white;
+  }
+
+  /* Tiquete de cocina: papel con el borde superior troquelado. */
+  .tiquete {
+    @apply relative bg-plato text-tinta rounded-b-xl;
+    --diente: 7px;
+    -webkit-mask: radial-gradient(circle var(--diente) at 50% 0, transparent 98%, #000) 50% 0 / calc(var(--diente) * 2.4) 100% repeat-x;
+    mask: radial-gradient(circle var(--diente) at 50% 0, transparent 98%, #000) 50% 0 / calc(var(--diente) * 2.4) 100% repeat-x;
   }
 }
 
@@ -28,6 +160,15 @@
   .animate-fadeIn {
     animation: fade-in 0.2s ease-out both;
   }
+  .animate-sheet {
+    animation: sheet-up 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .animate-added {
+    animation: added-pop 0.3s ease-out;
+  }
+  .animate-ticket {
+    animation: ticket-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
   .view-fade-enter {
     animation: view-fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
@@ -36,6 +177,23 @@
 @keyframes fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+@keyframes sheet-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes added-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+/* Una comanda nueva "cae" en el riel. */
+@keyframes ticket-in {
+  from { transform: translateY(-16px) rotate(-1.5deg); opacity: 0; }
+  to { transform: translateY(0) rotate(0); opacity: 1; }
 }
 
 @keyframes view-fade-in {
@@ -47,6 +205,7 @@
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

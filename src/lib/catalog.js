@@ -60,11 +60,7 @@ export function stockFromRows(rows = []) {
   return map;
 }
 
-const STORY_STYLES = [
-  { tag: 'MÁS PEDIDO', badgeColor: 'from-amber-500 to-orange-600' },
-  { tag: 'ESPECIAL DEL CHEF', badgeColor: 'from-rose-500 to-red-600' },
-  { tag: 'RECOMENDADO', badgeColor: 'from-purple-500 to-indigo-600' }
-];
+const STORY_STYLES = [{ tag: 'Más pedido' }, { tag: 'Receta del chef' }, { tag: 'Recomendado' }];
 
 /** Historias destacadas de la carta: platillos del chef y populares disponibles. */
 export function buildStories(products = [], max = 5) {
@@ -80,7 +76,6 @@ export function buildStories(products = [], max = 5) {
         title: p.isChef ? 'Especial Chef 👨‍🍳' : 'Top Estrella ⭐',
         subtitle: p.name,
         tag: style.tag,
-        badgeColor: style.badgeColor,
         image: p.image,
         storyText: p.chefNotes || p.description,
         duration: 5000

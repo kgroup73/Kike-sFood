@@ -63,7 +63,7 @@ Tablet de cocina / caja ── PIN ──► Edge Function staff-login ──►
 
 ### Impuesto al consumo (INC)
 
-Los restaurantes en Colombia cobran normalmente el **INC del 8 %** en lugar del IVA. El precio que ve el cliente en la carta **ya incluye el impuesto**, así que el tiquete lo **desglosa** (`base = total / 1,08`) en vez de sumarlo. La propina es voluntaria, va aparte y no hace parte de la base gravable. El tipo de impuesto y la tarifa se configuran en *Admin → Datos de Empresa*.
+Los restaurantes en Colombia cobran normalmente el **INC del 8 %** en lugar del IVA. El precio que ve el cliente en la carta **ya incluye el impuesto**, así que el tiquete lo **desglosa** (`base = total / 1,08`) en vez de sumarlo. La propina es voluntaria (Ley 1935 de 2018): el comensal no la elige al pedir; la caja la confirma con él al cobrar (sugerida, sin propina u otro valor). Va aparte y no hace parte de la base gravable. La propina sugerida se configura en *Admin → Datos de Empresa* y no puede superar el 10 %. El tipo de impuesto y la tarifa se configuran en *Admin → Datos de Empresa*.
 
 ### Estructura
 

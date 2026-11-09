@@ -263,6 +263,35 @@ await test('caja no puede escribir en invoice_orders; anon no lo puede leer', as
   await anon(() => rejects(rows(`select * from invoice_orders`), /permission denied/));
 });
 
+console.log('\nPropina en caja');
+async function tableOrder(token, tip = false) {
+  const { r } = await anon(() => createOrder([{ productId: SANGRIA, quantity: 1 }], token, tip));
+  await toPay(r.orderId);
+  return r;
+}
+await test('la caja define la propina al cobrar', async () => {
+  const a = await tableOrder(table3.token);
+  const inv = await asStaff('caja', () => one(`select * from issue_invoice($1::bigint[], 'pos', null, 'efectivo', 5000)`, [[a.orderId]]));
+  assert.equal(inv.tip, 5000);
+  assert.equal(inv.total, a.subtotal + 5000);
+});
+await test('sin propina explícita usa la de las comandas', async () => {
+  const a = await tableOrder(table3.token, true);
+  const inv = await asStaff('caja', () => one(`select * from issue_invoice($1::bigint[], 'pos')`, [[a.orderId]]));
+  assert.equal(inv.tip, a.tip);
+});
+await test('rechaza propina negativa o mayor que el consumo', async () => {
+  const a = await tableOrder(table2.token);
+  await asStaff('caja', () => rejects(rows(`select issue_invoice($1::bigint[], 'pos', null, 'efectivo', -1)`, [[a.orderId]]), /negativa/));
+  await asStaff('caja', () => rejects(rows(`select issue_invoice($1::bigint[], 'pos', null, 'efectivo', $2)`, [[a.orderId], a.subtotal + 1]), /superar/));
+  const inv = await asStaff('caja', () => one(`select * from issue_invoice($1::bigint[], 'pos', null, 'efectivo', 0)`, [[a.orderId]]));
+  assert.equal(inv.tip, 0);
+});
+await test('la propina sugerida no puede pasar del 10 %', async () => {
+  await asStaff('owner', () => rejects(rows(`update tenants set tip_rate = 15 where id = $1`, [TENANT]), /tip_rate_check/));
+  await asStaff('owner', () => rows(`update tenants set tip_rate = 10 where id = $1`, [TENANT]));
+});
+
 console.log('\nInventario');
 await test('agotar un ingrediente bloquea los platillos que lo usan', async () => {
   const res = await asStaff('cocina', () => one(`select set_ingredient_stock('Queso Brie', true, 'Sin proveedor') as r`));

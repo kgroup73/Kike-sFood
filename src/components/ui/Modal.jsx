@@ -1,7 +1,8 @@
 import { useEffect, useId } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
-/** Contenedor de modal accesible: cierra con Escape y anuncia su título. */
+/** Modal accesible del personal: cierra con Escape o tocando fuera, y anuncia su título. */
 export default function Modal({ title, icon, onClose, children, size = 'md', footer }) {
   const titleId = useId();
   useEffect(() => {
@@ -10,22 +11,31 @@ export default function Modal({ title, icon, onClose, children, size = 'md', foo
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  const width = { sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-2xl', xl: 'max-w-4xl' }[size];
-  return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn" onMouseDown={(e) => e.target === e.currentTarget && onClose?.()}>
-      <div role="dialog" aria-modal="true" aria-labelledby={titleId} className={`bg-slate-900 border border-slate-800 rounded-3xl ${width} w-full p-5 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto hide-scrollbar`}>
-        <div className="flex justify-between items-center pb-2 border-b border-slate-800 gap-3">
-          <h3 id={titleId} className="text-base font-bold text-white flex items-center gap-2">
-            {icon}
+  const width = { sm: 'sm:max-w-sm', md: 'sm:max-w-md', lg: 'sm:max-w-2xl', xl: 'sm:max-w-4xl' }[size];
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 bg-tinta/40 flex items-end sm:items-center justify-center sm:p-6 animate-fadeIn print:static print:bg-transparent"
+      onMouseDown={(e) => e.target === e.currentTarget && onClose?.()}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className={`bg-plato text-tinta w-full ${width} rounded-t-[28px] sm:rounded-[28px] max-h-[92vh] overflow-y-auto p-5 sm:p-6 space-y-5 animate-sheet`}
+      >
+        <div className="flex justify-between items-start gap-3">
+          <h2 id={titleId} className="block-title flex items-center gap-2.5">
+            {icon && <span className="text-hoja [&>svg]:w-5 [&>svg]:h-5 [&>svg]:text-current">{icon}</span>}
             {title}
-          </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white p-1" aria-label="Cerrar">
-            <X className="w-4 h-4" />
+          </h2>
+          <button onClick={onClose} className="icon-btn -mr-2 -mt-1 shrink-0" aria-label="Cerrar">
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
         {children}
         {footer}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

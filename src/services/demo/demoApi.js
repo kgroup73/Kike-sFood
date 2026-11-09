@@ -408,7 +408,7 @@ export const demoApi = {
     return delay(customer);
   },
 
-  async issueInvoice({ orderIds, kind, customerId, paymentMethod }) {
+  async issueInvoice({ orderIds, kind, customerId, paymentMethod, tip: tipInput = null }) {
     const s = requireStaff(['owner', 'admin', 'caja']);
     const db = load();
     if (!hasFeature(db.tenant.plan, 'pos')) return fail('La Caja POS requiere el plan Intermedio o superior');
@@ -430,7 +430,14 @@ export const demoApi = {
     }
     const customer = customerId ? db.customers.find((c) => c.id === customerId) : CONSUMIDOR_FINAL;
     if (!customer) return fail('Cliente no encontrado');
-    const { subtotal, tip } = sumOrders(orders);
+    const { subtotal, tip: ordersTip } = sumOrders(orders);
+    // Propina voluntaria: la confirma la caja al cobrar. Sin valor, la de las comandas.
+    let tip = ordersTip;
+    if (tipInput !== null && tipInput !== undefined) {
+      tip = Math.round(Number(tipInput));
+      if (!Number.isFinite(tip) || tip < 0) return fail('La propina no puede ser negativa');
+      if (tip > subtotal) return fail('La propina no puede superar el valor del consumo');
+    }
     const rate = effectiveTaxRate(db.tenant);
     const { base, tax } = splitTaxIncluded(subtotal, rate);
 
@@ -526,6 +533,8 @@ export const demoApi = {
   async updateTenant(_tenantId, tenant) {
     requireStaff(['owner', 'admin']);
     const { plan: _plan, slug: _slug, id: _id, ...editable } = tenant;
+    const tipRate = Number(editable.tipRate);
+    if (!(tipRate >= 0 && tipRate <= 10)) return fail('La propina sugerida debe estar entre 0 % y 10 %');
     commit((d) => Object.assign(d.tenant, editable), ['menu']);
   },
 
