@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Printer, Copy, ExternalLink, RefreshCw, Plus, Power } from 'lucide-react';
+import { Smartphone, Printer, Copy, ExternalLink, RefreshCw, Plus, Zap, Sparkles, Power } from 'lucide-react';
 import { useTenant } from '../../hooks/useTenant';
 import { useToast } from '../../hooks/useToast';
 import { api } from '../../services/api';
 import { InlineError } from '../ui/Screens';
-import AdminShell, { fieldClass } from './AdminShell';
+import AdminShell from './AdminShell';
 import TableStickersModal from './TableStickersModal';
 import { tableUrl } from './tableLinks';
+
+// Estilo original del campo (oscuro), para conservar el mosaico tal como estaba.
+const fieldClass = 'w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white text-xs focus:outline-none focus:border-orange-500 disabled:opacity-60';
 
 export default function TablesAdmin() {
   const { tenant } = useTenant();
@@ -52,92 +55,91 @@ export default function TablesAdmin() {
 
   return (
     <AdminShell
-      title="Mesas y códigos QR"
-      subtitle="Cada mesa tiene un enlace con un token secreto: sin él se puede ver la carta, pero no pedir."
+      title="Mesas, tags NFC y códigos QR"
+      subtitle="Cada mesa tiene un enlace con un token secreto: sin él no se puede pedir."
+      icon={<Smartphone className="w-5 h-5 text-amber-400" aria-hidden="true" />}
       actions={
-        <button onClick={() => setStickers(true)} disabled={!activeTables.length} className="btn btn-dark">
-          <Printer className="w-4 h-4" aria-hidden="true" /> Imprimir stickers
+        <button
+          onClick={() => setStickers(true)}
+          disabled={!activeTables.length}
+          className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 active:scale-95 text-slate-950 font-black rounded-xl flex items-center gap-1.5 shadow-md transition-all disabled:opacity-40"
+        >
+          <Printer className="w-4 h-4" aria-hidden="true" /> Imprimir stickers (NFC + QR)
         </button>
       }
     >
       {error && <InlineError message={error} onRetry={load} />}
 
-      <form onSubmit={addTables} className="flex flex-col sm:flex-row gap-3 sm:items-end max-w-3xl">
-        <label className="flex-1 block">
-          <span className="label">Agregar mesas</span>
-          <input value={newLabel} onChange={(e) => setNewLabel(e.target.value)} className={fieldClass} placeholder="Ej: 13, 14, Terraza-1" />
-          <span className="help">Separa varias con comas.</span>
+      <form onSubmit={addTables} className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row gap-2 sm:items-end">
+        <label className="flex-1 text-xs text-slate-400">
+          Agregar mesas (separa con comas: <code>13, 14, Terraza-1</code>)
+          <input value={newLabel} onChange={(e) => setNewLabel(e.target.value)} className={`${fieldClass} mt-1`} placeholder="Etiqueta de la mesa" />
         </label>
-        <button className="btn btn-quiet sm:mb-[26px]">
+        <button className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl border border-slate-700 flex items-center gap-1.5 justify-center">
           <Plus className="w-4 h-4" aria-hidden="true" /> Agregar
         </button>
       </form>
 
-      <ul className="surface divide-y divide-linea overflow-hidden">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
         {tables.map((t) => {
           const url = tableUrl(tenant.slug, t.token);
           return (
-            <li key={t.id} className={`flex flex-wrap lg:flex-nowrap items-center gap-x-5 gap-y-3 px-5 py-4 ${t.isActive ? '' : 'opacity-60'}`}>
-              <div className="w-24 shrink-0">
-                <p className="text-sm text-suave leading-none">Mesa</p>
-                <p className="precio font-extrabold text-3xl leading-tight">{t.label}</p>
+            <div key={t.id} className={`bg-slate-900 border rounded-2xl p-4 space-y-3 shadow-md ${t.isActive ? 'border-slate-800 hover:border-amber-500/50' : 'border-slate-800/60 opacity-60'}`}>
+              <div className="flex justify-between items-center pb-2 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 font-black flex items-center justify-center text-xs border border-amber-500/30">#{t.label}</div>
+                  <div>
+                    <h4 className="font-bold text-white text-xs sm:text-sm">Mesa {t.label}</h4>
+                    <span className="text-[10px] text-slate-400 flex items-center gap-1"><Zap className="w-2.5 h-2.5 text-amber-400" aria-hidden="true" /> NFC NTAG213 / QR</span>
+                  </div>
+                </div>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${t.isActive ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
+                  {t.isActive ? 'Activa' : 'Inactiva'}
+                </span>
               </div>
-              <div className="flex-1 min-w-0 basis-60">
-                <p className="text-sm text-suave truncate select-all" title={url}>
-                  {url}
-                </p>
-                {!t.isActive && <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-linea">Inactiva</span>}
-              </div>
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="bg-slate-950 p-2 rounded-xl border border-slate-800 text-[10px] text-slate-400 font-mono truncate select-all" title={url}>{url}</div>
+              <div className="flex items-center gap-1.5 text-xs">
                 <button
-                  onClick={() => navigator.clipboard?.writeText(url).then(() => showToast(`Enlace de la mesa ${t.label} copiado`), () => showToast('No se pudo copiar el enlace', 'error'))}
-                  className="btn btn-sm btn-quiet mr-1"
+                  onClick={() => navigator.clipboard?.writeText(url).then(() => showToast(`Enlace de la Mesa ${t.label} copiado 📋`), () => showToast('No se pudo copiar', 'error'))}
+                  className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl border border-slate-700 flex items-center justify-center gap-1.5"
                 >
-                  <Copy className="w-4 h-4" aria-hidden="true" /> Copiar enlace
+                  <Copy className="w-3.5 h-3.5 text-amber-400" aria-hidden="true" /> Copiar
                 </button>
-                <a href={url} target="_blank" rel="noreferrer" className="icon-btn" aria-label={`Abrir la carta de la mesa ${t.label}`} title="Abrir como comensal">
-                  <ExternalLink className="w-5 h-5" />
+                <a href={url} target="_blank" rel="noreferrer" className="py-2 px-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-700" aria-label={`Probar Mesa ${t.label}`} title="Abrir como comensal">
+                  <ExternalLink className="w-3.5 h-3.5" />
                 </a>
                 <button
-                  onClick={() => window.confirm(`¿Generar un enlace nuevo para la mesa ${t.label}? El QR/NFC actual dejará de funcionar.`) && act(() => api.regenerateTableToken(t.id), `Nuevo enlace para la mesa ${t.label}. Reimprime su sticker.`)}
-                  className="icon-btn"
-                  aria-label={`Regenerar enlace de la mesa ${t.label}`}
+                  onClick={() => window.confirm(`¿Generar un enlace nuevo para la Mesa ${t.label}? El QR/NFC actual dejará de funcionar.`) && act(() => api.regenerateTableToken(t.id), `Nuevo enlace para la Mesa ${t.label}. Reimprime su sticker.`)}
+                  className="py-2 px-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-700"
+                  aria-label={`Regenerar enlace de la Mesa ${t.label}`}
                   title="Regenerar enlace (invalida el anterior)"
                 >
-                  <RefreshCw className="w-5 h-5" />
+                  <RefreshCw className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => act(() => api.setTableActive(t.id, !t.isActive), t.isActive ? `Mesa ${t.label} desactivada` : `Mesa ${t.label} activada`)}
-                  className="icon-btn"
-                  aria-label={t.isActive ? `Desactivar mesa ${t.label}` : `Activar mesa ${t.label}`}
+                  className="py-2 px-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-700"
+                  aria-label={t.isActive ? `Desactivar Mesa ${t.label}` : `Activar Mesa ${t.label}`}
                   title={t.isActive ? 'Desactivar' : 'Activar'}
                 >
-                  <Power className="w-5 h-5" />
+                  <Power className="w-3.5 h-3.5" />
                 </button>
               </div>
-            </li>
+            </div>
           );
         })}
-      </ul>
+      </div>
 
-      <section className="space-y-4 max-w-4xl">
-        <h2 className="block-title">Cómo instalar las etiquetas NFC</h2>
-        <ol className="grid md:grid-cols-3 gap-6">
-          {[
-            ['Compra etiquetas NTAG213 o 215', 'Cuestan entre $1.200 y $1.800 cada una.'],
-            ['Graba el enlace', 'Con la app gratuita NFC Tools: Escribir → Añadir registro → URL. Pega el enlace de la mesa y bloquea la etiqueta.'],
-            ['Pégala en la mesa', 'Si un enlace se filtra, usa Regenerar y vuelve a grabar esa etiqueta.']
-          ].map(([title, text], i) => (
-            <li key={title} className="flex gap-3">
-              <span className="precio font-extrabold text-3xl leading-none text-hoja">{i + 1}</span>
-              <span>
-                <span className="block font-bold">{title}</span>
-                <span className="block text-suave leading-relaxed">{text}</span>
-              </span>
-            </li>
-          ))}
+      <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-amber-950/30 border border-amber-500/30 rounded-3xl p-5 sm:p-6 space-y-3 shadow-xl">
+        <h4 className="font-extrabold text-sm sm:text-base text-white flex items-center gap-2">
+          <Sparkles className="w-5 h-5 text-amber-400" aria-hidden="true" /> Cómo instalar los tags NFC
+        </h4>
+        <ol className="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs text-slate-300">
+          <li className="bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800"><strong className="text-amber-400 block mb-1">1. Compra stickers NTAG213/215</strong>Cuestan aprox. $1.200 a $1.800 COP cada uno.</li>
+          <li className="bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800"><strong className="text-amber-400 block mb-1">2. Graba el enlace</strong>Con la app gratuita NFC Tools: Escribir → Añadir registro → URL, pega el enlace de la mesa y bloquea el tag.</li>
+          <li className="bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800"><strong className="text-amber-400 block mb-1">3. Fija en la mesa</strong>Si un enlace se filtra, usa "Regenerar" y vuelve a grabar ese tag.</li>
         </ol>
-      </section>
+      </div>
 
       {stickers && <TableStickersModal tenant={tenant} tables={activeTables} onClose={() => setStickers(false)} />}
     </AdminShell>
