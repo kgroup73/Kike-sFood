@@ -5,7 +5,8 @@
 /* ==============================================================================
    Sistema visual de Kike's: "de la sala a la cocina".
    Un solo juego de tokens para toda la app. Los colores van en RGB para poder
-   usar opacidad (bg-hoja/10). Solo la carta del comensal tiene modo oscuro.
+   usar opacidad (bg-hoja/10). Hay temas de prueba (claros, mezclas y oscuros)
+   y la carta del comensal sigue el modo oscuro del celular con el tema por defecto.
    ============================================================================== */
 @layer base {
   :root {
@@ -19,7 +20,111 @@
     --c-aji: 200 50 60;          /* #C8323C error / eliminar / atrasado */
     --c-maracuya: 243 198 75;    /* #F3C64B en preparación / aviso */
     --c-acero: 37 43 40;         /* #252B28 solo el riel de la cocina */
+    --c-sobre-maracuya: 30 43 36;  /* texto sobre maracuyá: siempre oscuro */
+    --c-hoja-inversa: 158 217 174; /* verde legible sobre fondos bg-tinta (toast, plan activo) */
+    --c-aviso: 154 107 0;          /* texto de aviso (comanda por atrasarse) sobre plato */
     color-scheme: light;
+  }
+
+  /* ----------------------------------------------------------- Temas de prueba
+     src/lib/themes.js + selector (components/ui/ThemePicker). Solo cambian
+     colores; "hoja" (el de arriba) es el tema por defecto y no lleva atributo. */
+  :root[data-tema='gris'] {
+    --c-mantel: 238 239 241;
+    --c-plato: 255 255 255;
+    --c-tinta: 28 32 36;
+    --c-suave: 92 99 107;
+    --c-linea: 212 216 221;
+    --c-acero: 36 39 43;
+    --c-sobre-maracuya: 28 32 36;
+  }
+  :root[data-tema='arena'] {
+    --c-mantel: 245 241 232;
+    --c-plato: 255 253 248;
+    --c-tinta: 43 38 29;
+    --c-suave: 107 98 80;
+    --c-linea: 226 218 199;
+    --c-hoja: 92 104 38;
+    --c-aji: 182 50 42;
+    --c-maracuya: 234 180 60;
+    --c-acero: 46 41 32;
+    --c-sobre-maracuya: 43 38 29;
+    --c-hoja-inversa: 205 214 150;
+    --c-aviso: 140 96 0;
+  }
+  :root[data-tema='oceano'] {
+    --c-mantel: 239 244 246;
+    --c-plato: 255 255 255;
+    --c-tinta: 18 38 48;
+    --c-suave: 76 96 108;
+    --c-linea: 208 220 226;
+    --c-hoja: 13 110 122;
+    --c-aji: 196 50 66;
+    --c-acero: 20 36 44;
+    --c-sobre-maracuya: 18 38 48;
+    --c-hoja-inversa: 140 220 228;
+  }
+  :root[data-tema='terracota'] {
+    --c-mantel: 248 243 238;
+    --c-plato: 255 255 255;
+    --c-tinta: 52 34 28;
+    --c-suave: 114 92 82;
+    --c-linea: 232 219 208;
+    --c-hoja: 170 78 48;
+    --c-aji: 146 26 58;            /* vino: se distingue del acento ladrillo */
+    --c-maracuya: 238 186 70;
+    --c-acero: 48 34 28;
+    --c-sobre-maracuya: 52 34 28;
+    --c-hoja-inversa: 246 178 150;
+    --c-aviso: 146 92 0;
+  }
+  :root[data-tema='grafito'] {
+    --c-mantel: 32 34 37;
+    --c-plato: 43 46 50;
+    --c-tinta: 236 238 240;
+    --c-suave: 164 170 177;
+    --c-linea: 64 69 75;
+    --c-hoja: 118 196 138;
+    --c-sobre-hoja: 14 26 18;
+    --c-aji: 242 112 118;
+    --c-maracuya: 240 196 80;
+    --c-acero: 112 118 126;      /* riel más claro que las comandas para separarlas */
+    --c-sobre-maracuya: 28 30 33;
+    --c-hoja-inversa: 47 107 63;
+    --c-aviso: 240 196 80;
+    color-scheme: dark;
+  }
+  :root[data-tema='noche'] {
+    --c-mantel: 13 18 15;
+    --c-plato: 22 29 25;
+    --c-tinta: 230 236 230;
+    --c-suave: 148 165 155;
+    --c-linea: 40 53 46;
+    --c-hoja: 120 196 140;
+    --c-sobre-hoja: 12 24 16;
+    --c-aji: 240 110 116;
+    --c-maracuya: 243 198 75;
+    --c-acero: 86 109 95;
+    --c-sobre-maracuya: 13 18 15;
+    --c-hoja-inversa: 47 107 63;
+    --c-aviso: 243 198 75;
+    color-scheme: dark;
+  }
+  :root[data-tema='cafe'] {
+    --c-mantel: 20 18 12;
+    --c-plato: 31 28 20;
+    --c-tinta: 236 230 210;
+    --c-suave: 171 164 137;
+    --c-linea: 58 52 37;
+    --c-hoja: 205 168 40;          /* oro */
+    --c-sobre-hoja: 20 16 6;
+    --c-aji: 236 104 92;
+    --c-maracuya: 232 146 66;      /* naranja: se distingue del oro de "listo" */
+    --c-acero: 112 99 69;
+    --c-sobre-maracuya: 20 16 6;
+    --c-hoja-inversa: 125 101 7;
+    --c-aviso: 232 146 66;
+    color-scheme: dark;
   }
 
   html,
@@ -51,6 +156,9 @@
     --c-hoja: 120 196 140;
     --c-sobre-hoja: 14 26 18;
     --c-aji: 240 110 116;
+    --c-sobre-maracuya: 30 43 36;
+    --c-hoja-inversa: 47 107 63;
+    --c-aviso: 243 198 75;
     color-scheme: dark;
   }
 }
@@ -128,7 +236,8 @@ html.carta body {
     @apply bg-plato border border-tinta text-tinta;
   }
   .chip-preparando {
-    @apply bg-maracuya text-tinta;
+    @apply bg-maracuya;
+    color: rgb(var(--c-sobre-maracuya));
   }
   .chip-listo {
     @apply bg-hoja text-sobre-hoja;
@@ -172,6 +281,71 @@ html.carta body {
   .view-fade-enter {
     animation: view-fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
+  /* Portada del landing: las pantallas suben una sola vez al cargar. */
+  .animate-rise {
+    animation: rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  /* Secciones del landing: aparecen al entrar en pantalla (components/landing/Reveal). */
+  .reveal {
+    opacity: 0;
+    transition:
+      opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal-up {
+    transform: translateY(56px);
+  }
+  .reveal-scale {
+    transform: translateY(72px) scale(0.92);
+  }
+  .reveal-left {
+    transform: translateX(-72px);
+  }
+  .reveal-right {
+    transform: translateX(72px);
+  }
+  .reveal-in {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Ligadas al desplazamiento: --p va de 0 a 1 (components/landing/useScrollProgress). */
+  .hero-fan-left {
+    transform: translateX(calc(var(--p, 0) * -64px)) translateY(calc(var(--p, 0) * 24px)) rotate(calc(var(--p, 0) * -7deg));
+    transform-origin: bottom right;
+  }
+  .hero-fan-right {
+    transform: translateX(calc(var(--p, 0) * 64px)) translateY(calc(var(--p, 0) * 24px)) rotate(calc(var(--p, 0) * 7deg));
+    transform-origin: bottom left;
+  }
+  .hero-fan-center {
+    transform: translateY(calc(var(--p, 0) * -36px)) scale(calc(1 + var(--p, 0) * 0.03));
+  }
+  /* Planes en escritorio: cada bloque se queda arriba y el siguiente lo tapa al subir.
+     Solo en pantallas altas, para que ningún bloque quede cortado. */
+  @media (min-width: 1024px) and (min-height: 820px) {
+    .stack-card {
+      position: sticky;
+      top: calc(5rem + var(--i, 0) * 14px);
+    }
+  }
+  .tilt-in {
+    transform: perspective(1400px) rotateX(calc((1 - var(--p, 1)) * 28deg)) scale(calc(0.86 + var(--p, 1) * 0.14));
+    transform-origin: 50% 100%;
+    opacity: calc(0.35 + var(--p, 1) * 0.65);
+  }
+  /* Las comandas de la maqueta caen al riel, una tras otra, cuando la pantalla termina de abrirse. */
+  .tilt-in .drop-in {
+    opacity: 0;
+    transform: translateY(-28px) rotate(-2deg);
+    transition:
+      opacity 0.4s ease-out,
+      transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .tilt-in.is-done .drop-in {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @keyframes fade-in {
@@ -201,10 +375,16 @@ html.carta body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes rise {
+  from { transform: translateY(48px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
     scroll-behavior: auto !important;
   }
 }

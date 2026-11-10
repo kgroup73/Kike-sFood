@@ -1,12 +1,13 @@
 import { PROJECT_NAME } from '../../config/branding';
+import Timbre from './Timbre';
 
-/** Marca de Kike's: solo tipografía. */
+/** Marca de Kike's en horizontal: el timbre y el nombre. Sigue el color del texto. */
 export default function BrandMark({ size = 'md' }) {
-  const text = size === 'sm' ? 'text-lg' : 'text-2xl';
+  const sm = size === 'sm';
   return (
-    <span className={`font-display font-extrabold tracking-tight ${text} inline-flex items-baseline gap-0.5`}>
-      {PROJECT_NAME}
-      <span className="w-1.5 h-1.5 rounded-full bg-hoja translate-y-[-0.1em]" aria-hidden="true" />
+    <span className={`inline-flex items-center ${sm ? 'gap-1.5' : 'gap-2'}`}>
+      <Timbre className={sm ? 'w-7 h-7' : 'w-9 h-9'} />
+      <span className={`font-display font-extrabold tracking-tight ${sm ? 'text-lg' : 'text-2xl'}`}>{PROJECT_NAME}</span>
     </span>
   );
 }

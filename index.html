@@ -3,13 +3,21 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- La URL de la mesa lleva un token: no enviarlo a otros sitios (imágenes, enlaces). -->
     <meta name="referrer" content="strict-origin-when-cross-origin" />
 
     <title>Kike's | Carta digital, cocina y caja</title>
     <meta name="description" content="Carta digital QR/NFC, pedidos desde la mesa, cocina KDS y caja POS para restaurantes." />
-    <meta name="theme-color" content="#110f0a" />
+    <meta name="theme-color" content="#F6F7F3" />
+    <!-- Aplica el tema guardado antes de pintar (ver src/hooks/useTheme.js). -->
+    <script>
+      try {
+        var t = localStorage.getItem('kikes_tema');
+        if (t && t !== 'hoja' && /^[a-z]+$/.test(t)) document.documentElement.dataset.tema = t;
+      } catch (e) {}
+    </script>
 
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Kike's — Carta digital para restaurantes" />

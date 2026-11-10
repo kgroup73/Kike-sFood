@@ -27,6 +27,9 @@ export default {
         aji: 'rgb(var(--c-aji) / <alpha-value>)',
         maracuya: 'rgb(var(--c-maracuya) / <alpha-value>)',
         acero: 'rgb(var(--c-acero) / <alpha-value>)',
+        'sobre-maracuya': 'rgb(var(--c-sobre-maracuya) / <alpha-value>)',
+        'hoja-inversa': 'rgb(var(--c-hoja-inversa) / <alpha-value>)',
+        aviso: 'rgb(var(--c-aviso) / <alpha-value>)',
 
         // --- Paleta heredada (rama feat/frontend-redesign / main) ---
         // Solo la usan TablesAdmin y TableStickersModal, que se conservan con su

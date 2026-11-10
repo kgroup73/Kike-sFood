@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Printer, QrCode, Zap, FileDown, Loader2, Filter } from 'lucide-react';
 import QRCode from 'qrcode';
+import Timbre from '../ui/Timbre';
 import QrCodeImage from '../ui/QrCode';
 import { tableUrl } from './tableLinks';
 
@@ -146,6 +147,16 @@ function buildStickersHtml(tenant, tablesWithQr) {
       letter-spacing: 0.4px;
       margin-top: 2px;
     }
+    .powered {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      margin-top: 3px;
+      font-size: 7px;
+      font-weight: 800;
+      color: #000000;
+    }
     .single-guide {
       margin-top: 8px;
       font-size: 10px;
@@ -193,6 +204,7 @@ function buildStickersHtml(tenant, tablesWithQr) {
           <div style="width: 100%;">
             <div class="nfc-pill">📲 Toca con tu celular (NFC)</div>
             <div class="scan-note">O escanea con la cámara</div>
+            <div class="powered"><svg viewBox="6 14 52 41" width="11" height="9" aria-hidden="true" fill="#000"><circle cx="32" cy="19" r="4.5"/><rect x="30" y="21" width="4" height="5"/><path d="M11 45a21 21 0 0 1 42 0z"/><rect x="6" y="47" width="52" height="8" rx="4"/><path d="M26 31v11M37.5 31L29 36.5l8.5 5.5" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Kike's</div>
           </div>
         </div>
         ${isSingle ? `<div class="single-guide header-bar" style="background:none; color:#64748b; margin:6px 0 0 0; font-size:10px;">✂️ Tamaño de corte: 8.8 cm × 8.4 cm</div>` : ''}
@@ -431,6 +443,10 @@ export default function TableStickersModal({ onClose, tenant, tables = [], initi
                     </div>
                     <span className="text-[7px] font-bold text-slate-600 block uppercase tracking-wider">
                       O escanea con la cámara
+                    </span>
+                    <span className="flex items-center justify-center gap-1 text-[7px] font-extrabold text-slate-950">
+                      <Timbre className="w-3 h-3" mono />
+                      Kike's
                     </span>
                   </div>
                 </div>
