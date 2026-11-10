@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="6 14 52 41" fill="#000000">
+  <!-- Kike's: una tinta, con la K calada. Tiquetes térmicos, sellos y grabados. -->
+  <circle cx="32" cy="19" r="4.5"/>
+  <rect x="30" y="21" width="4" height="5"/>
+  <path d="M11 45a21 21 0 0 1 42 0z"/>
+  <rect x="6" y="47" width="52" height="8" rx="4"/>
+  <path d="M26 31v11M37.5 31L29 36.5l8.5 5.5" fill="none" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

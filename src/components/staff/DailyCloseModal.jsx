@@ -32,21 +32,29 @@ export default function DailyCloseModal({ invoices, onClose, onConfirm }) {
     }
   };
 
+  const row = 'flex justify-between';
   return (
-    <Modal title="Cierre de caja (Reporte Z)" icon={<Calculator className="w-5 h-5 text-amber-400" />} onClose={onClose}>
-      <dl className="space-y-2 text-xs bg-slate-950 p-4 rounded-2xl border border-slate-800">
-        <div className="flex justify-between text-slate-300">
-          <dt>Ventas del turno ({invoices.length} comprobantes):</dt>
-          <dd className="font-bold text-white text-sm">{formatCOP(totals.total)}</dd>
+    <Modal title="Cierre de caja (reporte Z)" icon={<Calculator />} onClose={onClose}>
+      <dl className="space-y-2">
+        <div className={`${row} items-baseline pb-3 border-b border-linea`}>
+          <dt>
+            Ventas del turno
+            <span className="block text-sm text-suave">
+              {invoices.length} {invoices.length === 1 ? 'comprobante' : 'comprobantes'}
+            </span>
+          </dt>
+          <dd className="precio font-extrabold text-3xl">{formatCOP(totals.total)}</dd>
         </div>
-        <div className="flex justify-between text-slate-400"><dt>Efectivo:</dt><dd>{formatCOP(totals.cash)}</dd></div>
-        <div className="flex justify-between text-slate-400"><dt>Tarjeta:</dt><dd>{formatCOP(totals.card)}</dd></div>
-        <div className="flex justify-between text-slate-400"><dt>Transferencia:</dt><dd>{formatCOP(totals.transfer)}</dd></div>
-        <div className="flex justify-between text-slate-500"><dt>Propinas incluidas:</dt><dd>{formatCOP(totals.tips)}</dd></div>
+        <div className={row}><dt>Efectivo</dt><dd className="precio">{formatCOP(totals.cash)}</dd></div>
+        <div className={row}><dt>Tarjeta</dt><dd className="precio">{formatCOP(totals.card)}</dd></div>
+        <div className={row}><dt>Transferencia</dt><dd className="precio">{formatCOP(totals.transfer)}</dd></div>
+        <div className={`${row} text-sm text-suave`}><dt>Propinas incluidas</dt><dd className="precio">{formatCOP(totals.tips)}</dd></div>
       </dl>
 
-      <div className="space-y-2 text-xs">
-        <label htmlFor="counted-cash" className="block text-slate-300 font-bold">Efectivo físico contado en caja:</label>
+      <div>
+        <label htmlFor="counted-cash" className="label">
+          Efectivo físico contado en caja
+        </label>
         <input
           id="counted-cash"
           type="number"
@@ -54,18 +62,18 @@ export default function DailyCloseModal({ invoices, onClose, onConfirm }) {
           min="0"
           value={countedCash}
           onChange={(e) => setCountedCash(e.target.value)}
-          placeholder="Ingresa el monto contado"
-          className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-bold text-sm focus:outline-none focus:border-amber-500"
+          placeholder="Monto contado"
+          className="field h-14 precio text-xl font-bold"
         />
         {diff !== null && (
-          <div className={`flex justify-between text-xs font-bold pt-1 ${diff === 0 ? 'text-emerald-400' : diff > 0 ? 'text-amber-300' : 'text-rose-400'}`}>
+          <p className={`mt-2 flex justify-between font-bold ${diff === 0 ? 'text-hoja' : 'text-aji'}`}>
             <span>{diff === 0 ? 'Caja cuadrada' : diff > 0 ? 'Sobrante' : 'Faltante'} (físico − sistema):</span>
-            <span>{formatCOP(diff)}</span>
-          </div>
+            <span className="precio">{formatCOP(diff)}</span>
+          </p>
         )}
       </div>
 
-      <button onClick={submit} disabled={counted === null || submitting} className="w-full py-3 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-all disabled:opacity-40 flex items-center justify-center gap-2">
+      <button onClick={submit} disabled={counted === null || submitting} className="btn btn-dark w-full h-14 text-base">
         {submitting && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
         Procesar cierre Z
       </button>

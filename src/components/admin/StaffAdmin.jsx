@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Users, UserPlus, KeyRound, Power, Lock } from 'lucide-react';
+import { UserPlus, KeyRound, Power, Lock } from 'lucide-react';
 import { useTenant } from '../../hooks/useTenant';
 import { useStaffSession } from '../../hooks/useStaffSession';
 import { useToast } from '../../hooks/useToast';
@@ -53,10 +53,11 @@ export default function StaffAdmin() {
   const canManage = (target) => me.role === 'owner' || !['owner', 'admin'].includes(target.role);
 
   return (
-    <AdminShell title="Personal y PIN" icon={<Users className="w-4 h-4 text-orange-500" aria-hidden="true" />} subtitle="Cada empleado entra con su propio PIN. Tras 5 intentos fallidos se bloquea 15 minutos.">
+    <AdminShell title="Personal" subtitle="Cada persona entra con su propio PIN. Tras 5 intentos fallidos su usuario se bloquea 15 minutos.">
       {error && <InlineError message={error} onRetry={load} />}
 
-      <form onSubmit={create} className="bg-slate-900 border border-slate-800 rounded-2xl p-4 grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+      <form onSubmit={create} className="surface p-5 sm:p-6 grid grid-cols-1 sm:grid-cols-4 gap-4 items-end max-w-4xl">
+        <h2 className="block-title sm:col-span-4">Agregar a alguien</h2>
         <label className="block sm:col-span-2">
           <span className={labelClass}>Nombre</span>
           <input value={form.displayName} maxLength={60} onChange={(e) => setForm({ ...form, displayName: e.target.value })} className={fieldClass} placeholder="Ej: Laura (Caja)" />
@@ -69,28 +70,39 @@ export default function StaffAdmin() {
         </label>
         <label className="block">
           <span className={labelClass}>PIN (4 a 6 dígitos)</span>
-          <input type="password" inputMode="numeric" autoComplete="new-password" maxLength={6} value={form.pin} onChange={(e) => setForm({ ...form, pin: e.target.value.replace(/\D/g, '') })} className={`${fieldClass} font-mono tracking-widest`} />
+          <input type="password" inputMode="numeric" autoComplete="new-password" maxLength={6} value={form.pin} onChange={(e) => setForm({ ...form, pin: e.target.value.replace(/\D/g, '') })} className={`${fieldClass} precio tracking-[0.3em]`} />
         </label>
-        <button disabled={!form.displayName.trim() || !PIN_RE.test(form.pin)} className={`${primaryButton} sm:col-span-4 sm:justify-self-start flex items-center gap-1.5`}>
+        <button disabled={!form.displayName.trim() || !PIN_RE.test(form.pin)} className={`${primaryButton} sm:col-span-4 sm:justify-self-start`}>
           <UserPlus className="w-4 h-4" aria-hidden="true" /> Crear usuario
         </button>
       </form>
 
-      <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <ul className="surface divide-y divide-linea overflow-hidden max-w-4xl">
         {list.map((s) => {
           const locked = s.lockedUntil && new Date(s.lockedUntil) > new Date();
           const editable = canManage(s) && s.id !== me.id;
           return (
-            <li key={s.id} className={`bg-slate-900 border rounded-2xl p-4 space-y-2 ${s.isActive ? 'border-slate-800' : 'border-slate-800/60 opacity-60'}`}>
-              <div className="flex justify-between items-start gap-2">
-                <div className="min-w-0">
-                  <h4 className="text-sm font-bold text-white truncate">{s.displayName}{s.id === me.id ? ' (tú)' : ''}</h4>
-                  <p className="text-[11px] text-slate-400">{ROLES[s.role]}{!s.isActive && ' · Inactivo'}</p>
-                </div>
-                {locked && <span className="text-[10px] text-rose-300 font-bold flex items-center gap-1"><Lock className="w-3 h-3" aria-hidden="true" /> Bloqueado</span>}
+            <li key={s.id} className={`flex flex-wrap sm:flex-nowrap items-center gap-x-4 gap-y-3 px-5 py-4 ${s.isActive ? '' : 'opacity-60'}`}>
+              <span className="w-11 h-11 rounded-full bg-mantel border border-linea flex items-center justify-center font-display font-bold shrink-0" aria-hidden="true">
+                {s.displayName.replace(/\(.*?\)/g, '').trim().slice(0, 1).toUpperCase()}
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold truncate">
+                  {s.displayName}
+                  {s.id === me.id && <span className="text-suave font-normal"> (tú)</span>}
+                </p>
+                <p className="text-sm text-suave flex items-center gap-2 flex-wrap">
+                  {ROLES[s.role]}
+                  {!s.isActive && <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-linea text-tinta">Inactivo</span>}
+                  {locked && (
+                    <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-aji text-white inline-flex items-center gap-1">
+                      <Lock className="w-3 h-3" aria-hidden="true" /> Bloqueado
+                    </span>
+                  )}
+                </p>
               </div>
               {canManage(s) && (
-                <div className="flex gap-1.5 text-[11px]">
+                <div className="flex gap-2 shrink-0">
                   <button
                     onClick={() => {
                       const pin = window.prompt(`Nuevo PIN para ${s.displayName} (4 a 6 dígitos):`);
@@ -98,14 +110,14 @@ export default function StaffAdmin() {
                       if (!PIN_RE.test(pin)) return showToast('El PIN debe tener entre 4 y 6 dígitos', 'error');
                       act(() => api.updateStaff({ staffId: s.id, pin }), `PIN de ${s.displayName} actualizado${locked ? ' y desbloqueado' : ''}`);
                     }}
-                    className="flex-1 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 flex items-center justify-center gap-1"
+                    className="btn btn-sm btn-quiet"
                   >
                     <KeyRound className="w-3.5 h-3.5" aria-hidden="true" /> Cambiar PIN
                   </button>
                   {editable && (
                     <button
                       onClick={() => act(() => api.updateStaff({ staffId: s.id, isActive: !s.isActive }), s.isActive ? `${s.displayName} desactivado` : `${s.displayName} activado`)}
-                      className="py-1.5 px-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 flex items-center gap-1"
+                      className="btn btn-sm btn-quiet"
                     >
                       <Power className="w-3.5 h-3.5" aria-hidden="true" /> {s.isActive ? 'Desactivar' : 'Activar'}
                     </button>

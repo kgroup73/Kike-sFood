@@ -29,13 +29,13 @@ export default function ProductFormModal({ product, categories, onClose, onSave 
   };
 
   return (
-    <Modal title={product.id ? 'Editar platillo' : 'Nuevo platillo'} icon={<UtensilsCrossed className="w-4 h-4 text-orange-400" />} onClose={onClose}>
-      <form onSubmit={submit} className="space-y-3 text-xs">
+    <Modal title={product.id ? 'Editar platillo' : 'Nuevo platillo'} icon={<UtensilsCrossed />} onClose={onClose}>
+      <form onSubmit={submit} className="space-y-4">
         <label className="block">
           <span className={labelClass}>Nombre</span>
           <input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Ej: Hamburguesa Suprema" className={fieldClass} required />
         </label>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           <label className="block">
             <span className={labelClass}>Categoría</span>
             <select value={form.categoryId || ''} onChange={(e) => set('categoryId', e.target.value || null)} className={fieldClass}>
@@ -61,14 +61,14 @@ export default function ProductFormModal({ product, categories, onClose, onSave 
         <label className="block">
           <span className={labelClass}>Ingredientes (separados por coma)</span>
           <textarea value={form.ingredientsText} onChange={(e) => set('ingredientsText', e.target.value)} rows="2" placeholder="Carne Angus, Queso Brie, Pan brioche" className={fieldClass} />
-          <span className="text-[10px] text-slate-500 mt-1 block">Cocina usa esta lista para agotar platillos cuando falta un insumo.</span>
+          <span className="help">La cocina usa esta lista para agotar los platos cuando falta un ingrediente.</span>
         </label>
         {form.modifiers?.length > 0 && (
-          <p className="text-[10px] text-slate-500">
+          <p className="help">
             Modificadores: {form.modifiers.map((m) => m.title).join(', ')} (se conservan al guardar).
           </p>
         )}
-        <div className="flex flex-wrap items-center gap-4 pt-1">
+        <fieldset className="flex flex-wrap gap-2 pt-1">
           {[
             ['isChef', 'Especial del chef'],
             ['isPopular', 'Popular'],
@@ -76,13 +76,18 @@ export default function ProductFormModal({ product, categories, onClose, onSave 
             ['isGf', 'Sin gluten'],
             ['available', 'Visible en la carta']
           ].map(([key, label]) => (
-            <label key={key} className="flex items-center gap-1.5 cursor-pointer select-none text-slate-300 font-medium">
-              <input type="checkbox" checked={!!form[key]} onChange={(e) => set(key, e.target.checked)} className="accent-orange-500" />
+            <label
+              key={key}
+              className={`h-10 px-4 rounded-full border flex items-center gap-2 cursor-pointer select-none font-bold text-sm transition-colors ${
+                form[key] ? 'bg-hoja border-hoja text-sobre-hoja' : 'bg-plato border-linea hover:border-tinta'
+              }`}
+            >
+              <input type="checkbox" checked={!!form[key]} onChange={(e) => set(key, e.target.checked)} className="sr-only" />
               {label}
             </label>
           ))}
-        </div>
-        <button disabled={saving || !form.name.trim()} className={`${primaryButton} w-full`}>{saving ? 'Guardando…' : 'Guardar platillo'}</button>
+        </fieldset>
+        <button disabled={saving || !form.name.trim()} className={`${primaryButton} w-full h-12`}>{saving ? 'Guardando…' : 'Guardar platillo'}</button>
       </form>
     </Modal>
   );

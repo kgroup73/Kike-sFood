@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Building2, Database } from 'lucide-react';
+import { Database } from 'lucide-react';
 import { useTenant } from '../../hooks/useTenant';
 import { useToast } from '../../hooks/useToast';
 import { api, isDemoMode } from '../../services/api';
@@ -38,13 +38,13 @@ export default function CompanySettings() {
   };
 
   return (
-    <AdminShell title="Datos de la empresa" icon={<Building2 className="w-4 h-4 text-orange-500" aria-hidden="true" />}>
-      <form onSubmit={save} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 max-w-2xl shadow-xl">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <AdminShell title="Datos de la empresa" subtitle="Aparecen en los comprobantes y definen cómo se calculan el impuesto y la propina.">
+      <form onSubmit={save} className="surface p-5 sm:p-8 space-y-6 max-w-3xl">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-5">
           <div>
             <span className={labelClass}>Código del restaurante (URL)</span>
-            <input value={tenant.slug} disabled className={`${fieldClass} font-mono`} />
-            <span className="text-[10px] text-slate-500 mt-1 block">Lo asigna la plataforma. Carta: /r/{tenant.slug}</span>
+            <input value={tenant.slug} disabled className={fieldClass} />
+            <span className="help">Lo asigna la plataforma. La carta queda en /r/{tenant.slug}</span>
           </div>
           {FIELDS.map(([key, label]) => (
             <label key={key} className="block">
@@ -67,12 +67,12 @@ export default function CompanySettings() {
           <label className="block">
             <span className={labelClass}>Tarifa del impuesto (%)</span>
             <input type="number" min="0" max="100" step="0.01" disabled={form.taxType === 'NINGUNO'} value={form.taxType === 'NINGUNO' ? 0 : form.taxRate} onChange={(e) => set('taxRate', e.target.value)} className={fieldClass} />
-            <span className="text-[10px] text-slate-500 mt-1 block">Los precios de la carta ya incluyen este impuesto; se desglosa en el tiquete.</span>
+            <span className="help">Los precios de la carta ya lo incluyen; el tiquete lo desglosa.</span>
           </label>
           <label className="block">
             <span className={labelClass}>Propina sugerida (%)</span>
-            <input type="number" min="0" max="30" value={form.tipRate} onChange={(e) => set('tipRate', e.target.value)} className={fieldClass} />
-            <span className="text-[10px] text-slate-500 mt-1 block">Voluntaria: el comensal puede quitarla.</span>
+            <input type="number" min="0" max="10" value={form.tipRate} onChange={(e) => set('tipRate', e.target.value)} className={fieldClass} />
+            <span className="help">Voluntaria y máximo 10 % (Ley 1935). La caja la confirma con el cliente al cobrar.</span>
           </label>
           <label className="block sm:col-span-2">
             <span className={labelClass}>Pie de página del tiquete</span>
@@ -80,11 +80,11 @@ export default function CompanySettings() {
           </label>
         </div>
 
-        <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-1.5">
-          <span className="text-xs font-bold text-white flex items-center gap-2">
-            <Database className="w-4 h-4 text-orange-400" aria-hidden="true" /> Base de datos
+        <div className="border-l-4 border-linea pl-4 space-y-1">
+          <span className="font-bold flex items-center gap-2">
+            <Database className="w-4 h-4 text-suave" aria-hidden="true" /> Base de datos
           </span>
-          <p className="text-[11px] text-slate-400 leading-relaxed">
+          <p className="text-sm text-suave leading-relaxed">
             {isDemoMode
               ? 'Modo demo: los datos viven solo en este navegador. Configura VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY para usar la nube.'
               : 'Conectado a Supabase. Pedidos, inventario y caja se sincronizan en tiempo real entre dispositivos.'}

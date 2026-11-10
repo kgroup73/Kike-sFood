@@ -1,34 +1,26 @@
 import { Link } from 'react-router-dom';
-import {
-  Building2, UtensilsCrossed, Users, Package, Gem, Smartphone, ShieldCheck, Receipt, Flame,
-  ChevronRight, Lock, Sparkles, Settings, RotateCcw
-} from 'lucide-react';
+import { Building2, UtensilsCrossed, Users, Package, Gem, Smartphone, ShieldCheck, ChevronRight, Lock, RotateCcw, Printer } from 'lucide-react';
 import { useTenant } from '../../hooks/useTenant';
-import { hasFeature, requiredPlanFor } from '../../lib/plans';
+import { hasFeature, requiredPlanFor, planLabel } from '../../lib/plans';
 import { api, isDemoMode } from '../../services/api';
 
 const GROUPS = [
   {
-    title: 'Personalización',
-    subtitle: 'Marca, carta y equipo',
-    icon: Sparkles,
+    title: 'Tu restaurante',
     items: [
-      { to: 'admin/empresa', icon: Building2, title: 'Datos de Empresa', text: 'Razón social, NIT, impuesto al consumo y propina.' },
-      { to: 'admin/carta', icon: UtensilsCrossed, title: 'Platillos del Menú', text: 'Crear, editar, ocultar y gestionar los platillos.' },
-      { to: 'admin/personal', icon: Users, title: 'Personal y PIN', text: 'Usuarios, roles y PIN de acceso de cada empleado.' }
+      { to: 'admin/empresa', icon: Building2, title: 'Datos de la empresa', text: 'Razón social, NIT, impuesto al consumo y propina sugerida.' },
+      { to: 'admin/carta', icon: UtensilsCrossed, title: 'Platillos', text: 'Crea, edita y oculta los platos de la carta.' },
+      { to: 'admin/personal', icon: Users, title: 'Personal', text: 'Quién entra, con qué rol y con qué PIN.' },
+      { to: 'admin/mesas', icon: Smartphone, title: 'Mesas y códigos QR', text: 'El enlace de cada mesa y los stickers para imprimir.' }
     ]
   },
   {
-    title: 'Servicios',
-    subtitle: 'Módulos operativos',
-    icon: Settings,
+    title: 'Operación',
     items: [
-      { to: 'cocina', icon: Flame, title: 'Cocina KDS', text: 'Comandas en tiempo real y agotados.', feature: 'kitchen' },
-      { to: 'caja', icon: Receipt, title: 'Caja POS', text: 'Cobrar comandas, tiquetes y cierre de caja.', feature: 'pos' },
-      { to: 'admin/inventario', icon: Package, title: 'Inventario', text: 'Trazabilidad de agotados y sugerencias de compra.', feature: 'inventory' },
-      { to: 'admin/mesas', icon: Smartphone, title: 'Mesas / QR / NFC', text: 'Enlaces seguros por mesa y stickers para imprimir.' },
-      { to: 'admin/facturacion', icon: ShieldCheck, title: 'Facturación', text: 'Numeración POS, resolución DIAN y proveedor.', feature: 'pos' },
-      { to: 'admin/planes', icon: Gem, title: 'Plan', text: 'Módulos incluidos en tu suscripción.' }
+      { to: 'admin/cocina', icon: Printer, title: 'Cocina e impresión', text: 'Pantalla de cocina o comandas impresas, y qué equipo imprime.', feature: 'kitchen' },
+      { to: 'admin/inventario', icon: Package, title: 'Inventario', text: 'Qué se ha agotado y qué conviene comprar.', feature: 'inventory' },
+      { to: 'admin/facturacion', icon: ShieldCheck, title: 'Facturación', text: 'Numeración de comprobantes y resolución de la DIAN.', feature: 'pos' },
+      { to: 'admin/planes', icon: Gem, title: 'Plan', text: 'Qué incluye tu suscripción.' }
     ]
   }
 ];
@@ -36,56 +28,57 @@ const GROUPS = [
 export default function AdminHome() {
   const { tenant } = useTenant();
   return (
-    <div className="space-y-8">
-      {GROUPS.map((group) => (
-        <section key={group.title}>
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-9 h-9 rounded-xl bg-orange-500/15 text-orange-400 flex items-center justify-center border border-orange-500/30 shrink-0">
-              <group.icon className="w-5 h-5" aria-hidden="true" />
-            </div>
-            <div>
-              <h3 className="font-extrabold text-white text-sm sm:text-base">{group.title}</h3>
-              <p className="text-[11px] text-slate-400">{group.subtitle}</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {group.items.map((item) => {
-              const enabled = !item.feature || hasFeature(tenant.plan, item.feature);
-              const Icon = item.icon;
-              const content = (
-                <>
-                  <div className="flex items-start gap-3.5 min-w-0">
-                    <div className="w-11 h-11 rounded-xl bg-orange-500/15 text-orange-400 flex items-center justify-center border border-orange-500/25 shrink-0">
-                      <Icon className="w-5 h-5" aria-hidden="true" />
-                    </div>
-                    <div className="min-w-0">
-                      <h4 className="font-bold text-white text-xs sm:text-sm">{item.title}</h4>
-                      <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">{item.text}</p>
-                    </div>
-                  </div>
-                  {enabled ? (
-                    <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-orange-400 shrink-0 mt-1" aria-hidden="true" />
-                  ) : (
-                    <span className="shrink-0 mt-0.5 text-[9px] font-black bg-slate-800 text-slate-400 border border-slate-700 px-1.5 py-0.5 rounded-full flex items-center gap-1 whitespace-nowrap">
-                      <Lock className="w-2.5 h-2.5" aria-hidden="true" /> {requiredPlanFor(item.feature)}
+    <div className="space-y-10">
+      <div className="space-y-1.5">
+        <h1 className="page-title">Administración</h1>
+        <p className="text-suave">Plan {planLabel(tenant.plan)}</p>
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-x-10 gap-y-10 items-start">
+        {GROUPS.map((group) => (
+          <section key={group.title} aria-labelledby={`grupo-${group.title}`} className="space-y-3">
+            <h2 id={`grupo-${group.title}`} className="block-title">
+              {group.title}
+            </h2>
+            <ul className="surface divide-y divide-linea overflow-hidden">
+              {group.items.map((item) => {
+                const enabled = !item.feature || hasFeature(tenant.plan, item.feature);
+                const Icon = item.icon;
+                const content = (
+                  <>
+                    <Icon className={`w-6 h-6 shrink-0 ${enabled ? 'text-hoja' : 'text-suave'}`} aria-hidden="true" />
+                    <span className="flex-1 min-w-0">
+                      <span className="block font-bold text-[17px] group-hover:underline underline-offset-4">{item.title}</span>
+                      <span className="block text-suave leading-snug">{item.text}</span>
                     </span>
-                  )}
-                </>
-              );
-              const cls = 'group bg-slate-900 border rounded-2xl p-5 text-left flex items-start justify-between gap-3 shadow-md transition-all';
-              return enabled ? (
-                <Link key={item.to} to={`/staff/${tenant.slug}/${item.to}`} className={`${cls} border-slate-800 hover:border-orange-500/50 hover:bg-slate-800/60 active:scale-[0.98]`}>
-                  {content}
-                </Link>
-              ) : (
-                <div key={item.to} className={`${cls} border-slate-800/70 opacity-70`} aria-disabled="true">
-                  {content}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      ))}
+                    {enabled ? (
+                      <ChevronRight className="w-5 h-5 text-suave shrink-0" aria-hidden="true" />
+                    ) : (
+                      <span className="shrink-0 text-sm font-bold text-suave flex items-center gap-1 whitespace-nowrap">
+                        <Lock className="w-3.5 h-3.5" aria-hidden="true" /> {requiredPlanFor(item.feature)}
+                      </span>
+                    )}
+                  </>
+                );
+                const cls = 'group flex items-center gap-4 px-5 py-4';
+                return (
+                  <li key={item.to}>
+                    {enabled ? (
+                      <Link to={`/staff/${tenant.slug}/${item.to}`} className={`${cls} hover:bg-mantel transition-colors`}>
+                        {content}
+                      </Link>
+                    ) : (
+                      <div className={`${cls} opacity-60`} aria-disabled="true">
+                        {content}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ))}
+      </div>
 
       {isDemoMode && (
         <button
@@ -95,9 +88,9 @@ export default function AdminHome() {
               window.location.reload();
             }
           }}
-          className="text-xs text-slate-500 hover:text-rose-300 flex items-center gap-1.5"
+          className="text-sm text-suave hover:text-aji flex items-center gap-1.5"
         >
-          <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" /> Reiniciar datos de la demo
+          <RotateCcw className="w-4 h-4" aria-hidden="true" /> Reiniciar los datos de la demo
         </button>
       )}
     </div>

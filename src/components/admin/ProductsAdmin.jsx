@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Eye, EyeOff, Edit3, Trash2, UtensilsCrossed } from 'lucide-react';
+import { Plus, Eye, EyeOff, Edit3, Trash2 } from 'lucide-react';
 import { useTenant } from '../../hooks/useTenant';
 import { useMenu } from '../../hooks/useMenu';
 import { useToast } from '../../hooks/useToast';
@@ -8,6 +8,7 @@ import { formatCOP } from '../../lib/money';
 import { InlineError } from '../ui/Screens';
 import AdminShell, { primaryButton } from './AdminShell';
 import ProductFormModal from './ProductFormModal';
+import DishImage from '../client/DishImage';
 
 const EMPTY = {
   id: null, name: '', categoryId: null, price: 25000, image: '', description: '',
@@ -32,54 +33,65 @@ export default function ProductsAdmin() {
     }
   };
 
+  const groups = [
+    ...menu.categories.map((c) => ({ name: c.name, items: menu.productsWithStock.filter((p) => p.category === c.name) })),
+    { name: 'Sin categoría', items: menu.productsWithStock.filter((p) => !p.category) }
+  ].filter((g) => g.items.length);
+
   return (
     <AdminShell
-      title={`Platillos del menú (${menu.products.length})`}
-      icon={<UtensilsCrossed className="w-4 h-4 text-orange-500" aria-hidden="true" />}
+      title="Platillos"
+      subtitle={`${menu.products.length} platos en la carta. Los ocultos no aparecen para el comensal.`}
       actions={
-        <button onClick={() => setEditing({ ...EMPTY, categoryId: menu.categories[0]?.id || null })} className={`${primaryButton} flex items-center gap-1.5`}>
+        <button onClick={() => setEditing({ ...EMPTY, categoryId: menu.categories[0]?.id || null })} className={primaryButton}>
           <Plus className="w-4 h-4" aria-hidden="true" /> Nuevo platillo
         </button>
       }
     >
       {menu.error && <InlineError message={menu.error} onRetry={menu.reload} />}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {menu.productsWithStock.map((p) => (
-          <div key={p.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 flex justify-between items-center gap-3 shadow-md hover:border-slate-700 transition-all">
-            <div className="flex items-center space-x-3 overflow-hidden">
-              {p.image ? <img src={p.image} alt="" className={`w-12 h-12 rounded-xl object-cover bg-slate-950 shrink-0 ${p.available ? '' : 'opacity-40'}`} loading="lazy" /> : <div className="w-12 h-12 rounded-xl bg-slate-950 shrink-0" />}
-              <div className="truncate">
-                <h4 className="font-bold text-white text-xs truncate">{p.name}</h4>
-                <span className="text-orange-500 font-extrabold text-xs">{formatCOP(p.price)}</span>
-                <span className="text-[10px] text-slate-500 block truncate">
-                  {p.category || 'Sin categoría'}
-                  {!p.available && ' · Oculto'}
-                  {p.soldOut && ' · Agotado'}
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center space-x-1 shrink-0">
-              <button
-                onClick={() => act(() => api.setProductAvailable(p.id, !p.available), p.available ? 'Platillo oculto de la carta' : 'Platillo visible en la carta')}
-                className={`p-2 rounded-lg transition-colors ${p.available ? 'text-emerald-400 hover:bg-emerald-500/10' : 'text-rose-400 hover:bg-rose-500/10'}`}
-                aria-label={p.available ? `Ocultar ${p.name}` : `Mostrar ${p.name}`}
-                title={p.available ? 'Visible (clic para ocultar)' : 'Oculto (clic para mostrar)'}
-              >
-                {p.available ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-              </button>
-              <button onClick={() => setEditing(p)} className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800" aria-label={`Editar ${p.name}`} title="Editar">
-                <Edit3 className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => window.confirm(`¿Eliminar "${p.name}" de la carta?`) && act(() => api.deleteProduct(p.id), 'Platillo eliminado')}
-                className="p-2 text-rose-400 hover:text-rose-300 rounded-lg hover:bg-rose-500/10"
-                aria-label={`Eliminar ${p.name}`}
-                title="Eliminar"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
+      <div className="space-y-10">
+        {groups.map((group) => (
+          <section key={group.name} className="space-y-3">
+            <h2 className="block-title">
+              {group.name} <span className="text-suave font-normal">{group.items.length}</span>
+            </h2>
+            <ul className="surface divide-y divide-linea overflow-hidden">
+              {group.items.map((p) => (
+                <li key={p.id} className="flex items-center gap-4 px-4 sm:px-5 py-3">
+                  <DishImage src={p.image} className={`w-14 h-14 rounded-xl shrink-0 ${p.available ? '' : 'opacity-40'}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className={`font-bold truncate ${p.available ? '' : 'text-suave'}`}>{p.name}</p>
+                    <p className="flex items-center gap-2 flex-wrap">
+                      <span className="precio">{formatCOP(p.price)}</span>
+                      {!p.available && <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-linea">Oculto</span>}
+                      {p.soldOut && <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-aji text-white">Agotado</span>}
+                    </p>
+                  </div>
+                  <div className="flex items-center shrink-0">
+                    <button
+                      onClick={() => act(() => api.setProductAvailable(p.id, !p.available), p.available ? 'Platillo oculto de la carta' : 'Platillo visible en la carta')}
+                      className="icon-btn"
+                      aria-label={p.available ? `Ocultar ${p.name}` : `Mostrar ${p.name}`}
+                      title={p.available ? 'Visible: clic para ocultar' : 'Oculto: clic para mostrar'}
+                    >
+                      {p.available ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                    </button>
+                    <button onClick={() => setEditing(p)} className="icon-btn" aria-label={`Editar ${p.name}`} title="Editar">
+                      <Edit3 className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => window.confirm(`¿Eliminar "${p.name}" de la carta?`) && act(() => api.deleteProduct(p.id), 'Platillo eliminado')}
+                      className="icon-btn hover:!text-aji hover:!bg-aji/10"
+                      aria-label={`Eliminar ${p.name}`}
+                      title="Eliminar"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
         ))}
       </div>
 

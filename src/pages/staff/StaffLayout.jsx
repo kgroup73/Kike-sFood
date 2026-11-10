@@ -1,70 +1,91 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Flame, Receipt, Settings, Volume2, VolumeX, LogOut } from 'lucide-react';
+import { Flame, Receipt, Settings, Volume2, VolumeX, LogOut, ClipboardList } from 'lucide-react';
 import { useTenant } from '../../hooks/useTenant';
 import { useStaffSession } from '../../hooks/useStaffSession';
 import { useSound } from '../../hooks/useSound';
-import { canAccess, ROLES } from '../../lib/roles';
-import { hasFeature, planLabel } from '../../lib/plans';
+import { canAccess } from '../../lib/roles';
+import { hasFeature } from '../../lib/plans';
 import { isDemoMode } from '../../services/api';
-import BrandMark from '../../components/ui/BrandMark';
+import { usePrinterDevice } from '../../hooks/useOrderPrinter';
+import WaiterCalls from '../../components/staff/WaiterCalls';
+import PrinterStatus from '../../components/staff/PrinterStatus';
 
 const SECTIONS = [
   { key: 'cocina', label: 'Cocina', icon: Flame, feature: 'kitchen' },
   { key: 'caja', label: 'Caja', icon: Receipt, feature: 'pos' },
-  { key: 'admin', label: 'Admin', icon: Settings }
+  { key: 'admin', label: 'Administración', icon: Settings }
 ];
 
 export default function StaffLayout() {
   const { tenant } = useTenant();
   const { staff, logout } = useStaffSession();
   const { soundEnabled, toggleSound } = useSound();
-  const sections = SECTIONS.filter((s) => canAccess(staff.role, s.key) && (!s.feature || hasFeature(tenant.plan, s.feature)));
+  const [isPrinter] = usePrinterDevice(tenant.id);
+  // Sin pantalla de cocina, la sección se llama Comandas: la cocina trabaja con la comanda impresa.
+  const sections = SECTIONS.filter((s) => canAccess(staff.role, s.key) && (!s.feature || hasFeature(tenant.plan, s.feature))).map((s) =>
+    s.key === 'cocina' && tenant.kitchenDisplay === false ? { ...s, label: 'Comandas', icon: ClipboardList } : s
+  );
 
   return (
-    <div className="min-h-screen pb-10">
-      <header className="bg-brand-panel/95 backdrop-blur-md border-b border-brand-line sticky top-0 z-30 print-hidden">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-          <div className="flex items-center justify-between gap-3 min-w-0">
-            <div className="flex items-center gap-3 min-w-0">
-              <BrandMark size="sm" showName={false} />
-              <div className="min-w-0 leading-tight">
-                <p className="font-extrabold text-sm text-brand-ivory truncate">{tenant.name}</p>
-                <p className="text-[10px] text-brand-khaki truncate">
-                  {staff.displayName} · {ROLES[staff.role]} · Plan {planLabel(tenant.plan)}
-                  {isDemoMode && ' · DEMO'}
-                </p>
-              </div>
-            </div>
+    <div className="min-h-screen pb-12">
+      <header className="bg-mantel/95 backdrop-blur border-b border-linea sticky top-0 z-30 print-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-wrap sm:flex-nowrap items-stretch gap-x-4">
+          <div className="order-1 flex-1 min-w-0 leading-tight py-3">
+            <p className="font-display font-bold text-lg tracking-tight truncate">{tenant.name}</p>
+            <p className="text-sm text-suave truncate flex items-center gap-2">
+              {staff.displayName}
+              {isDemoMode && <span className="text-xs font-bold px-1.5 rounded bg-maracuya text-sobre-maracuya">Demo</span>}
+            </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <nav aria-label="Secciones del personal" className="flex items-center bg-brand-night p-1 rounded-xl border border-brand-line text-[11px] font-semibold flex-1 sm:flex-initial">
-              {sections.map(({ key, label, icon: Icon }) => (
-                <NavLink
-                  key={key}
-                  to={`/staff/${tenant.slug}/${key}`}
-                  className={({ isActive }) =>
-                    `px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap flex-1 sm:flex-initial justify-center ${
-                      isActive ? 'bg-gradient-to-r from-brand-gold to-brand-gold-light text-brand-ivory shadow-md' : 'text-brand-khaki hover:text-brand-cream'
-                    }`
-                  }
-                >
-                  <Icon className="w-3.5 h-3.5" aria-hidden="true" /> <span>{label}</span>
-                </NavLink>
-              ))}
-            </nav>
-            <button onClick={toggleSound} aria-label={soundEnabled ? 'Silenciar sonido' : 'Activar sonido'} aria-pressed={soundEnabled} className="p-2 bg-brand-raised hover:bg-brand-line text-brand-khaki hover:text-brand-ivory rounded-xl border border-brand-line">
-              {soundEnabled ? <Volume2 className="w-4 h-4 text-brand-gold" /> : <VolumeX className="w-4 h-4" />}
-            </button>
-            <button onClick={logout} aria-label="Cerrar sesión" title="Cerrar sesión" className="p-2 bg-brand-raised hover:bg-rose-500/20 text-brand-khaki hover:text-rose-300 rounded-xl border border-brand-line">
-              <LogOut className="w-4 h-4" />
-            </button>
+          <nav
+            aria-label="Secciones del personal"
+            className="order-3 sm:order-2 w-[calc(100%+2rem)] sm:w-auto flex items-stretch -mx-4 px-2 sm:mx-0 sm:px-0 border-t border-linea sm:border-0"
+          >
+            {sections.map(({ key, label, icon: Icon }) => (
+              <NavLink
+                key={key}
+                to={`/staff/${tenant.slug}/${key}`}
+                className={({ isActive }) =>
+                  `relative flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 h-12 sm:h-auto font-bold text-[15px] transition-colors after:absolute after:inset-x-3 after:bottom-0 after:h-[3px] after:rounded-t-full ${
+                    isActive ? 'text-tinta after:bg-hoja' : 'text-suave hover:text-tinta after:bg-transparent'
+                  }`
+                }
+              >
+                <Icon className="w-4 h-4" aria-hidden="true" /> <span>{label}</span>
+              </NavLink>
+            ))}
+          </nav>
+
+          <div className="order-2 sm:order-3 flex items-center gap-1 sm:pl-3 sm:border-l sm:border-linea sm:my-3">
+            {isPrinter && hasFeature(tenant.plan, 'kitchen') && <PrinterStatus tenant={tenant} />}
+            <SoundAndLogout soundEnabled={soundEnabled} toggleSound={toggleSound} logout={logout} />
           </div>
         </div>
       </header>
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <Outlet />
       </main>
+      {hasFeature(tenant.plan, 'waiterCall') && <WaiterCalls tenantId={tenant.id} />}
     </div>
+  );
+}
+
+function SoundAndLogout({ soundEnabled, toggleSound, logout }) {
+  return (
+    <>
+      <button
+        onClick={toggleSound}
+        aria-label={soundEnabled ? 'Silenciar sonido' : 'Activar sonido'}
+        aria-pressed={soundEnabled}
+        title={soundEnabled ? 'Sonido activado' : 'Sonido apagado'}
+        className="icon-btn"
+      >
+        {soundEnabled ? <Volume2 className="w-5 h-5" aria-hidden="true" /> : <VolumeX className="w-5 h-5" aria-hidden="true" />}
+      </button>
+      <button onClick={logout} aria-label="Cerrar sesión" title="Cerrar sesión" className="icon-btn hover:!text-aji">
+        <LogOut className="w-5 h-5" aria-hidden="true" />
+      </button>
+    </>
   );
 }

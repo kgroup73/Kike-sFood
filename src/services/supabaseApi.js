@@ -1,10 +1,12 @@
-import { supabase } from '../lib/supabaseClient';
+import { supabase, publicConnection } from '../lib/supabaseClient';
 import { productFromRow, productToRow, stockFromRows } from '../lib/catalog';
 import { OPEN_STATUSES } from '../lib/orderStatus';
 import { unwrap, toAppError } from './errors';
+import { localFloorPlanStore } from './floorPlanStore';
 import {
   tenantFromRow, tenantToRow, orderFromRow, invoiceFromRow, dailyCloseFromRow, stockEventFromRow,
-  customerFromRow, staffFromRow, tableFromRow, sequenceFromRow, sequenceToRow
+  customerFromRow, staffFromRow, tableFromRow, sequenceFromRow, sequenceToRow, waiterCallFromRow,
+  printStationFromRow, printDeviceFromRow, printJobFromRow
 } from './mappers';
 
 let channelSeq = 0;
@@ -35,7 +37,7 @@ export const supabaseApi = {
       supabase.from('products').select('*').eq('tenant_id', tenantId).order('sort_order'),
       supabase.from('ingredients_stock').select('*').eq('tenant_id', tenantId).eq('is_sold_out', true)
     ]);
-    const categories = unwrap(cats).map((c) => ({ id: c.id, name: c.name, sortOrder: c.sort_order }));
+    const categories = unwrap(cats).map((c) => ({ id: c.id, name: c.name, sortOrder: c.sort_order, printStationId: c.print_station_id ?? null }));
     const names = Object.fromEntries(categories.map((c) => [c.id, c.name]));
     return {
       categories,
@@ -63,6 +65,112 @@ export const supabaseApi = {
         p_include_tip: includeTip
       })
     );
+  },
+
+  // ------------------------------------------------------------------ Llamado al mesero
+  async callWaiter({ slug, tableToken }) {
+    return unwrap(await supabase.rpc('call_waiter', { p_slug: slug, p_table_token: tableToken }));
+  },
+
+  async listWaiterCalls(tenantId) {
+    const since = new Date(Date.now() - 3 * 3600000).toISOString();
+    const rows = unwrap(
+      await supabase
+        .from('waiter_calls')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .is('attended_at', null)
+        .gte('created_at', since)
+        .order('created_at', { ascending: true })
+    );
+    return rows.map(waiterCallFromRow);
+  },
+
+  subscribeWaiterCalls(tenantId, { onInsert, onChange }) {
+    return subscribe('waiter', ['waiter_calls'], tenantId, (payload) => {
+      if (payload.eventType === 'INSERT') onInsert?.(waiterCallFromRow(payload.new));
+      else onChange?.();
+    });
+  },
+
+  async attendWaiterCall(callId) {
+    unwrap(await supabase.rpc('attend_waiter_call', { p_call_id: callId }));
+  },
+
+  // ------------------------------------------------------------------ Fila de impresión
+  // La app anota qué imprimir (print_jobs) y un imprimidor lo saca: el agente local o,
+  // de respaldo, el navegador de un equipo del personal. Ver impresora/README.md.
+  async listPrintStations(tenantId) {
+    const rows = unwrap(await supabase.from('print_stations').select('*').eq('tenant_id', tenantId).order('sort_order'));
+    return rows.map(printStationFromRow);
+  },
+
+  async savePrintStation({ id = null, name, isDefault = false, printsReceipts = false }) {
+    return unwrap(
+      await supabase.rpc('admin_save_print_station', { p_id: id, p_name: name, p_is_default: isDefault, p_prints_receipts: printsReceipts })
+    );
+  },
+
+  async deletePrintStation(id) {
+    unwrap(await supabase.rpc('admin_delete_print_station', { p_id: id }));
+  },
+
+  async setCategoryStation(categoryId, stationId) {
+    const rows = unwrap(await supabase.from('categories').update({ print_station_id: stationId || null }).eq('id', categoryId).select('id'));
+    if (!rows.length) throw new Error('No tienes permiso para cambiar esta categoría');
+  },
+
+  async listPrintDevices(tenantId) {
+    const rows = unwrap(
+      await supabase
+        .from('print_devices')
+        .select('id, name, station_ids, pairing_expires_at, paired_at, last_seen_at, agent_version, revoked_at, created_at')
+        .eq('tenant_id', tenantId)
+        .order('created_at')
+    );
+    return rows.map(printDeviceFromRow);
+  },
+
+  async createPrintDevice({ name, stationIds }) {
+    return unwrap(await supabase.rpc('admin_create_print_device', { p_name: name, p_station_ids: stationIds }));
+  },
+
+  async newPairingCode(deviceId) {
+    return unwrap(await supabase.rpc('admin_new_pairing_code', { p_device_id: deviceId }));
+  },
+
+  async updatePrintDevice({ id, name, stationIds }) {
+    unwrap(await supabase.rpc('admin_update_print_device', { p_device_id: id, p_name: name, p_station_ids: stationIds }));
+  },
+
+  async revokePrintDevice(id) {
+    unwrap(await supabase.rpc('admin_revoke_print_device', { p_device_id: id }));
+  },
+
+  /** Lo que el agente necesita para vincularse: dirección y llave pública de Supabase. */
+  agentConnection() {
+    return publicConnection;
+  },
+
+  async claimPrintJobs(stationIds = null) {
+    const rows = unwrap(await supabase.rpc('claim_print_jobs', { p_station_ids: stationIds, p_limit: 10 }));
+    return rows.map(printJobFromRow);
+  },
+
+  async reportPrintJob(jobId, ok, error = null) {
+    unwrap(await supabase.rpc('report_print_job', { p_job_id: jobId, p_ok: ok, p_error: error }));
+  },
+
+  async printInvoice(invoiceId) {
+    return unwrap(await supabase.rpc('enqueue_invoice_print', { p_invoice_id: invoiceId }));
+  },
+
+  async printTest(stationId) {
+    return unwrap(await supabase.rpc('enqueue_test_print', { p_station_id: stationId }));
+  },
+
+  subscribePrintJobs(tenantId, onChange) {
+    return subscribe('print', ['print_jobs'], tenantId, onChange);
   },
 
   // ------------------------------------------------------------------ Sesión del personal
@@ -137,6 +245,10 @@ export const supabaseApi = {
     if (!rows.length) throw new Error('No tienes permiso para actualizar este pedido');
   },
 
+  async requestOrderReprint(orderId) {
+    unwrap(await supabase.rpc('request_order_reprint', { p_order_id: orderId }));
+  },
+
   async setIngredientStock({ name, soldOut, note }) {
     return unwrap(
       await supabase.rpc('set_ingredient_stock', { p_name: name, p_sold_out: soldOut, p_note: note || null })
@@ -179,13 +291,14 @@ export const supabaseApi = {
     return customerFromRow(row);
   },
 
-  async issueInvoice({ orderIds, kind, customerId, paymentMethod }) {
+  async issueInvoice({ orderIds, kind, customerId, paymentMethod, tip = null }) {
     const row = unwrap(
       await supabase.rpc('issue_invoice', {
         p_order_ids: orderIds,
         p_kind: kind,
         p_customer_id: customerId || null,
-        p_payment_method: paymentMethod
+        p_payment_method: paymentMethod,
+        p_tip: tip
       })
     );
     return invoiceFromRow(row);
@@ -256,12 +369,33 @@ export const supabaseApi = {
   async createTables(tenantId, labels) {
     const existing = unwrap(await supabase.from('restaurant_tables').select('sort_order').eq('tenant_id', tenantId));
     const start = existing.reduce((m, r) => Math.max(m, r.sort_order), 0);
-    unwrap(
+    const rows = unwrap(
       await supabase
         .from('restaurant_tables')
         .insert(labels.map((label, i) => ({ tenant_id: tenantId, label, sort_order: start + i + 1 })))
+        .select('*')
     );
+    return rows.map(tableFromRow);
   },
+
+  async deleteTable(tableId) {
+    // Los pedidos guardan table_id con ON DELETE SET NULL: se bloquea aquí para no dejar
+    // comandas abiertas sin mesa. TODO(supabase): mover esta regla a un trigger (ver docs/plano-sala-supabase.md).
+    const open = unwrap(
+      await supabase.from('orders').select('id').eq('table_id', tableId).in('status', OPEN_STATUSES).limit(1)
+    );
+    if (open.length) throw new Error('No se puede eliminar la mesa: tiene pedidos abiertos');
+    const rows = unwrap(await supabase.from('restaurant_tables').delete().eq('id', tableId).select('tenant_id'));
+    if (!rows.length) throw new Error('Mesa no encontrada o sin permiso para eliminarla');
+    await localFloorPlanStore.saveTableLayout(rows[0].tenant_id, { [tableId]: null });
+  },
+
+  // Plano de sala. TODO(supabase): hoy vive en el navegador (localFloorPlanStore); al crear las
+  // tablas de docs/plano-sala-supabase.md se reemplazan estas 4 funciones y las vistas no cambian.
+  getFloorPlan: (tenantId) => localFloorPlanStore.getFloorPlan(tenantId),
+  saveEnvironments: (tenantId, environments) => localFloorPlanStore.saveEnvironments(tenantId, environments),
+  saveTableLayout: (tenantId, updates) => localFloorPlanStore.saveTableLayout(tenantId, updates),
+  subscribeFloorPlan: (tenantId, onChange) => localFloorPlanStore.subscribeFloorPlan(tenantId, onChange),
 
   async setTableActive(tableId, isActive) {
     unwrap(await supabase.from('restaurant_tables').update({ is_active: isActive }).eq('id', tableId));

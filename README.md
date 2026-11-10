@@ -36,9 +36,10 @@ Sin variables de Supabase la app funciona en **modo demo**. Los datos viven en e
 | `npm run lint` | ESLint (incluye `react-hooks/exhaustive-deps`) |
 | `npm test` | Pruebas unitarias y de integración (Vitest + Testing Library) |
 | `npm run test:db` | Prueba la migración, el seed y las políticas RLS en un Postgres embebido (PGlite) |
+| `npm run test:impresora` | Pruebas del agente local de impresión (`impresora/`) |
 | `node scripts/generate-seed.mjs` | Regenera `supabase/seed.sql` a partir de los datos demo |
 
-El CI (`.github/workflows/ci.yml`) ejecuta lint, test, test:db y build en cada PR.
+El CI (`.github/workflows/ci.yml`) ejecuta lint, test, test:db, test:impresora y build en cada PR.
 
 ---
 
@@ -63,7 +64,7 @@ Tablet de cocina / caja ── PIN ──► Edge Function staff-login ──►
 
 ### Impuesto al consumo (INC)
 
-Los restaurantes en Colombia cobran normalmente el **INC del 8 %** en lugar del IVA. El precio que ve el cliente en la carta **ya incluye el impuesto**, así que el tiquete lo **desglosa** (`base = total / 1,08`) en vez de sumarlo. La propina es voluntaria, va aparte y no hace parte de la base gravable. El tipo de impuesto y la tarifa se configuran en *Admin → Datos de Empresa*.
+Los restaurantes en Colombia cobran normalmente el **INC del 8 %** en lugar del IVA. El precio que ve el cliente en la carta **ya incluye el impuesto**, así que el tiquete lo **desglosa** (`base = total / 1,08`) en vez de sumarlo. La propina es voluntaria (Ley 1935 de 2018): el comensal no la elige al pedir; la caja la confirma con él al cobrar (sugerida, sin propina u otro valor). Va aparte y no hace parte de la base gravable. La propina sugerida se configura en *Admin → Datos de Empresa* y no puede superar el 10 %. El tipo de impuesto y la tarifa se configuran en *Admin → Datos de Empresa*.
 
 ### Estructura
 
@@ -142,6 +143,18 @@ La migración revoca los privilegios por defecto de `anon` y `authenticated`. Ca
 1. Hacer `GRANT` explícito de lo que necesita.
 2. Activar RLS (`enable row level security`) con políticas que usen `has_staff_role(tenant_id, ...)`.
 3. Tener su caso en `scripts/test-db.mjs`.
+
+---
+
+## Impresión de comandas y tiquetes
+
+La app no imprime directo: anota cada trabajo en una fila (`print_jobs`) y un imprimidor lo saca.
+
+- **Estaciones por restaurante** (`print_stations`): Cocina, Barra, Caja… Cada categoría de la carta va a una estación; lo que no tiene estación va a la estación por defecto. La comanda de una mesa se reparte y cada estación recibe solo sus platos. Una estación puede imprimir los tiquetes de caja.
+- **Agente local** ([`impresora/`](impresora/README.md)): programa en Node que se instala una vez en el computador de la impresora (`instalar-windows.ps1`). Se vincula con el código del restaurante y un código de un solo uso que genera Administración → Cocina e impresión, e imprime en ESC/POS por red (puerto 9100) o por el spooler de Windows, sin vista previa.
+- **Respaldo en el navegador**: un equipo del personal puede imprimir la fila desde el panel (sin vista previa solo con Chrome y `--kiosk-printing`).
+
+El servidor entrega cada trabajo a un solo imprimidor (`FOR UPDATE SKIP LOCKED`); si falla vuelve a la fila y tras 5 intentos queda en error. Migración: `supabase/migrations/20261111000000_fila_impresion.sql`.
 
 ---
 

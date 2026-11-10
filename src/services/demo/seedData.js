@@ -16,6 +16,7 @@ export const DEMO_TENANT = {
   phone: '+57 (604) 444-5566',
   email: 'facturacion@latrattoria.com',
   plan: 'premium',
+  kitchenDisplay: true,
   taxType: 'INC',
   taxRate: 8,
   tipRate: 10,

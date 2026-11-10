@@ -12,10 +12,10 @@ export default function RequireSection({ section, feature, children }) {
 
   if (!canAccess(staff.role, section)) {
     return (
-      <div className="max-w-md mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-2">
-        <ShieldOff className="w-8 h-8 mx-auto text-rose-400" aria-hidden="true" />
-        <h2 className="text-sm font-bold text-white">Sin acceso a esta sección</h2>
-        <p className="text-xs text-slate-400">Tu rol ({ROLES[staff.role]}) no tiene permiso para entrar aquí.</p>
+      <div className="max-w-lg mx-auto py-16 space-y-3">
+        <ShieldOff className="w-6 h-6 text-aji" aria-hidden="true" />
+        <h2 className="page-title">Sin acceso a esta sección</h2>
+        <p className="text-suave">Tu rol ({ROLES[staff.role]}) no tiene permiso para entrar aquí. Usa las pestañas de arriba para ir a tus secciones.</p>
       </div>
     );
   }

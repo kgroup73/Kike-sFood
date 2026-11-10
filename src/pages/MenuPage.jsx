@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { MapPin, ShieldAlert } from 'lucide-react';
 import { useTenant } from '../hooks/useTenant';
 import { useMenu } from '../hooks/useMenu';
 import { useToast } from '../hooks/useToast';
@@ -8,8 +7,8 @@ import { api } from '../services/api';
 import { hasFeature } from '../lib/plans';
 import { buildStories } from '../lib/catalog';
 import { makeCartItem, addToCart, setCartQuantity, toOrderPayload } from '../lib/pricing';
-import BrandMark from '../components/ui/BrandMark';
 import { LoadingScreen, ErrorScreen, InlineError } from '../components/ui/Screens';
+import { PROJECT_NAME } from '../config/branding';
 import ClientView from '../components/client/ClientView';
 import FloatingClientBar from '../components/client/FloatingBar';
 import CartDrawer from '../components/client/CartDrawer';
@@ -52,16 +51,15 @@ function Menu({ tenant, tableToken }) {
 
   const [table, setTable] = useState({ status: tableToken ? 'checking' : 'none', label: null });
   const [cart, setCart] = useState(() => readJSON(sessionStorage, cartKey, []));
-  const [includeTip, setIncludeTip] = useState(true);
   const [favorites, setFavorites] = useState(() => readJSON(localStorage, favKey, []));
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState('Todos');
   const [dietaryFilter, setDietaryFilter] = useState('');
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [storyIndex, setStoryIndex] = useState(null);
   const [tableModal, setTableModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [waiter, setWaiter] = useState('idle'); // 'idle' | 'sending' | 'called'
 
   // Valida el token de la mesa en el servidor (antes bastaba con ?mesa=4 en la URL).
   useEffect(() => {
@@ -77,9 +75,37 @@ function Menu({ tenant, tableToken }) {
   }, [tenant.slug, tableToken]);
 
   useEffect(() => writeJSON(sessionStorage, cartKey, cart), [cartKey, cart]);
+
+  // La carta tiene su propia piel (src/index.css, .carta); se aplica a toda la página.
+  useEffect(() => {
+    document.documentElement.classList.add('carta');
+    return () => document.documentElement.classList.remove('carta');
+  }, []);
   useEffect(() => writeJSON(localStorage, favKey, favorites), [favKey, favorites]);
 
   const orderingEnabled = hasFeature(tenant.plan, 'ordering');
+  const canCallWaiter = hasFeature(tenant.plan, 'waiterCall') && table.status === 'ok';
+
+  // Tras avisar, el botón queda en "Mesero avisado" un minuto: evita llamados repetidos.
+  useEffect(() => {
+    if (waiter !== 'called') return undefined;
+    const t = setTimeout(() => setWaiter('idle'), 60000);
+    return () => clearTimeout(t);
+  }, [waiter]);
+
+  const callWaiter = async () => {
+    if (waiter !== 'idle') return;
+    setWaiter('sending');
+    try {
+      await api.callWaiter({ slug: tenant.slug, tableToken });
+      setWaiter('called');
+      playChime();
+      showToast('Avisamos al personal: el mesero va en camino', 'success');
+    } catch (err) {
+      setWaiter('idle');
+      showToast(err.message || 'No se pudo llamar al mesero. Intenta de nuevo.', 'error');
+    }
+  };
   const canOrder = orderingEnabled && table.status === 'ok';
   const blockedReason = !orderingEnabled
     ? 'Este restaurante opera con carta de consulta. Pide directamente a tu mesero.'
@@ -137,7 +163,8 @@ function Menu({ tenant, tableToken }) {
         slug: tenant.slug,
         tableToken,
         items: toOrderPayload(cart),
-        includeTip
+        // La propina es voluntaria y se define al pagar, en caja (Ley 1935 de 2018).
+        includeTip: false
       });
       setCart([]);
       setIsCartOpen(false);
@@ -153,66 +180,64 @@ function Menu({ tenant, tableToken }) {
   };
 
   return (
-    <div className="min-h-screen pb-28">
-      <header className="bg-brand-panel/95 backdrop-blur-md border-b border-brand-line sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex items-center justify-between gap-3">
-          <BrandMark size="sm" />
-          {table.status === 'ok' ? (
-            <span className="text-[11px] font-bold bg-brand-gold/15 text-brand-cream border border-brand-gold/40 px-2.5 py-1 rounded-full flex items-center gap-1">
-              <MapPin className="w-3 h-3 text-brand-gold-light" aria-hidden="true" /> Mesa {table.label}
-            </span>
-          ) : orderingEnabled ? (
-            <button
-              onClick={() => setTableModal(true)}
-              className="text-[11px] font-bold bg-brand-raised text-brand-mute border border-brand-line px-2.5 py-1 rounded-full flex items-center gap-1"
-            >
-              <ShieldAlert className="w-3 h-3" aria-hidden="true" /> {table.status === 'checking' ? 'Validando mesa…' : 'Sin mesa'}
-            </button>
-          ) : null}
-        </div>
-      </header>
+    <div className="carta min-h-screen pb-28">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6">
+        <header className="pt-8 pb-5 sm:pt-12">
+          <h1 className="font-display font-extrabold text-[2.5rem] sm:text-6xl leading-[0.95] tracking-tight">{tenant.name}</h1>
+          <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-suave">
+            {table.status === 'ok' ? (
+              <>
+                <span className="font-bold text-tinta">Mesa {table.label}</span>
+                <span>{orderingEnabled ? '· pide desde aquí y llega a la cocina' : ''}</span>
+              </>
+            ) : orderingEnabled ? (
+              <button onClick={() => setTableModal(true)} className="font-bold text-tinta underline underline-offset-4">
+                {table.status === 'checking' ? 'Validando mesa…' : 'Sin mesa'}
+              </button>
+            ) : (
+              <span>Carta</span>
+            )}
+            {tenant.address && <span className="w-full text-sm">{tenant.address}{tenant.city ? `, ${tenant.city}` : ''}</span>}
+          </p>
+        </header>
 
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 space-y-4">
-        {menu.error && <InlineError message={`No se pudo cargar la carta: ${menu.error}`} onRetry={menu.reload} />}
-        {menu.loading ? (
-          <div className="py-24 text-center text-xs text-brand-khaki">Cargando la carta…</div>
-        ) : (
-          <ClientView
-            company={tenant}
-            products={visibleProducts}
-            categories={categoryNames}
-            stories={stories}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            activeCategory={activeCategory}
-            setActiveCategory={setActiveCategory}
-            dietaryFilter={dietaryFilter}
-            setDietaryFilter={setDietaryFilter}
-            setSelectedProduct={(p) => setSelectedProductId(p.id)}
-            favorites={favorites}
-            toggleFavorite={toggleFavorite}
-            onOpenStory={setStoryIndex}
-            canOrder={canOrder}
-          />
-        )}
-      </main>
+        <main>
+          {menu.error && <InlineError message={`No se pudo cargar la carta: ${menu.error}`} onRetry={menu.reload} />}
+          {menu.loading ? (
+            <p className="py-24 text-center text-suave">Cargando la carta…</p>
+          ) : (
+            <ClientView
+              products={visibleProducts}
+              categories={categoryNames}
+              stories={stories}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              dietaryFilter={dietaryFilter}
+              setDietaryFilter={setDietaryFilter}
+              setSelectedProduct={(p) => setSelectedProductId(p.id)}
+              onQuickAdd={(p) => handleAddToCart(p, {}, 1)}
+              favorites={favorites}
+              onOpenStory={setStoryIndex}
+              canOrder={canOrder}
+            />
+          )}
+        </main>
+
+        <footer className="pt-12 pb-4 text-center text-xs text-suave">Carta digital por {PROJECT_NAME}</footer>
+      </div>
 
       <FloatingClientBar
         cart={cart}
-        includeTip={includeTip}
-        tipRate={tenant.tipRate}
         onOpenCart={() => setIsCartOpen(true)}
         mode={orderingEnabled ? 'order' : 'consult'}
-        tableLabel={table.label}
+        onCallWaiter={canCallWaiter ? callWaiter : undefined}
+        waiter={waiter}
       />
 
       {isCartOpen && (
         <CartDrawer
           cart={cart}
           tableLabel={table.label}
-          tipRate={tenant.tipRate}
-          includeTip={includeTip}
-          setIncludeTip={setIncludeTip}
           onChangeQuantity={(key, q) => setCart((prev) => setCartQuantity(prev, key, q))}
           onClose={() => setIsCartOpen(false)}
           onSubmit={submitOrder}
@@ -223,6 +248,7 @@ function Menu({ tenant, tableToken }) {
 
       {selectedProduct && (
         <ProductDetailModal
+          key={selectedProduct.id}
           product={selectedProduct}
           allProducts={visibleProducts}
           isFavorite={favorites.includes(selectedProduct.id)}

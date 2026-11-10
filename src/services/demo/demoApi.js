@@ -16,6 +16,7 @@ import { splitTaxIncluded, computeTip, effectiveTaxRate } from '../../lib/money'
 import { canTransition, ORDER_STATUS, OPEN_STATUSES } from '../../lib/orderStatus';
 import { hasFeature } from '../../lib/plans';
 import { CONSUMIDOR_FINAL, sumOrders, mergeInvoiceItems } from '../../lib/billing';
+import { localFloorPlanStore } from '../floorPlanStore';
 
 const DB_KEY = 'kikes_demo_db_v2';
 const SESSION_KEY = 'kikes_demo_session';
@@ -23,7 +24,7 @@ export const demoTableToken = (label) => `demo-mesa-${label}`;
 
 // ------------------------------------------------------------------ almacenamiento
 function seed() {
-  const categories = DEMO_CATEGORIES.map((name, i) => ({ id: demoUuid('c', i + 1), name, sortOrder: i }));
+  const categories = DEMO_CATEGORIES.map((name, i) => ({ id: demoUuid('c', i + 1), name, sortOrder: i, printStationId: null }));
   const catId = (name) => categories.find((c) => c.name === name)?.id ?? null;
   const products = INITIAL_PRODUCTS.map((p, i) => ({
     id: demoUuid('p', p.id),
@@ -73,6 +74,8 @@ function seed() {
       total: subtotal + tip,
       notes: '',
       createdAt: new Date(now - (8 - i * 6) * 60000).toISOString(),
+      // Las comandas de ejemplo figuran como impresas: activar la impresora no las imprime.
+      printedAt: new Date(now - (8 - i * 6) * 60000).toISOString(),
       items
     };
   });
@@ -91,9 +94,61 @@ function seed() {
     sequences: DEMO_INVOICE_SEQUENCES.map((s) => ({ ...s })),
     billingSettings: { provider: 'simulado', environment: 'habilitacion' },
     invoices: [],
-    dailyCloses: []
+    dailyCloses: [],
+    waiterCalls: [],
+    nextCallId: 1,
+    ...printSeed()
   };
 }
+
+// Fila de impresión: misma lógica que supabase/migrations/20261111000000_fila_impresion.sql.
+const DEMO_STATION = 'st-cocina';
+function printSeed() {
+  return { printStations: [{ id: DEMO_STATION, name: 'Cocina', isDefault: true, printsReceipts: false, sortOrder: 0 }], printJobs: [], nextJobId: 1 };
+}
+
+/** Datos guardados por una versión anterior de la demo: se completan sin borrarlos. */
+function upgrade(db) {
+  db.tenant.kitchenDisplay ??= true;
+  db.waiterCalls ??= [];
+  db.nextCallId ??= db.waiterCalls.length + 1;
+  for (const o of db.orders) if (o.printedAt === undefined) o.printedAt = o.createdAt;
+  if (!db.printStations) Object.assign(db, printSeed());
+  for (const c of db.categories) c.printStationId ??= null;
+  return db;
+}
+
+/** Arma los trabajos de una comanda: uno por estación, con solo sus platos. */
+function enqueueOrder(d, order, reprint = false) {
+  const fallback = d.printStations.find((s) => s.isDefault)?.id || null;
+  const groups = new Map();
+  for (const it of order.items) {
+    const product = d.products.find((p) => p.id === it.productId);
+    const category = product && d.categories.find((c) => c.id === product.categoryId);
+    const stationId = category?.printStationId || fallback;
+    if (!stationId) continue;
+    if (!groups.has(stationId)) groups.set(stationId, []);
+    groups.get(stationId).push({ quantity: it.quantity, name: it.name, options: it.selectedOptions || [] });
+  }
+  for (const [stationId, items] of groups) {
+    const station = d.printStations.find((s) => s.id === stationId);
+    d.printJobs.push(newJob(d, stationId, 'comanda', {
+      restaurant: d.tenant.name, station: station.name, orderId: order.id, tableLabel: order.tableLabel,
+      createdAt: order.createdAt, notes: order.notes || '', reprint, items
+    }, { orderId: order.id }));
+  }
+  d.printJobs = d.printJobs.slice(-300);
+  return groups.size;
+}
+
+function newJob(d, stationId, kind, payload, extra = {}) {
+  return { id: d.nextJobId++, stationId, kind, payload, status: 'pendiente', attempts: 0, claimedByName: '', claimedAt: null, error: '', createdAt: new Date().toISOString(), orderId: null, invoiceId: null, ...extra };
+}
+
+const claimable = (j) =>
+  Date.now() - new Date(j.createdAt).getTime() < 12 * 3600000 &&
+  j.attempts < 5 &&
+  (j.status === 'pendiente' || (j.status === 'imprimiendo' && Date.now() - new Date(j.claimedAt).getTime() > 60000));
 
 let cache = null;
 function load() {
@@ -101,7 +156,7 @@ function load() {
   try {
     const raw = localStorage.getItem(DB_KEY);
     const parsed = raw ? JSON.parse(raw) : null;
-    cache = parsed?.version === 2 ? parsed : seed();
+    cache = parsed?.version === 2 ? upgrade(parsed) : seed();
   } catch {
     cache = seed();
   }
@@ -237,6 +292,7 @@ export const demoApi = {
       if (!check.ok) return fail(`${check.errors[0]} (${product.name})`);
       const unit = unitPriceFor(product, it.selections || {});
       lines.push({
+        productId: product.id,
         name: product.name,
         quantity: qty,
         unitPrice: unit,
@@ -259,13 +315,57 @@ export const demoApi = {
         total: subtotal + tip,
         notes: '',
         createdAt: new Date().toISOString(),
+        printedAt: null,
         items: lines
       };
       d.orders.push(o);
+      enqueueOrder(d, o);
       return o;
     });
     emit('orders', { type: 'insert', order });
+    emit('print');
     return delay({ orderId: order.id, tableLabel: order.tableLabel, subtotal, tip, total: subtotal + tip });
+  },
+
+  // ---------------------------------------------------------------- llamado al mesero
+  async callWaiter({ slug, tableToken }) {
+    const db = load();
+    if (db.tenant.slug !== slug) return fail('Restaurante no encontrado');
+    if (!hasFeature(db.tenant.plan, 'waiterCall')) return fail('Este restaurante no recibe llamados desde la mesa');
+    const table = db.tables.find((t) => t.token === tableToken && t.isActive);
+    if (!table) return fail('Código de mesa inválido. Escanea de nuevo el código de tu mesa.');
+    // Igual que call_waiter(): un llamado abierto por mesa, y tocar de nuevo no crea otro.
+    const recent = db.waiterCalls
+      .filter((c) => c.tableId === table.id && (!c.attendedAt || Date.now() - new Date(c.createdAt).getTime() < 30000))
+      .at(-1);
+    if (recent) return delay({ callId: recent.id, tableLabel: recent.tableLabel, createdAt: recent.createdAt });
+    const call = commit((d) => {
+      const c = { id: d.nextCallId++, tableId: table.id, tableLabel: table.label, createdAt: new Date().toISOString(), attendedAt: null, attendedByName: '' };
+      d.waiterCalls.push(c);
+      d.waiterCalls = d.waiterCalls.slice(-200);
+      return c;
+    });
+    emit('waiter', { type: 'insert', call });
+    return delay({ callId: call.id, tableLabel: call.tableLabel, createdAt: call.createdAt });
+  },
+
+  async listWaiterCalls() {
+    requireStaff();
+    const since = Date.now() - 3 * 3600000;
+    return delay(load().waiterCalls.filter((c) => !c.attendedAt && new Date(c.createdAt).getTime() >= since));
+  },
+
+  subscribeWaiterCalls(_tenantId, { onInsert, onChange }) {
+    return on('waiter', (e) => (e?.type === 'insert' ? onInsert?.(e.call) : onChange?.()));
+  },
+
+  async attendWaiterCall(callId) {
+    const s = requireStaff();
+    commit((d) => {
+      const c = d.waiterCalls.find((x) => x.id === callId);
+      if (c && !c.attendedAt) Object.assign(c, { attendedAt: new Date().toISOString(), attendedByName: s.displayName });
+    });
+    emit('waiter', { type: 'update' });
   },
 
   // ---------------------------------------------------------------- sesión
@@ -344,13 +444,149 @@ export const demoApi = {
     const o = db.orders.find((x) => x.id === orderId);
     if (!o) return fail('Pedido no encontrado');
     if (status === ORDER_STATUS.PAID) return fail('Un pedido solo pasa a Cobrado al emitir su comprobante');
-    if (!canTransition(o.status, status)) return fail(`Transición de estado no permitida: ${o.status} → ${status}`);
+    const withPos = hasFeature(db.tenant.plan, 'pos');
+    if (!canTransition(o.status, status, { withPos })) {
+      if (o.status === ORDER_STATUS.READY && status === ORDER_STATUS.TO_PAY) return fail('Sin caja en tu plan: marca la comanda como entregada');
+      if (o.status === ORDER_STATUS.READY && status === ORDER_STATUS.DELIVERED) return fail('Con caja, la comanda lista pasa a caja para cobrarse');
+      return fail(`Transición de estado no permitida: ${o.status} → ${status}`);
+    }
     const order = commit((d) => {
       const x = d.orders.find((y) => y.id === orderId);
       x.status = status;
       return x;
     });
     emit('orders', { type: 'update', order });
+  },
+
+  async requestOrderReprint(orderId) {
+    requireStaff();
+    if (!load().orders.some((x) => x.id === orderId)) return fail('Pedido no encontrado');
+    const { order, count } = commit((d) => {
+      const x = d.orders.find((y) => y.id === orderId);
+      x.printedAt = null;
+      return { order: x, count: enqueueOrder(d, x, true) };
+    });
+    if (!count) return fail('No hay estaciones de impresión configuradas');
+    emit('orders', { type: 'update', order });
+    emit('print');
+  },
+
+  // ---------------------------------------------------------------- fila de impresión
+  async listPrintStations() {
+    requireStaff();
+    return delay([...load().printStations].sort((a, b) => a.sortOrder - b.sortOrder));
+  },
+
+  async savePrintStation({ id = null, name, isDefault = false, printsReceipts = false }) {
+    requireStaff(['owner', 'admin']);
+    const clean = String(name || '').trim();
+    if (!clean || clean.length > 40) return fail('El nombre de la estación debe tener entre 1 y 40 caracteres');
+    if (load().printStations.some((s) => s.id !== id && s.name.toLowerCase() === clean.toLowerCase())) return fail('Ya existe una estación con ese nombre');
+    if (id && !load().printStations.some((s) => s.id === id)) return fail('Estación no encontrada');
+    const saved = commit((d) => {
+      if (isDefault) d.printStations.forEach((s) => (s.isDefault = false));
+      if (printsReceipts) d.printStations.forEach((s) => (s.printsReceipts = false));
+      if (id) {
+        Object.assign(d.printStations.find((s) => s.id === id), { name: clean, isDefault, printsReceipts });
+        return id;
+      }
+      const nid = `st-${Date.now()}-${Math.random().toString(16).slice(2, 6)}`;
+      d.printStations.push({ id: nid, name: clean, isDefault, printsReceipts, sortOrder: d.printStations.length });
+      return nid;
+    }, ['print']);
+    return delay(saved);
+  },
+
+  async deletePrintStation(id) {
+    requireStaff(['owner', 'admin']);
+    if (load().printStations.length <= 1) return fail('El restaurante necesita al menos una estación de impresión');
+    commit((d) => {
+      d.printStations = d.printStations.filter((s) => s.id !== id);
+      d.printJobs = d.printJobs.filter((j) => j.stationId !== id);
+      for (const c of d.categories) if (c.printStationId === id) c.printStationId = null;
+    }, ['print', 'menu']);
+  },
+
+  async setCategoryStation(categoryId, stationId) {
+    requireStaff(['owner', 'admin']);
+    commit((d) => {
+      d.categories.find((c) => c.id === categoryId).printStationId = stationId || null;
+    }, ['menu']);
+  },
+
+  // El agente local se conecta a la nube: en la demo solo imprime el navegador.
+  async listPrintDevices() {
+    requireStaff(['owner', 'admin']);
+    return delay([]);
+  },
+  createPrintDevice: () => fail('Los equipos de impresión necesitan la versión en la nube (Supabase). En la demo, usa "Este navegador imprime".'),
+  newPairingCode: () => fail('Solo disponible con Supabase'),
+  updatePrintDevice: () => fail('Solo disponible con Supabase'),
+  revokePrintDevice: () => fail('Solo disponible con Supabase'),
+  agentConnection: () => null,
+
+  async claimPrintJobs(stationIds = null) {
+    const s = requireStaff();
+    const jobs = commit((d) => {
+      const picked = d.printJobs.filter((j) => (!stationIds || stationIds.includes(j.stationId)) && claimable(j)).slice(0, 10);
+      for (const j of picked) Object.assign(j, { status: 'imprimiendo', attempts: j.attempts + 1, claimedAt: new Date().toISOString(), claimedByName: `Navegador de ${s.displayName}`, error: '' });
+      return picked;
+    });
+    return delay(jobs);
+  },
+
+  async reportPrintJob(jobId, ok, error = null) {
+    requireStaff();
+    const order = commit((d) => {
+      const j = d.printJobs.find((x) => x.id === jobId && x.status === 'imprimiendo');
+      if (!j) return null;
+      j.status = ok ? 'impreso' : j.attempts >= 5 ? 'error' : 'pendiente';
+      j.error = ok ? '' : String(error || 'Error de impresión').slice(0, 300);
+      if (!ok || j.kind !== 'comanda') return null;
+      const pending = d.printJobs.some((x) => x.orderId === j.orderId && x.kind === 'comanda' && x.status !== 'impreso');
+      const o = d.orders.find((x) => x.id === j.orderId);
+      if (o && !pending) o.printedAt = new Date().toISOString();
+      return o && !pending ? o : null;
+    }, ['print']);
+    if (order) emit('orders', { type: 'update', order });
+  },
+
+  async printInvoice(invoiceId) {
+    requireStaff(['owner', 'admin', 'caja']);
+    const db = load();
+    const inv = db.invoices.find((i) => i.id === invoiceId);
+    if (!inv) return fail('Comprobante no encontrado');
+    const station = db.printStations.find((s) => s.printsReceipts);
+    if (!station) return fail('Elige en Administración qué estación imprime los tiquetes de caja');
+    const t = db.tenant;
+    const id = commit((d) => {
+      const job = newJob(d, station.id, 'tiquete', {
+        restaurant: t.name, nit: t.nit, address: [t.address, t.city].filter(Boolean).join(', '), phone: t.phone, footer: t.footerText,
+        station: station.name, kind: inv.kind, number: inv.number, createdAt: inv.createdAt, tableLabel: inv.tableLabel,
+        customer: inv.customer, paymentMethod: inv.paymentMethod, items: inv.items, itemsTotal: inv.itemsTotal, taxBase: inv.taxBase,
+        tax: inv.tax, taxType: inv.taxType, taxRate: inv.taxRate, tip: inv.tip, total: inv.total, cufe: inv.cufe,
+        dianStatus: inv.dianStatus, issuedByName: inv.issuedByName
+      }, { invoiceId: inv.id });
+      d.printJobs.push(job);
+      return job.id;
+    }, ['print']);
+    return delay(id);
+  },
+
+  async printTest(stationId) {
+    const s = requireStaff(['owner', 'admin']);
+    const station = load().printStations.find((x) => x.id === stationId);
+    if (!station) return fail('Estación no encontrada');
+    const id = commit((d) => {
+      const job = newJob(d, station.id, 'prueba', { restaurant: d.tenant.name, station: station.name, requestedBy: s.displayName, createdAt: new Date().toISOString() });
+      d.printJobs.push(job);
+      return job.id;
+    }, ['print']);
+    return delay(id);
+  },
+
+  subscribePrintJobs(_tenantId, onChange) {
+    return on('print', onChange);
   },
 
   async setIngredientStock({ name, soldOut, note }) {
@@ -408,10 +644,10 @@ export const demoApi = {
     return delay(customer);
   },
 
-  async issueInvoice({ orderIds, kind, customerId, paymentMethod }) {
+  async issueInvoice({ orderIds, kind, customerId, paymentMethod, tip: tipInput = null }) {
     const s = requireStaff(['owner', 'admin', 'caja']);
     const db = load();
-    if (!hasFeature(db.tenant.plan, 'pos')) return fail('La Caja POS requiere el plan Intermedio o superior');
+    if (!hasFeature(db.tenant.plan, 'pos')) return fail('La caja requiere el plan Premium');
     if (kind === 'electronica' && !hasFeature(db.tenant.plan, 'dian')) return fail('La facturación electrónica requiere el plan Premium');
     const ids = [...new Set((orderIds || []).filter((x) => x != null))].sort((a, b) => a - b);
     if (!ids.length) return fail('Selecciona al menos una comanda para cobrar');
@@ -430,7 +666,14 @@ export const demoApi = {
     }
     const customer = customerId ? db.customers.find((c) => c.id === customerId) : CONSUMIDOR_FINAL;
     if (!customer) return fail('Cliente no encontrado');
-    const { subtotal, tip } = sumOrders(orders);
+    const { subtotal, tip: ordersTip } = sumOrders(orders);
+    // Propina voluntaria: la confirma la caja al cobrar. Sin valor, la de las comandas.
+    let tip = ordersTip;
+    if (tipInput !== null && tipInput !== undefined) {
+      tip = Math.round(Number(tipInput));
+      if (!Number.isFinite(tip) || tip < 0) return fail('La propina no puede ser negativa');
+      if (tip > subtotal) return fail('La propina no puede superar el valor del consumo');
+    }
     const rate = effectiveTaxRate(db.tenant);
     const { base, tax } = splitTaxIncluded(subtotal, rate);
 
@@ -526,7 +769,9 @@ export const demoApi = {
   async updateTenant(_tenantId, tenant) {
     requireStaff(['owner', 'admin']);
     const { plan: _plan, slug: _slug, id: _id, ...editable } = tenant;
-    commit((d) => Object.assign(d.tenant, editable), ['menu']);
+    const tipRate = Number(editable.tipRate);
+    if (!(tipRate >= 0 && tipRate <= 10)) return fail('La propina sugerida debe estar entre 0 % y 10 %');
+    commit((d) => Object.assign(d.tenant, editable, { kitchenDisplay: editable.kitchenDisplay !== false }), ['menu']);
   },
 
   async saveProduct(_tenantId, product) {
@@ -572,11 +817,44 @@ export const demoApi = {
     const db = load();
     const dup = labels.find((l) => db.tables.some((t) => t.label === l));
     if (dup) return fail(`Ya existe la mesa ${dup}`);
-    commit((d) => {
-      labels.forEach((label, i) => {
-        d.tables.push({ id: `table-${Date.now()}-${i}`, label, token: demoTableToken(label), isActive: true, sortOrder: d.tables.length + 1 });
-      });
+    return commit((d) => {
+      const created = labels.map((label, i) => ({ id: `table-${Date.now()}-${i}`, label, token: demoTableToken(label), isActive: true, sortOrder: d.tables.length + i + 1 }));
+      d.tables.push(...created);
+      return created.map((t) => ({ ...t }));
     });
+  },
+
+  async deleteTable(tableId) {
+    requireStaff(['owner', 'admin']);
+    const db = load();
+    const table = db.tables.find((t) => t.id === tableId);
+    if (!table) return fail('Mesa no encontrada');
+    const hasOpenOrders = db.orders.some((o) => o.tableId === tableId && OPEN_STATUSES.includes(o.status));
+    if (hasOpenOrders) return fail(`No se puede eliminar la mesa ${table.label}: tiene pedidos abiertos`);
+    commit((d) => {
+      d.tables = d.tables.filter((t) => t.id !== tableId);
+    });
+    await localFloorPlanStore.saveTableLayout(db.tenant.id, { [tableId]: null });
+  },
+
+  // Plano de sala (ambientes y ubicación de mesas). Ver services/floorPlanStore.js.
+  async getFloorPlan(tenantId) {
+    requireStaff();
+    return localFloorPlanStore.getFloorPlan(tenantId);
+  },
+
+  async saveEnvironments(tenantId, environments) {
+    requireStaff(['owner', 'admin']);
+    return localFloorPlanStore.saveEnvironments(tenantId, environments);
+  },
+
+  async saveTableLayout(tenantId, updates) {
+    requireStaff(['owner', 'admin']);
+    return localFloorPlanStore.saveTableLayout(tenantId, updates);
+  },
+
+  subscribeFloorPlan(tenantId, onChange) {
+    return localFloorPlanStore.subscribeFloorPlan(tenantId, onChange);
   },
 
   async setTableActive(tableId, isActive) {

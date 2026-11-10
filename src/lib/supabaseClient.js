@@ -24,3 +24,6 @@ export const supabase = isSupabaseConfigured
       realtime: { params: { eventsPerSecond: 10 } }
     })
   : null;
+
+/** Dirección y llave pública que usa el agente local de impresión al vincularse. */
+export const publicConnection = isSupabaseConfigured ? { servidor: supabaseUrl, llave: supabaseAnonKey } : null;
