@@ -179,7 +179,7 @@ export default function PosView({
                         <td className="px-5 py-3 precio font-bold whitespace-nowrap">{inv.number}</td>
                         <td className="px-5 py-3 whitespace-nowrap">
                           {INVOICE_KINDS[inv.kind]}
-                          {inv.dianStatus === 'simulado' && <span className="ml-2 text-xs font-bold px-1.5 py-0.5 rounded bg-maracuya">Simulada</span>}
+                          {inv.dianStatus === 'simulado' && <span className="ml-2 text-xs font-bold px-1.5 py-0.5 rounded bg-maracuya text-sobre-maracuya">Simulada</span>}
                         </td>
                         <td className="px-5 py-3 whitespace-nowrap">{inv.tableLabel || '—'}</td>
                         <td className="px-5 py-3 whitespace-nowrap">{inv.customer?.name}</td>

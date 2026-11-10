@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Printer, AlertTriangle } from 'lucide-react';
 import Modal from '../ui/Modal';
 import QrCode from '../ui/QrCode';
@@ -6,7 +7,8 @@ import { PAYMENT_METHODS, INVOICE_KINDS, DIAN_STATUS } from '../../lib/billing';
 
 const DIAN_QR_BASE = 'https://catalogo-vpfe.dian.gov.co/document/searchqr?documentkey=';
 
-export default function TicketModal({ invoice, tenant, onClose }) {
+export default function TicketModal({ invoice, tenant, onClose, receiptStation = null, onSendToPrinter }) {
+  const [sending, setSending] = useState(false);
   const status = DIAN_STATUS[invoice.dianStatus] || DIAN_STATUS.no_aplica;
   const isElectronic = invoice.kind === 'electronica';
   const date = new Date(invoice.createdAt).toLocaleString('es-CO');
@@ -73,10 +75,33 @@ export default function TicketModal({ invoice, tenant, onClose }) {
 
       </div>
 
-      <div className="flex gap-2 print-hidden">
-        <button onClick={() => window.print()} className="btn btn-primary flex-1">
-          <Printer className="w-4 h-4" aria-hidden="true" /> Imprimir
-        </button>
+      <div className="flex flex-wrap gap-2 print-hidden">
+        {receiptStation ? (
+          <>
+            {/* Va a la fila de impresión: lo imprime el agente de la caja, sin vista previa. */}
+            <button
+              disabled={sending}
+              onClick={async () => {
+                setSending(true);
+                try {
+                  await onSendToPrinter();
+                } finally {
+                  setSending(false);
+                }
+              }}
+              className="btn btn-primary flex-1"
+            >
+              <Printer className="w-4 h-4" aria-hidden="true" /> {sending ? 'Enviando…' : `Imprimir en ${receiptStation}`}
+            </button>
+            <button onClick={() => window.print()} className="btn btn-quiet flex-1">
+              Desde este equipo
+            </button>
+          </>
+        ) : (
+          <button onClick={() => window.print()} className="btn btn-primary flex-1">
+            <Printer className="w-4 h-4" aria-hidden="true" /> Imprimir
+          </button>
+        )}
         <button onClick={onClose} className="btn btn-quiet flex-1">
           Cerrar
         </button>

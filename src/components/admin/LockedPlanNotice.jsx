@@ -1,7 +1,7 @@
 import { Lock } from 'lucide-react';
 import { requiredPlanFor } from '../../lib/plans';
 
-const FEATURE_NAMES = { kitchen: 'Cocina', pos: 'Caja', inventory: 'Inventario', dian: 'Facturación electrónica', ordering: 'Pedidos desde la mesa' };
+const FEATURE_NAMES = { kitchen: 'Cocina y comandas', pos: 'Caja', inventory: 'Inventario', dian: 'Facturación electrónica', ordering: 'Pedidos desde la mesa', waiterCall: 'Llamado al mesero' };
 
 export default function LockedPlanNotice({ feature }) {
   const name = FEATURE_NAMES[feature] || feature;

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Building2, UtensilsCrossed, Users, Package, Gem, Smartphone, ShieldCheck, ChevronRight, Lock, RotateCcw } from 'lucide-react';
+import { Building2, UtensilsCrossed, Users, Package, Gem, Smartphone, ShieldCheck, ChevronRight, Lock, RotateCcw, Printer } from 'lucide-react';
 import { useTenant } from '../../hooks/useTenant';
 import { hasFeature, requiredPlanFor, planLabel } from '../../lib/plans';
 import { api, isDemoMode } from '../../services/api';
@@ -17,6 +17,7 @@ const GROUPS = [
   {
     title: 'Operación',
     items: [
+      { to: 'admin/cocina', icon: Printer, title: 'Cocina e impresión', text: 'Pantalla de cocina o comandas impresas, y qué equipo imprime.', feature: 'kitchen' },
       { to: 'admin/inventario', icon: Package, title: 'Inventario', text: 'Qué se ha agotado y qué conviene comprar.', feature: 'inventory' },
       { to: 'admin/facturacion', icon: ShieldCheck, title: 'Facturación', text: 'Numeración de comprobantes y resolución de la DIAN.', feature: 'pos' },
       { to: 'admin/planes', icon: Gem, title: 'Plan', text: 'Qué incluye tu suscripción.' }

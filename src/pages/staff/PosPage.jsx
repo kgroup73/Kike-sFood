@@ -51,16 +51,19 @@ export default function PosPage() {
   const [closeOpen, setCloseOpen] = useState(false);
   const [customerOpen, setCustomerOpen] = useState(false);
   const [advancingKey, setAdvancingKey] = useState(null);
+  const [receiptStation, setReceiptStation] = useState(null);
 
   const reloadBilling = useCallback(async () => {
     try {
-      const [inv, z, cust, settings, tbls] = await Promise.all([
+      const [inv, z, cust, settings, tbls, stations] = await Promise.all([
         api.listOpenInvoices(tenant.id),
         api.listDailyCloses(tenant.id),
         api.listCustomers(tenant.id),
         api.getBillingSettings(tenant.id),
-        api.listTables(tenant.id)
+        api.listTables(tenant.id),
+        api.listPrintStations(tenant.id)
       ]);
+      setReceiptStation(stations.find((s) => s.printsReceipts)?.name || null);
       setInvoices(inv);
       setCloses(z);
       setCustomers(cust);
@@ -181,7 +184,23 @@ export default function PosPage() {
         />
       )}
 
-      {ticket && <TicketModal invoice={ticket} tenant={tenant} onClose={() => setTicket(null)} />}
+      {ticket && (
+        <TicketModal
+          invoice={ticket}
+          tenant={tenant}
+          onClose={() => setTicket(null)}
+          receiptStation={receiptStation}
+          onSendToPrinter={async () => {
+            try {
+              await api.printInvoice(ticket.id);
+              showToast(`Tiquete ${ticket.number} enviado a ${receiptStation}`, 'success');
+              setTicket(null);
+            } catch (err) {
+              showToast(err.message, 'error');
+            }
+          }}
+        />
+      )}
 
       {closeOpen && (
         <DailyCloseModal

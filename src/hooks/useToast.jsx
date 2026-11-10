@@ -5,7 +5,7 @@ const ToastContext = createContext(() => {});
 
 const TONES = {
   info: { icon: Info, className: 'bg-tinta text-mantel', iconClass: 'text-mantel/70' },
-  success: { icon: CheckCircle2, className: 'bg-tinta text-mantel', iconClass: 'text-[#9ED9AE]' },
+  success: { icon: CheckCircle2, className: 'bg-tinta text-mantel', iconClass: 'text-hoja-inversa' },
   error: { icon: AlertTriangle, className: 'bg-aji text-white', iconClass: 'text-white' }
 };
 
@@ -31,7 +31,7 @@ export function ToastProvider({ children }) {
         {toast && (
           <div
             key={toast.key}
-            className={`fixed bottom-24 sm:bottom-8 left-1/2 -translate-x-1/2 z-[60] ${meta.className} text-[15px] pl-4 pr-5 py-3 rounded-2xl shadow-[0_8px_30px_rgb(30_43_36/0.25)] flex items-start gap-2.5 w-max max-w-[92vw] sm:max-w-md animate-sheet`}
+            className={`fixed bottom-24 sm:bottom-8 inset-x-0 mx-auto z-[60] ${meta.className} text-[15px] pl-4 pr-5 py-3 rounded-2xl shadow-[0_8px_30px_rgb(30_43_36/0.25)] flex items-start gap-2.5 w-max max-w-[92vw] sm:max-w-md animate-sheet`}
           >
             <Icon className={`w-5 h-5 shrink-0 ${meta.iconClass}`} aria-hidden="true" />
             <span className="font-bold leading-snug">{toast.message}</span>

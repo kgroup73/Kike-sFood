@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { canTransition, ORDER_STATUS as S } from './orderStatus';
+import { canTransition, kitchenNextStep, stepsTo, ORDER_STATUS as S } from './orderStatus';
 import { planLevel, hasFeature } from './plans';
 import { canAccess, homeSectionFor } from './roles';
 import { buildMasterIngredientList, deriveProductsWithStock, getAffectedProducts } from './inventory';
@@ -14,14 +14,37 @@ describe('estados de pedido', () => {
     expect(canTransition(S.PENDING, S.PAID)).toBe(false);
     expect(canTransition(S.PAID, S.CANCELLED)).toBe(false);
   });
+
+  it('con caja lo listo pasa a caja; sin caja se entrega', () => {
+    expect(canTransition(S.READY, S.TO_PAY, { withPos: true })).toBe(true);
+    expect(canTransition(S.READY, S.DELIVERED, { withPos: true })).toBe(false);
+    expect(canTransition(S.READY, S.TO_PAY, { withPos: false })).toBe(false);
+    expect(canTransition(S.READY, S.DELIVERED, { withPos: false })).toBe(true);
+    expect(kitchenNextStep(S.READY, { withPos: true }).label).toBe('Pasar a caja');
+    expect(kitchenNextStep(S.READY, { withPos: false })).toEqual({ to: S.DELIVERED, label: 'Entregada' });
+    expect(kitchenNextStep(S.TO_PAY)).toBeNull();
+  });
+
+  it('sin pantalla de cocina, un toque recorre los pasos que faltan', () => {
+    expect(stepsTo(S.PENDING, S.DELIVERED)).toEqual([S.PREPARING, S.READY, S.DELIVERED]);
+    expect(stepsTo(S.READY, S.TO_PAY)).toEqual([S.TO_PAY]);
+    expect(stepsTo(S.TO_PAY, S.DELIVERED)).toEqual([]);
+    expect(stepsTo(S.PENDING, S.PAID)).toEqual([]);
+  });
 });
 
 describe('planes y roles', () => {
   it('un plan desconocido no da acceso premium', () => {
     expect(planLevel('full')).toBe(0);
     expect(planLevel(undefined)).toBe(0);
-    expect(hasFeature('intermedio', 'pos')).toBe(true);
+    // Plan 1 solo carta; plan 2 pedidos, mesero y cocina; plan 3 caja y facturación
+    expect(hasFeature('basic', 'ordering')).toBe(false);
+    expect(hasFeature('basic', 'waiterCall')).toBe(false);
+    expect(hasFeature('intermedio', 'waiterCall')).toBe(true);
+    expect(hasFeature('intermedio', 'kitchen')).toBe(true);
+    expect(hasFeature('intermedio', 'pos')).toBe(false);
     expect(hasFeature('intermedio', 'dian')).toBe(false);
+    expect(hasFeature('premium', 'pos')).toBe(true);
   });
 
   it('cada rol ve solo sus secciones', () => {

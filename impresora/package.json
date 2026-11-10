@@ -1,0 +1,13 @@
+{
+  "name": "kikes-impresora",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agente local de impresión de Kike's: imprime comandas y tiquetes en impresoras térmicas ESC/POS, sin vista previa.",
+  "type": "module",
+  "bin": { "kikes-impresora": "./kikes-impresora.mjs" },
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node kikes-impresora.mjs iniciar",
+    "test": "node --test test/"
+  }
+}

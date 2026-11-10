@@ -59,6 +59,7 @@ function Menu({ tenant, tableToken }) {
   const [storyIndex, setStoryIndex] = useState(null);
   const [tableModal, setTableModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [waiter, setWaiter] = useState('idle'); // 'idle' | 'sending' | 'called'
 
   // Valida el token de la mesa en el servidor (antes bastaba con ?mesa=4 en la URL).
   useEffect(() => {
@@ -83,6 +84,28 @@ function Menu({ tenant, tableToken }) {
   useEffect(() => writeJSON(localStorage, favKey, favorites), [favKey, favorites]);
 
   const orderingEnabled = hasFeature(tenant.plan, 'ordering');
+  const canCallWaiter = hasFeature(tenant.plan, 'waiterCall') && table.status === 'ok';
+
+  // Tras avisar, el botón queda en "Mesero avisado" un minuto: evita llamados repetidos.
+  useEffect(() => {
+    if (waiter !== 'called') return undefined;
+    const t = setTimeout(() => setWaiter('idle'), 60000);
+    return () => clearTimeout(t);
+  }, [waiter]);
+
+  const callWaiter = async () => {
+    if (waiter !== 'idle') return;
+    setWaiter('sending');
+    try {
+      await api.callWaiter({ slug: tenant.slug, tableToken });
+      setWaiter('called');
+      playChime();
+      showToast('Avisamos al personal: el mesero va en camino', 'success');
+    } catch (err) {
+      setWaiter('idle');
+      showToast(err.message || 'No se pudo llamar al mesero. Intenta de nuevo.', 'error');
+    }
+  };
   const canOrder = orderingEnabled && table.status === 'ok';
   const blockedReason = !orderingEnabled
     ? 'Este restaurante opera con carta de consulta. Pide directamente a tu mesero.'
@@ -203,7 +226,13 @@ function Menu({ tenant, tableToken }) {
         <footer className="pt-12 pb-4 text-center text-xs text-suave">Carta digital por {PROJECT_NAME}</footer>
       </div>
 
-      <FloatingClientBar cart={cart} onOpenCart={() => setIsCartOpen(true)} mode={orderingEnabled ? 'order' : 'consult'} />
+      <FloatingClientBar
+        cart={cart}
+        onOpenCart={() => setIsCartOpen(true)}
+        mode={orderingEnabled ? 'order' : 'consult'}
+        onCallWaiter={canCallWaiter ? callWaiter : undefined}
+        waiter={waiter}
+      />
 
       {isCartOpen && (
         <CartDrawer

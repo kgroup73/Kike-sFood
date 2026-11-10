@@ -1,11 +1,12 @@
-import { supabase } from '../lib/supabaseClient';
+import { supabase, publicConnection } from '../lib/supabaseClient';
 import { productFromRow, productToRow, stockFromRows } from '../lib/catalog';
 import { OPEN_STATUSES } from '../lib/orderStatus';
 import { unwrap, toAppError } from './errors';
 import { localFloorPlanStore } from './floorPlanStore';
 import {
   tenantFromRow, tenantToRow, orderFromRow, invoiceFromRow, dailyCloseFromRow, stockEventFromRow,
-  customerFromRow, staffFromRow, tableFromRow, sequenceFromRow, sequenceToRow
+  customerFromRow, staffFromRow, tableFromRow, sequenceFromRow, sequenceToRow, waiterCallFromRow,
+  printStationFromRow, printDeviceFromRow, printJobFromRow
 } from './mappers';
 
 let channelSeq = 0;
@@ -36,7 +37,7 @@ export const supabaseApi = {
       supabase.from('products').select('*').eq('tenant_id', tenantId).order('sort_order'),
       supabase.from('ingredients_stock').select('*').eq('tenant_id', tenantId).eq('is_sold_out', true)
     ]);
-    const categories = unwrap(cats).map((c) => ({ id: c.id, name: c.name, sortOrder: c.sort_order }));
+    const categories = unwrap(cats).map((c) => ({ id: c.id, name: c.name, sortOrder: c.sort_order, printStationId: c.print_station_id ?? null }));
     const names = Object.fromEntries(categories.map((c) => [c.id, c.name]));
     return {
       categories,
@@ -64,6 +65,112 @@ export const supabaseApi = {
         p_include_tip: includeTip
       })
     );
+  },
+
+  // ------------------------------------------------------------------ Llamado al mesero
+  async callWaiter({ slug, tableToken }) {
+    return unwrap(await supabase.rpc('call_waiter', { p_slug: slug, p_table_token: tableToken }));
+  },
+
+  async listWaiterCalls(tenantId) {
+    const since = new Date(Date.now() - 3 * 3600000).toISOString();
+    const rows = unwrap(
+      await supabase
+        .from('waiter_calls')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .is('attended_at', null)
+        .gte('created_at', since)
+        .order('created_at', { ascending: true })
+    );
+    return rows.map(waiterCallFromRow);
+  },
+
+  subscribeWaiterCalls(tenantId, { onInsert, onChange }) {
+    return subscribe('waiter', ['waiter_calls'], tenantId, (payload) => {
+      if (payload.eventType === 'INSERT') onInsert?.(waiterCallFromRow(payload.new));
+      else onChange?.();
+    });
+  },
+
+  async attendWaiterCall(callId) {
+    unwrap(await supabase.rpc('attend_waiter_call', { p_call_id: callId }));
+  },
+
+  // ------------------------------------------------------------------ Fila de impresión
+  // La app anota qué imprimir (print_jobs) y un imprimidor lo saca: el agente local o,
+  // de respaldo, el navegador de un equipo del personal. Ver impresora/README.md.
+  async listPrintStations(tenantId) {
+    const rows = unwrap(await supabase.from('print_stations').select('*').eq('tenant_id', tenantId).order('sort_order'));
+    return rows.map(printStationFromRow);
+  },
+
+  async savePrintStation({ id = null, name, isDefault = false, printsReceipts = false }) {
+    return unwrap(
+      await supabase.rpc('admin_save_print_station', { p_id: id, p_name: name, p_is_default: isDefault, p_prints_receipts: printsReceipts })
+    );
+  },
+
+  async deletePrintStation(id) {
+    unwrap(await supabase.rpc('admin_delete_print_station', { p_id: id }));
+  },
+
+  async setCategoryStation(categoryId, stationId) {
+    const rows = unwrap(await supabase.from('categories').update({ print_station_id: stationId || null }).eq('id', categoryId).select('id'));
+    if (!rows.length) throw new Error('No tienes permiso para cambiar esta categoría');
+  },
+
+  async listPrintDevices(tenantId) {
+    const rows = unwrap(
+      await supabase
+        .from('print_devices')
+        .select('id, name, station_ids, pairing_expires_at, paired_at, last_seen_at, agent_version, revoked_at, created_at')
+        .eq('tenant_id', tenantId)
+        .order('created_at')
+    );
+    return rows.map(printDeviceFromRow);
+  },
+
+  async createPrintDevice({ name, stationIds }) {
+    return unwrap(await supabase.rpc('admin_create_print_device', { p_name: name, p_station_ids: stationIds }));
+  },
+
+  async newPairingCode(deviceId) {
+    return unwrap(await supabase.rpc('admin_new_pairing_code', { p_device_id: deviceId }));
+  },
+
+  async updatePrintDevice({ id, name, stationIds }) {
+    unwrap(await supabase.rpc('admin_update_print_device', { p_device_id: id, p_name: name, p_station_ids: stationIds }));
+  },
+
+  async revokePrintDevice(id) {
+    unwrap(await supabase.rpc('admin_revoke_print_device', { p_device_id: id }));
+  },
+
+  /** Lo que el agente necesita para vincularse: dirección y llave pública de Supabase. */
+  agentConnection() {
+    return publicConnection;
+  },
+
+  async claimPrintJobs(stationIds = null) {
+    const rows = unwrap(await supabase.rpc('claim_print_jobs', { p_station_ids: stationIds, p_limit: 10 }));
+    return rows.map(printJobFromRow);
+  },
+
+  async reportPrintJob(jobId, ok, error = null) {
+    unwrap(await supabase.rpc('report_print_job', { p_job_id: jobId, p_ok: ok, p_error: error }));
+  },
+
+  async printInvoice(invoiceId) {
+    return unwrap(await supabase.rpc('enqueue_invoice_print', { p_invoice_id: invoiceId }));
+  },
+
+  async printTest(stationId) {
+    return unwrap(await supabase.rpc('enqueue_test_print', { p_station_id: stationId }));
+  },
+
+  subscribePrintJobs(tenantId, onChange) {
+    return subscribe('print', ['print_jobs'], tenantId, onChange);
   },
 
   // ------------------------------------------------------------------ Sesión del personal
@@ -136,6 +243,10 @@ export const supabaseApi = {
   async updateOrderStatus(orderId, status) {
     const rows = unwrap(await supabase.from('orders').update({ status }).eq('id', orderId).select('id'));
     if (!rows.length) throw new Error('No tienes permiso para actualizar este pedido');
+  },
+
+  async requestOrderReprint(orderId) {
+    unwrap(await supabase.rpc('request_order_reprint', { p_order_id: orderId }));
   },
 
   async setIngredientStock({ name, soldOut, note }) {

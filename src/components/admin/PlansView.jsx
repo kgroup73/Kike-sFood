@@ -7,9 +7,10 @@ import AdminShell from './AdminShell';
 const FEATURES = [
   { label: 'Carta digital QR/NFC y mesas', level: 0 },
   { label: 'Pedidos desde la mesa', level: 1 },
-  { label: 'Cocina KDS en tiempo real', level: 1 },
-  { label: 'Inventario de materias primas', level: 1 },
-  { label: 'Caja POS y cierre Z', level: 1 },
+  { label: 'Llamado al mesero', level: 1 },
+  { label: 'Cocina en pantalla o comandas impresas', level: 1 },
+  { label: 'Ingredientes agotados e inventario', level: 1 },
+  { label: 'Caja POS y cierre Z', level: 2 },
   { label: 'Facturación electrónica DIAN', level: 2 }
 ];
 
@@ -34,7 +35,7 @@ export default function PlansView() {
                   const included = f.level <= plan.level;
                   return (
                     <li key={f.label} className={`flex items-start gap-2 ${included ? '' : active ? 'text-mantel/40' : 'text-suave/60'}`}>
-                      {included ? <Check className={`w-4 h-4 mt-0.5 shrink-0 ${active ? 'text-[#9ED9AE]' : 'text-hoja'}`} aria-hidden="true" /> : <Minus className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />}
+                      {included ? <Check className={`w-4 h-4 mt-0.5 shrink-0 ${active ? 'text-hoja-inversa' : 'text-hoja'}`} aria-hidden="true" /> : <Minus className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />}
                       <span>
                         {f.label}
                         {!included && <span className="sr-only"> (no incluido)</span>}

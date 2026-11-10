@@ -14,7 +14,9 @@ export const tenantFromRow = (r) =>
     taxType: r.tax_type,
     taxRate: Number(r.tax_rate),
     tipRate: Number(r.tip_rate),
-    footerText: r.footer_text || ''
+    footerText: r.footer_text || '',
+    // Sin la columna (antes de la migración 20261110) se asume la pantalla de cocina encendida.
+    kitchenDisplay: r.kitchen_display !== false
   };
 
 export const tenantToRow = (t) => ({
@@ -27,7 +29,8 @@ export const tenantToRow = (t) => ({
   tax_type: t.taxType,
   tax_rate: Number(t.taxRate) || 0,
   tip_rate: Number(t.tipRate) || 0,
-  footer_text: t.footerText || null
+  footer_text: t.footerText || null,
+  kitchen_display: t.kitchenDisplay !== false
 });
 
 export const orderFromRow = (o) => ({
@@ -41,6 +44,7 @@ export const orderFromRow = (o) => ({
   total: o.total,
   notes: o.notes || '',
   createdAt: o.created_at,
+  printedAt: o.printed_at ?? null,
   items: (o.order_items || []).map((it) => ({
     name: it.name,
     quantity: it.quantity,
@@ -147,4 +151,47 @@ export const sequenceToRow = (s, tenantId) => ({
   resolution_number: s.resolutionNumber || null,
   resolution_date: s.resolutionDate || null,
   valid_until: s.validUntil || null
+});
+
+export const waiterCallFromRow = (r) => ({
+  id: r.id,
+  tableId: r.table_id,
+  tableLabel: r.table_label,
+  createdAt: r.created_at,
+  attendedAt: r.attended_at,
+  attendedByName: r.attended_by_name || ''
+});
+
+export const printStationFromRow = (r) => ({
+  id: r.id,
+  name: r.name,
+  isDefault: !!r.is_default,
+  printsReceipts: !!r.prints_receipts,
+  sortOrder: r.sort_order
+});
+
+export const printDeviceFromRow = (r) => ({
+  id: r.id,
+  name: r.name,
+  stationIds: r.station_ids || [],
+  pairingExpiresAt: r.pairing_expires_at,
+  pairedAt: r.paired_at,
+  lastSeenAt: r.last_seen_at,
+  agentVersion: r.agent_version || '',
+  revokedAt: r.revoked_at,
+  createdAt: r.created_at
+});
+
+export const printJobFromRow = (r) => ({
+  id: r.id,
+  stationId: r.station_id,
+  kind: r.kind,
+  orderId: r.order_id,
+  invoiceId: r.invoice_id,
+  payload: r.payload || {},
+  status: r.status,
+  attempts: r.attempts,
+  claimedByName: r.claimed_by_name || '',
+  error: r.error || '',
+  createdAt: r.created_at
 });

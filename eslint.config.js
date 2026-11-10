@@ -36,5 +36,14 @@ export default [
   {
     files: ['**/*.test.{js,jsx}', 'scripts/**', '*.config.js'],
     languageOptions: { globals: { ...globals.node, ...globals.browser } }
+  },
+  {
+    // Agente local de impresión: Node puro, sin React.
+    files: ['impresora/**/*.mjs'],
+    languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: { ...globals.node } },
+    rules: {
+      ...js.configs.recommended.rules,
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' }]
+    }
   }
 ];

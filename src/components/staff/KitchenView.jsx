@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
-import { PackageX, PackageCheck, ChevronDown, Clock, BellRing } from 'lucide-react';
+import { PackageX, PackageCheck, ChevronDown, Clock, BellRing, Printer } from 'lucide-react';
 import { timeAgo, INGREDIENT_CATEGORIES } from '../../lib/inventory';
-import { ORDER_STATUS, KITCHEN_NEXT_STEP, KITCHEN_STATUSES } from '../../lib/orderStatus';
+import { ORDER_STATUS, kitchenNextStep, KITCHEN_STATUSES } from '../../lib/orderStatus';
 import { useNow } from '../../hooks/useNow';
 
 // Cada estado tiene un color fijo (el mismo en caja). Ver .chip-* en src/index.css.
@@ -21,7 +21,9 @@ export default function KitchenView({
   ingredientsStock = {},
   updateOrderStatus,
   onMarkIngredientSoldOut,
-  onRestockIngredient
+  onRestockIngredient,
+  withPos = true,
+  onReprint
 }) {
   const [activeTab, setActiveTab] = useState('orders');
   const [busy, setBusy] = useState(null);
@@ -111,7 +113,7 @@ export default function KitchenView({
                 const st = STATUS[order.status] || {};
                 const mins = Math.max(0, Math.floor((now - new Date(order.createdAt).getTime()) / 60000));
                 const late = mins >= LATE;
-                const step = KITCHEN_NEXT_STEP[order.status];
+                const step = kitchenNextStep(order.status, { withPos });
                 return (
                   <article key={order.id} aria-label={`Comanda ${order.id}, mesa ${order.tableLabel}`} className="animate-ticket drop-shadow-[0_10px_14px_rgb(0_0_0/0.4)]">
                     <div className="tiquete">
@@ -123,7 +125,7 @@ export default function KitchenView({
                         </div>
                         <div className="text-right space-y-2">
                           <p
-                            className={`precio inline-flex items-center gap-1 font-bold text-lg ${late ? 'text-aji' : mins >= LATE_WARN ? 'text-[#9A6B00]' : 'text-tinta'}`}
+                            className={`precio inline-flex items-center gap-1 font-bold text-lg ${late ? 'text-aji' : mins >= LATE_WARN ? 'text-aviso' : 'text-tinta'}`}
                             title={timeAgo(order.createdAt)}
                           >
                             <Clock className="w-4 h-4" aria-hidden="true" />
@@ -134,7 +136,19 @@ export default function KitchenView({
                           </div>
                         </div>
                       </header>
-                      <p className="text-sm text-suave -mt-1">Comanda {order.id}</p>
+                      <p className="text-sm text-suave -mt-1 flex items-center justify-between gap-2">
+                        <span>Comanda {order.id}</span>
+                        {onReprint && order.printedAt && (
+                          <button
+                            onClick={() => run(`p${order.id}`, () => onReprint(order))}
+                            disabled={busy === `p${order.id}`}
+                            className="inline-flex items-center gap-1 font-bold hover:text-tinta"
+                            aria-label={`Reimprimir la comanda ${order.id}`}
+                          >
+                            <Printer className="w-3.5 h-3.5" aria-hidden="true" /> Reimprimir
+                          </button>
+                        )}
+                      </p>
 
                       <ul className="border-t-2 border-dashed border-linea pt-3 space-y-2.5">
                         {order.items.map((item, idx) => (

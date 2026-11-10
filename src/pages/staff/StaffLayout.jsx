@@ -1,11 +1,14 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Flame, Receipt, Settings, Volume2, VolumeX, LogOut } from 'lucide-react';
+import { Flame, Receipt, Settings, Volume2, VolumeX, LogOut, ClipboardList } from 'lucide-react';
 import { useTenant } from '../../hooks/useTenant';
 import { useStaffSession } from '../../hooks/useStaffSession';
 import { useSound } from '../../hooks/useSound';
 import { canAccess } from '../../lib/roles';
 import { hasFeature } from '../../lib/plans';
 import { isDemoMode } from '../../services/api';
+import { usePrinterDevice } from '../../hooks/useOrderPrinter';
+import WaiterCalls from '../../components/staff/WaiterCalls';
+import PrinterStatus from '../../components/staff/PrinterStatus';
 
 const SECTIONS = [
   { key: 'cocina', label: 'Cocina', icon: Flame, feature: 'kitchen' },
@@ -17,7 +20,11 @@ export default function StaffLayout() {
   const { tenant } = useTenant();
   const { staff, logout } = useStaffSession();
   const { soundEnabled, toggleSound } = useSound();
-  const sections = SECTIONS.filter((s) => canAccess(staff.role, s.key) && (!s.feature || hasFeature(tenant.plan, s.feature)));
+  const [isPrinter] = usePrinterDevice(tenant.id);
+  // Sin pantalla de cocina, la sección se llama Comandas: la cocina trabaja con la comanda impresa.
+  const sections = SECTIONS.filter((s) => canAccess(staff.role, s.key) && (!s.feature || hasFeature(tenant.plan, s.feature))).map((s) =>
+    s.key === 'cocina' && tenant.kitchenDisplay === false ? { ...s, label: 'Comandas', icon: ClipboardList } : s
+  );
 
   return (
     <div className="min-h-screen pb-12">
@@ -27,7 +34,7 @@ export default function StaffLayout() {
             <p className="font-display font-bold text-lg tracking-tight truncate">{tenant.name}</p>
             <p className="text-sm text-suave truncate flex items-center gap-2">
               {staff.displayName}
-              {isDemoMode && <span className="text-xs font-bold px-1.5 rounded bg-maracuya text-tinta">Demo</span>}
+              {isDemoMode && <span className="text-xs font-bold px-1.5 rounded bg-maracuya text-sobre-maracuya">Demo</span>}
             </p>
           </div>
 
@@ -50,7 +57,8 @@ export default function StaffLayout() {
             ))}
           </nav>
 
-          <div className="order-2 sm:order-3 flex items-center sm:pl-3 sm:border-l sm:border-linea sm:my-3">
+          <div className="order-2 sm:order-3 flex items-center gap-1 sm:pl-3 sm:border-l sm:border-linea sm:my-3">
+            {isPrinter && hasFeature(tenant.plan, 'kitchen') && <PrinterStatus tenant={tenant} />}
             <SoundAndLogout soundEnabled={soundEnabled} toggleSound={toggleSound} logout={logout} />
           </div>
         </div>
@@ -58,6 +66,7 @@ export default function StaffLayout() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <Outlet />
       </main>
+      {hasFeature(tenant.plan, 'waiterCall') && <WaiterCalls tenantId={tenant.id} />}
     </div>
   );
 }

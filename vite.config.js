@@ -21,7 +21,13 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    // Las pruebas siempre corren en modo demo, aunque .env.local tenga Supabase:
+    // así no dependen de la red ni de los datos de un proyecto real.
+    env: { VITE_SUPABASE_URL: '', VITE_SUPABASE_ANON_KEY: '', VITE_SUPABASE_PUBLISHABLE_KEY: '' },
     include: ['src/**/*.test.{js,jsx}'],
-    setupFiles: ['./src/test/setup.js']
+    setupFiles: ['./src/test/setup.js'],
+    // Los flujos completos (carta → cocina → caja) corren con varios archivos en paralelo:
+    // en un equipo cargado 5 s no alcanzan.
+    testTimeout: 30000
   }
 });
