@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Progreso de las animaciones ligadas al desplazamiento (components/landing/useScrollProgress).
+   Sin herencia: al cambiar en cada frame no obliga a recalcular el estilo de lo que va dentro. */
+@property --p {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
+
 /* ==============================================================================
    Sistema visual de Kike's: "de la sala a la cocina".
    Un solo juego de tokens para toda la app. Los colores van en RGB para poder
@@ -309,7 +317,13 @@ html.carta body {
     transform: none;
   }
 
-  /* Ligadas al desplazamiento: --p va de 0 a 1 (components/landing/useScrollProgress). */
+  /* Ligadas al desplazamiento: --p va de 0 a 1 (components/landing/useScrollProgress).
+     will-change las sube a su propia capa: se mueven sin repintar fotos ni sombras. */
+  .hero-fan-left,
+  .hero-fan-right,
+  .hero-fan-center {
+    will-change: transform;
+  }
   .hero-fan-left {
     transform: translateX(calc(var(--p, 0) * -64px)) translateY(calc(var(--p, 0) * 24px)) rotate(calc(var(--p, 0) * -7deg));
     transform-origin: bottom right;
@@ -333,6 +347,7 @@ html.carta body {
     transform: perspective(1400px) rotateX(calc((1 - var(--p, 1)) * 28deg)) scale(calc(0.86 + var(--p, 1) * 0.14));
     transform-origin: 50% 100%;
     opacity: calc(0.35 + var(--p, 1) * 0.65);
+    will-change: transform, opacity;
   }
   /* Las comandas de la maqueta caen al riel, una tras otra, cuando la pantalla termina de abrirse. */
   .tilt-in .drop-in {
