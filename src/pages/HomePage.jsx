@@ -10,7 +10,7 @@ import TiltIn from '../components/landing/TiltIn';
 import { CartaAdminScreen, CocinaDesktop, CajaDesktop } from '../components/landing/Screens';
 import TableSticker from '../components/landing/TableSticker';
 import Faq from '../components/landing/Faq';
-import { PROJECT_NAME, PROJECT_TAGLINE } from '../config/branding';
+import { PROJECT_NAME, PROJECT_TAGLINE, MAKER_NAME, MAKER_URL } from '../config/branding';
 import { isDemoMode } from '../services/api';
 import { DEMO_TENANT, DEMO_STAFF } from '../services/demo/seedData';
 import { demoTableToken } from '../services/demo/demoApi';
@@ -364,8 +364,22 @@ export default function HomePage() {
             </ul>
           </nav>
         </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-10 text-sm text-suave">
-          {isDemoMode ? 'Modo demostración: los datos viven en este navegador y vuelven al inicio si lo limpias.' : `${PROJECT_NAME}. ${PROJECT_TAGLINE}.`}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-10 text-sm text-suave flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <p>
+            {isDemoMode ? 'Modo demostración: los datos viven en este navegador y vuelven al inicio si lo limpias.' : `${PROJECT_NAME}. ${PROJECT_TAGLINE}.`}
+          </p>
+          <p className="shrink-0">
+            Hecho por{' '}
+            <a
+              href={MAKER_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-tinta underline decoration-hoja/40 decoration-2 underline-offset-4 hover:decoration-hoja transition-colors"
+            >
+              {MAKER_NAME}
+              <span className="sr-only"> (se abre en una pestaña nueva)</span>
+            </a>
+          </p>
         </div>
       </footer>
     </div>
