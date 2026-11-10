@@ -16,6 +16,7 @@ import { splitTaxIncluded, computeTip, effectiveTaxRate } from '../../lib/money'
 import { canTransition, ORDER_STATUS, OPEN_STATUSES } from '../../lib/orderStatus';
 import { hasFeature } from '../../lib/plans';
 import { CONSUMIDOR_FINAL, sumOrders, mergeInvoiceItems } from '../../lib/billing';
+import { localFloorPlanStore } from '../floorPlanStore';
 
 const DB_KEY = 'kikes_demo_db_v2';
 const SESSION_KEY = 'kikes_demo_session';
@@ -581,11 +582,44 @@ export const demoApi = {
     const db = load();
     const dup = labels.find((l) => db.tables.some((t) => t.label === l));
     if (dup) return fail(`Ya existe la mesa ${dup}`);
-    commit((d) => {
-      labels.forEach((label, i) => {
-        d.tables.push({ id: `table-${Date.now()}-${i}`, label, token: demoTableToken(label), isActive: true, sortOrder: d.tables.length + 1 });
-      });
+    return commit((d) => {
+      const created = labels.map((label, i) => ({ id: `table-${Date.now()}-${i}`, label, token: demoTableToken(label), isActive: true, sortOrder: d.tables.length + i + 1 }));
+      d.tables.push(...created);
+      return created.map((t) => ({ ...t }));
     });
+  },
+
+  async deleteTable(tableId) {
+    requireStaff(['owner', 'admin']);
+    const db = load();
+    const table = db.tables.find((t) => t.id === tableId);
+    if (!table) return fail('Mesa no encontrada');
+    const hasOpenOrders = db.orders.some((o) => o.tableId === tableId && OPEN_STATUSES.includes(o.status));
+    if (hasOpenOrders) return fail(`No se puede eliminar la mesa ${table.label}: tiene pedidos abiertos`);
+    commit((d) => {
+      d.tables = d.tables.filter((t) => t.id !== tableId);
+    });
+    await localFloorPlanStore.saveTableLayout(db.tenant.id, { [tableId]: null });
+  },
+
+  // Plano de sala (ambientes y ubicación de mesas). Ver services/floorPlanStore.js.
+  async getFloorPlan(tenantId) {
+    requireStaff();
+    return localFloorPlanStore.getFloorPlan(tenantId);
+  },
+
+  async saveEnvironments(tenantId, environments) {
+    requireStaff(['owner', 'admin']);
+    return localFloorPlanStore.saveEnvironments(tenantId, environments);
+  },
+
+  async saveTableLayout(tenantId, updates) {
+    requireStaff(['owner', 'admin']);
+    return localFloorPlanStore.saveTableLayout(tenantId, updates);
+  },
+
+  subscribeFloorPlan(tenantId, onChange) {
+    return localFloorPlanStore.subscribeFloorPlan(tenantId, onChange);
   },
 
   async setTableActive(tableId, isActive) {

@@ -238,6 +238,52 @@ html.carta body {
   .print-hidden {
     display: none !important;
   }
+
+  /* --- Hoja de stickers de mesas (TableStickersModal) ---
+     El modal se monta fuera de #root; al imprimirlo se oculta la app de fondo
+     para no generar hojas en blanco. */
+  body.printing-stickers-active #root,
+  body:has(.print-stickers) #root {
+    display: none !important;
+  }
+  .print-area.print-stickers {
+    position: static !important;
+    inset: auto !important;
+    width: 100% !important;
+    overflow: visible !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+  }
+  .print-stickers .sticker-card {
+    break-inside: avoid !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    width: 88mm !important;
+    height: 85mm !important;
+    max-width: 88mm !important;
+    max-height: 85mm !important;
+    box-sizing: border-box !important;
+  }
+  .print-modal-overlay,
+  .print-modal-content {
+    position: static !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+@page stickers {
+  size: A4 portrait;
+  margin: 8mm;
 }
 
 @page receipt {

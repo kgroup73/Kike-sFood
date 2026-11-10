@@ -36,7 +36,7 @@ const tableKey = (order) => (order.tableId ? `id:${order.tableId}` : `label:${or
  */
 export function groupOrdersByTable(orders, { toPay = 'Por Cobrar', closed = ['Cobrado', 'Cancelado'] } = {}) {
   const groups = new Map();
-  for (const order of orders) {
+  for (const order of orders || []) {
     if (closed.includes(order.status)) continue;
     const key = tableKey(order);
     if (!groups.has(key)) groups.set(key, { key, tableLabel: order.tableLabel, orders: [], inKitchen: 0 });
@@ -54,16 +54,58 @@ export function groupOrdersByTable(orders, { toPay = 'Por Cobrar', closed = ['Co
 }
 
 export function sumOrders(orders) {
-  const subtotal = orders.reduce((s, o) => s + o.subtotal, 0);
-  const tip = orders.reduce((s, o) => s + o.tip, 0);
+  const subtotal = (orders || []).reduce((s, o) => s + (o.subtotal || 0), 0);
+  const tip = (orders || []).reduce((s, o) => s + (o.tip || 0), 0);
   return { subtotal, tip, total: subtotal + tip };
+}
+
+/**
+ * Agrupa todas las mesas con pedidos activos en sala (en cocina o en caja) para
+ * supervisión integral y cobro directo sin esperar confirmación de cocina.
+ */
+export function groupAllActiveTables(orders, { closed = ['Cobrado', 'Cancelado'] } = {}) {
+  const groups = new Map();
+  for (const order of orders || []) {
+    if (closed.includes(order.status)) continue;
+    const key = tableKey(order);
+    if (!groups.has(key)) {
+      groups.set(key, {
+        key,
+        tableLabel: order.tableLabel,
+        tableId: order.tableId,
+        orders: []
+      });
+    }
+    groups.get(key).orders.push(order);
+  }
+  return [...groups.values()]
+    .map((g) => {
+      const sortedOrders = [...g.orders].sort((a, b) => a.id - b.id);
+      const toPayOrders = sortedOrders.filter((o) => o.status === 'Por Cobrar');
+      const kitchenOrders = sortedOrders.filter((o) => o.status !== 'Por Cobrar');
+      const totals = sumOrders(sortedOrders);
+      return {
+        ...g,
+        orders: sortedOrders,
+        toPayOrders,
+        kitchenOrders,
+        isReadyToPay: kitchenOrders.length === 0 && toPayOrders.length > 0,
+        hasKitchenOrders: kitchenOrders.length > 0,
+        ...totals
+      };
+    })
+    .sort((a, b) => {
+      if (a.isReadyToPay && !b.isReadyToPay) return -1;
+      if (!a.isReadyToPay && b.isReadyToPay) return 1;
+      return String(a.tableLabel).localeCompare(String(b.tableLabel), undefined, { numeric: true });
+    });
 }
 
 /** Une las líneas iguales (platillo, precio y opciones) de varias comandas. Igual que issue_invoice(). */
 export function mergeInvoiceItems(orders) {
   const lines = new Map();
-  for (const order of orders) {
-    for (const it of order.items) {
+  for (const order of orders || []) {
+    for (const it of order.items || []) {
       const options = it.selectedOptions || [];
       const key = JSON.stringify([it.name, it.unitPrice, options]);
       const line = lines.get(key);

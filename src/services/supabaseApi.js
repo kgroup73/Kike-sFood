@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabaseClient';
 import { productFromRow, productToRow, stockFromRows } from '../lib/catalog';
 import { OPEN_STATUSES } from '../lib/orderStatus';
 import { unwrap, toAppError } from './errors';
+import { localFloorPlanStore } from './floorPlanStore';
 import {
   tenantFromRow, tenantToRow, orderFromRow, invoiceFromRow, dailyCloseFromRow, stockEventFromRow,
   customerFromRow, staffFromRow, tableFromRow, sequenceFromRow, sequenceToRow
@@ -257,12 +258,33 @@ export const supabaseApi = {
   async createTables(tenantId, labels) {
     const existing = unwrap(await supabase.from('restaurant_tables').select('sort_order').eq('tenant_id', tenantId));
     const start = existing.reduce((m, r) => Math.max(m, r.sort_order), 0);
-    unwrap(
+    const rows = unwrap(
       await supabase
         .from('restaurant_tables')
         .insert(labels.map((label, i) => ({ tenant_id: tenantId, label, sort_order: start + i + 1 })))
+        .select('*')
     );
+    return rows.map(tableFromRow);
   },
+
+  async deleteTable(tableId) {
+    // Los pedidos guardan table_id con ON DELETE SET NULL: se bloquea aquí para no dejar
+    // comandas abiertas sin mesa. TODO(supabase): mover esta regla a un trigger (ver docs/plano-sala-supabase.md).
+    const open = unwrap(
+      await supabase.from('orders').select('id').eq('table_id', tableId).in('status', OPEN_STATUSES).limit(1)
+    );
+    if (open.length) throw new Error('No se puede eliminar la mesa: tiene pedidos abiertos');
+    const rows = unwrap(await supabase.from('restaurant_tables').delete().eq('id', tableId).select('tenant_id'));
+    if (!rows.length) throw new Error('Mesa no encontrada o sin permiso para eliminarla');
+    await localFloorPlanStore.saveTableLayout(rows[0].tenant_id, { [tableId]: null });
+  },
+
+  // Plano de sala. TODO(supabase): hoy vive en el navegador (localFloorPlanStore); al crear las
+  // tablas de docs/plano-sala-supabase.md se reemplazan estas 4 funciones y las vistas no cambian.
+  getFloorPlan: (tenantId) => localFloorPlanStore.getFloorPlan(tenantId),
+  saveEnvironments: (tenantId, environments) => localFloorPlanStore.saveEnvironments(tenantId, environments),
+  saveTableLayout: (tenantId, updates) => localFloorPlanStore.saveTableLayout(tenantId, updates),
+  subscribeFloorPlan: (tenantId, onChange) => localFloorPlanStore.subscribeFloorPlan(tenantId, onChange),
 
   async setTableActive(tableId, isActive) {
     unwrap(await supabase.from('restaurant_tables').update({ is_active: isActive }).eq('id', tableId));
