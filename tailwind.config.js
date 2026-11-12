@@ -30,63 +30,6 @@ export default {
         'sobre-maracuya': 'rgb(var(--c-sobre-maracuya) / <alpha-value>)',
         'hoja-inversa': 'rgb(var(--c-hoja-inversa) / <alpha-value>)',
         aviso: 'rgb(var(--c-aviso) / <alpha-value>)',
-
-        // --- Paleta heredada (rama feat/frontend-redesign / main) ---
-        // Solo la usan TablesAdmin y TableStickersModal, que se conservan con su
-        // mosaico de mesas y su hoja de stickers originales. Si esos módulos se
-        // migran al sistema de color de arriba, esta sección se puede borrar.
-        brand: {
-          cream: '#e9e2ca',
-          ivory: '#fdfcf7',
-          sand: '#e7e1c9',
-          khaki: '#857f5d',
-          gold: '#9b7e09',
-          'gold-light': '#b8960e',
-          'gold-dark': '#7d6507',
-          dark: '#110f0a',
-          surface: '#1a1711',
-          card: '#221e16',
-          border: '#332d20',
-          muted: '#857f5d',
-          night: '#14120c',
-          panel: '#1e1b13',
-          line: '#383324',
-          raised: '#2c271d',
-          hover: '#242017',
-          mute: '#aba489'
-        },
-        orange: {
-          50: '#fdfcf7',
-          100: '#f7f4ed',
-          200: '#e9e2ca',
-          300: '#e7e1c9',
-          400: '#b8960e',
-          500: '#9b7e09',
-          600: '#857f5d',
-          700: '#6e5a06',
-          800: '#524305',
-          900: '#2e281b',
-          950: '#1a1711'
-        },
-        amber: {
-          300: '#e9e2ca',
-          400: '#b8960e',
-          500: '#9b7e09',
-          600: '#857f5d'
-        },
-        slate: {
-          950: '#110f0a',
-          900: '#1a1711',
-          800: '#2c271d',
-          700: '#423b2d',
-          600: '#5e5541',
-          500: '#857f5d',
-          400: '#aba489',
-          300: '#d7d0b8',
-          200: '#e7e1c9',
-          100: '#e9e2ca',
-          50: '#fdfcf7'
-        }
       }
     },
   },

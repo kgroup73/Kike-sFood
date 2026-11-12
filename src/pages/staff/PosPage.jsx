@@ -61,9 +61,9 @@ export default function PosPage() {
         api.listCustomers(tenant.id),
         api.getBillingSettings(tenant.id),
         api.listTables(tenant.id),
-        api.listPrintStations(tenant.id)
+        (api.listPrintStations ? api.listPrintStations(tenant.id) : Promise.resolve([])).catch(() => [])
       ]);
-      setReceiptStation(stations.find((s) => s.printsReceipts)?.name || null);
+      setReceiptStation((stations || []).find((s) => s?.printsReceipts)?.name || null);
       setInvoices(inv);
       setCloses(z);
       setCustomers(cust);

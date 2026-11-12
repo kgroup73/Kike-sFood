@@ -48,9 +48,12 @@ export default function KitchenSettings() {
 
   const reloadPrinting = useCallback(async () => {
     try {
-      const [st, menu] = await Promise.all([api.listPrintStations(tenant.id), api.getMenu(tenant.id)]);
-      setStations(st);
-      setCategories(menu.categories);
+      const [st, menu] = await Promise.all([
+        (api.listPrintStations ? api.listPrintStations(tenant.id) : Promise.resolve([])).catch(() => []),
+        api.getMenu(tenant.id)
+      ]);
+      setStations(st || []);
+      setCategories(menu?.categories || []);
     } catch (err) {
       showToast(err.message, 'error');
     }

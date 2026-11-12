@@ -11,16 +11,54 @@ import { tableUrl } from './tableLinks';
 const escapeHtml = (value) =>
   String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
 
-// Plantilla HTML optimizada para impresión: tamaño compacto realista (8.8 x 8.4 cm, 6 por hoja A4)
-function buildStickersHtml(tenant, tablesWithQr) {
+// SVG vector oficial del timbre de Kike's vertical para el sticker impreso
+function getStickerLogoSvg(isMono) {
+  if (isMono) {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 208.92 209.90" width="20mm" height="20mm" role="img" aria-label="Kike's">
+      <circle cx="104.46" cy="39.02" r="10.98" fill="#1E2B24"/>
+      <rect x="99.58" y="43.90" width="9.76" height="12.20" fill="#1E2B24"/>
+      <path d="M53.24 102.44A51.22 51.22 0 0 1 155.68 102.44Z" fill="#1E2B24"/>
+      <rect x="41.05" y="107.32" width="126.83" height="19.51" rx="9.76" fill="#1E2B24"/>
+      <path d="M89.83 68.29 L89.83 95.12 M117.88 68.29 L97.14 81.71 L117.88 95.12" fill="none" stroke="#FFFFFF" stroke-width="10.98" stroke-linecap="round" stroke-linejoin="round"/>
+      <path transform="translate(26.83 183.07) scale(0.06400 -0.06400)" d="M40 0V660H202V378Q250 394 286.5 423.5Q323 453 349.0 491.0Q375 529 392.0 572.5Q409 616 418 660H600Q588 603 565.5 552.5Q543 502 509.0 460.0Q475 418 430.0 385.5Q385 353 328 332V324Q389 329 429.0 316.5Q469 304 494.0 280.0Q519 256 533.5 225.5Q548 195 558 164L611 0H431L393 147Q384 183 367.5 205.5Q351 228 325.0 238.0Q299 248 259 248H202V0Z" fill="#1E2B24"/>
+      <path transform="translate(64.14 183.07) scale(0.06400 -0.06400)" d="M36 0V528H198V0ZM116 566Q70 566 45.5 585.5Q21 605 21 642Q21 680 45.5 699.5Q70 719 116 719Q163 719 187.5 699.0Q212 679 212 642Q212 606 187.5 586.0Q163 566 116 566Z" fill="#1E2B24"/>
+      <path transform="translate(76.56 183.07) scale(0.06400 -0.06400)" d="M36 0V700H194V329Q228 347 252.5 370.0Q277 393 294.0 419.5Q311 446 321.5 473.5Q332 501 339 528H525Q514 488 493.5 450.5Q473 413 443.0 380.5Q413 348 373.5 322.0Q334 296 286 279V271Q348 281 387.5 273.5Q427 266 450.0 245.5Q473 225 485.5 194.0Q498 163 505 125L528 0H353L342 88Q338 120 331.0 148.0Q324 176 304.0 193.5Q284 211 241 211H194V0Z" fill="#1E2B24"/>
+      <path transform="translate(108.62 183.07) scale(0.06400 -0.06400)" d="M287 -14Q212 -14 161.5 7.5Q111 29 80.0 66.5Q49 104 35.5 152.0Q22 200 22 253Q22 310 36.5 362.0Q51 414 81.5 454.5Q112 495 160.5 518.5Q209 542 277 542Q345 542 393.5 518.5Q442 495 471.0 453.0Q500 411 508.5 356.0Q517 301 506 237L123 231V319L382 324L361 273Q367 319 359.5 350.5Q352 382 332.0 398.5Q312 415 277 415Q240 415 218.0 396.0Q196 377 187.0 342.5Q178 308 178 261Q178 180 205.0 143.0Q232 106 288 106Q312 106 328.0 112.0Q344 118 354.0 129.5Q364 141 368.0 157.5Q372 174 371 195L519 187Q522 154 512.5 119.0Q503 84 477.0 54.0Q451 24 404.5 5.0Q358 -14 287 -14Z" fill="#1E2B24"/>
+      <path transform="translate(140.43 183.07) scale(0.06400 -0.06400)" d="M32 440 14 700H160L142 440Z" fill="#1E2B24"/>
+      <path transform="translate(149.01 183.07) scale(0.06400 -0.06400)" d="M267 -14Q214 -14 168.5 -3.5Q123 7 89.5 30.0Q56 53 38.5 91.5Q21 130 24 185L165 197Q167 164 180.0 142.5Q193 121 216.0 111.0Q239 101 272 101Q303 101 325.5 111.5Q348 122 348 147Q348 160 340.0 168.5Q332 177 310.5 184.5Q289 192 248 202Q197 215 156.0 228.0Q115 241 86.0 259.0Q57 277 42.0 303.5Q27 330 27 369Q27 424 56.5 462.5Q86 501 138.0 521.5Q190 542 258 542Q319 542 372.0 523.0Q425 504 455.5 461.0Q486 418 478 347L340 334Q343 363 332.0 383.5Q321 404 300.0 414.5Q279 425 249 425Q215 425 196.5 412.5Q178 400 178 381Q178 366 189.5 355.5Q201 345 225.5 337.5Q250 330 289 321Q323 314 360.0 303.0Q397 292 429.0 273.5Q461 255 481.0 225.0Q501 195 501 149Q501 100 474.0 63.0Q447 26 395.0 6.0Q343 -14 267 -14Z" fill="#1E2B24"/>
+    </svg>`;
+  }
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 208.92 209.90" width="20mm" height="20mm" role="img" aria-label="Kike's">
+    <circle cx="104.46" cy="39.02" r="10.98" fill="#1E2B24"/>
+    <rect x="99.58" y="43.90" width="9.76" height="12.20" fill="#1E2B24"/>
+    <path d="M53.24 102.44A51.22 51.22 0 0 1 155.68 102.44Z" fill="#F3C64B"/>
+    <rect x="41.05" y="107.32" width="126.83" height="19.51" rx="9.76" fill="#1E2B24"/>
+    <path d="M89.83 68.29 L89.83 95.12 M117.88 68.29 L97.14 81.71 L117.88 95.12" fill="none" stroke="#1E2B24" stroke-width="10.98" stroke-linecap="round" stroke-linejoin="round"/>
+    <path transform="translate(26.83 183.07) scale(0.06400 -0.06400)" d="M40 0V660H202V378Q250 394 286.5 423.5Q323 453 349.0 491.0Q375 529 392.0 572.5Q409 616 418 660H600Q588 603 565.5 552.5Q543 502 509.0 460.0Q475 418 430.0 385.5Q385 353 328 332V324Q389 329 429.0 316.5Q469 304 494.0 280.0Q519 256 533.5 225.5Q548 195 558 164L611 0H431L393 147Q384 183 367.5 205.5Q351 228 325.0 238.0Q299 248 259 248H202V0Z" fill="#1E2B24"/>
+    <path transform="translate(64.14 183.07) scale(0.06400 -0.06400)" d="M36 0V528H198V0ZM116 566Q70 566 45.5 585.5Q21 605 21 642Q21 680 45.5 699.5Q70 719 116 719Q163 719 187.5 699.0Q212 679 212 642Q212 606 187.5 586.0Q163 566 116 566Z" fill="#1E2B24"/>
+    <path transform="translate(76.56 183.07) scale(0.06400 -0.06400)" d="M36 0V700H194V329Q228 347 252.5 370.0Q277 393 294.0 419.5Q311 446 321.5 473.5Q332 501 339 528H525Q514 488 493.5 450.5Q473 413 443.0 380.5Q413 348 373.5 322.0Q334 296 286 279V271Q348 281 387.5 273.5Q427 266 450.0 245.5Q473 225 485.5 194.0Q498 163 505 125L528 0H353L342 88Q338 120 331.0 148.0Q324 176 304.0 193.5Q284 211 241 211H194V0Z" fill="#1E2B24"/>
+    <path transform="translate(108.62 183.07) scale(0.06400 -0.06400)" d="M287 -14Q212 -14 161.5 7.5Q111 29 80.0 66.5Q49 104 35.5 152.0Q22 200 22 253Q22 310 36.5 362.0Q51 414 81.5 454.5Q112 495 160.5 518.5Q209 542 277 542Q345 542 393.5 518.5Q442 495 471.0 453.0Q500 411 508.5 356.0Q517 301 506 237L123 231V319L382 324L361 273Q367 319 359.5 350.5Q352 382 332.0 398.5Q312 415 277 415Q240 415 218.0 396.0Q196 377 187.0 342.5Q178 308 178 261Q178 180 205.0 143.0Q232 106 288 106Q312 106 328.0 112.0Q344 118 354.0 129.5Q364 141 368.0 157.5Q372 174 371 195L519 187Q522 154 512.5 119.0Q503 84 477.0 54.0Q451 24 404.5 5.0Q358 -14 287 -14Z" fill="#1E2B24"/>
+    <path transform="translate(140.43 183.07) scale(0.06400 -0.06400)" d="M32 440 14 700H160L142 440Z" fill="#1E2B24"/>
+    <path transform="translate(149.01 183.07) scale(0.06400 -0.06400)" d="M267 -14Q214 -14 168.5 -3.5Q123 7 89.5 30.0Q56 53 38.5 91.5Q21 130 24 185L165 197Q167 164 180.0 142.5Q193 121 216.0 111.0Q239 101 272 101Q303 101 325.5 111.5Q348 122 348 147Q348 160 340.0 168.5Q332 177 310.5 184.5Q289 192 248 202Q197 215 156.0 228.0Q115 241 86.0 259.0Q57 277 42.0 303.5Q27 330 27 369Q27 424 56.5 462.5Q86 501 138.0 521.5Q190 542 258 542Q319 542 372.0 523.0Q425 504 455.5 461.0Q486 418 478 347L340 334Q343 363 332.0 383.5Q321 404 300.0 414.5Q279 425 249 425Q215 425 196.5 412.5Q178 400 178 381Q178 366 189.5 355.5Q201 345 225.5 337.5Q250 330 289 321Q323 314 360.0 303.0Q397 292 429.0 273.5Q461 255 481.0 225.0Q501 195 501 149Q501 100 474.0 63.0Q447 26 395.0 6.0Q343 -14 267 -14Z" fill="#1E2B24"/>
+  </svg>`;
+}
+
+// Plantilla HTML optimizada para impresión: tamaño compacto calibrado (8.8 x 8.5 cm, 6 por hoja A4)
+function buildStickersHtml(tenant, tablesWithQr, printMode = 'color') {
   const tenantName = escapeHtml(tenant.name);
   const isSingle = tablesWithQr.length === 1;
+  const isMono = printMode === 'mono';
+  const logoSvg = getStickerLogoSvg(isMono);
 
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8">
   <title>Stickers Mesas - ${tenantName}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800;12..96,900&display=swap" rel="stylesheet">
   <style>
     @page {
       size: A4 portrait;
@@ -30,13 +68,13 @@ function buildStickersHtml(tenant, tablesWithQr) {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
     body {
       background: #ffffff;
-      color: #000000;
+      color: #1E2B24;
       margin: 0;
       padding: 0;
+      font-family: 'Atkinson Hyperlegible', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
@@ -45,15 +83,15 @@ function buildStickersHtml(tenant, tablesWithQr) {
       justify-content: space-between;
       align-items: center;
       padding: 10px 16px;
-      background: #0f172a;
-      color: #ffffff;
-      border-radius: 10px;
+      background: #1E2B24;
+      color: #F6F7F3;
+      border-radius: 12px;
       margin: 8px;
     }
     .btn-print {
-      background: #f59e0b;
-      color: #000000;
-      font-weight: 800;
+      background: #2F6B3F;
+      color: #FFFFFF;
+      font-weight: 700;
       border: none;
       padding: 7px 14px;
       border-radius: 8px;
@@ -81,9 +119,9 @@ function buildStickersHtml(tenant, tablesWithQr) {
     .sticker {
       width: 88mm;
       height: 85mm;
-      border: 2px solid #000000;
-      border-radius: 12px;
-      padding: 6mm 8mm;
+      border: 2px solid #1E2B24;
+      border-radius: 14px;
+      padding: 5mm 6mm;
       text-align: center;
       page-break-inside: avoid;
       break-inside: avoid;
@@ -95,28 +133,35 @@ function buildStickersHtml(tenant, tablesWithQr) {
       position: relative;
       box-sizing: border-box;
     }
+    .sticker-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1.1;
+    }
     .brand-name {
-      font-size: 8.5px;
-      font-weight: 900;
+      font-size: 8px;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #000000;
-      margin-bottom: 1px;
+      letter-spacing: 1.2px;
+      color: #56655C;
+      margin-top: 1px;
     }
     .table-num {
-      font-size: 19px;
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-size: 20px;
       font-weight: 900;
-      color: #000000;
-      letter-spacing: -0.3px;
+      color: #1E2B24;
+      letter-spacing: -0.4px;
       line-height: 1.1;
-      margin-bottom: 2px;
+      margin-top: 2px;
     }
     .qr-box {
       background: #ffffff;
-      border: 2px solid #000000;
+      border: 2px solid #1E2B24;
       border-radius: 10px;
       padding: 2mm;
-      margin: 1.5mm auto;
+      margin: 1mm auto;
       display: inline-block;
       line-height: 0;
     }
@@ -127,43 +172,32 @@ function buildStickersHtml(tenant, tablesWithQr) {
     }
     .nfc-pill {
       width: 100%;
-      background: #000000;
-      color: #ffffff;
-      padding: 4.5px 8px;
+      background: #1E2B24;
+      color: #FFFFFF;
+      padding: 4px 6px;
       border-radius: 6px;
-      font-size: 8.5px;
-      font-weight: 800;
+      font-size: 8px;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.6px;
-      border: 1px solid #000000;
-      margin-top: 2px;
+      margin-top: 1px;
       box-sizing: border-box;
     }
     .scan-note {
       font-size: 7.5px;
-      font-weight: 800;
-      color: #334155;
+      font-weight: 700;
+      color: #56655C;
       text-transform: uppercase;
       letter-spacing: 0.4px;
       margin-top: 2px;
     }
-    .powered {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 3px;
-      margin-top: 3px;
-      font-size: 7px;
-      font-weight: 800;
-      color: #000000;
-    }
     .single-guide {
       margin-top: 8px;
       font-size: 10px;
-      color: #64748b;
+      color: #56655C;
       font-weight: 600;
     }
-    .corner { position: absolute; width: 7px; height: 7px; border-color: #000000; border-style: solid; }
+    .corner { position: absolute; width: 7px; height: 7px; border-color: #1E2B24; border-style: solid; }
     .corner-tl { top: 4px; left: 4px; border-width: 1.5px 0 0 1.5px; }
     .corner-tr { top: 4px; right: 4px; border-width: 1.5px 1.5px 0 0; }
     .corner-bl { bottom: 4px; left: 4px; border-width: 0 0 1.5px 1.5px; }
@@ -177,8 +211,8 @@ function buildStickersHtml(tenant, tablesWithQr) {
       <p style="font-size: 11px; opacity: 0.85;">
         ${
           isSingle
-            ? `Sticker individual de Mesa #${escapeHtml(tablesWithQr[0].label)} (formato compacto 8.8 × 8.4 cm)`
-            : `${tablesWithQr.length} stickers (formato compacto 8.8 × 8.4 cm, 6 por hoja A4)`
+            ? `Sticker individual de Mesa #${escapeHtml(tablesWithQr[0].label)} (8.8 × 8.5 cm)`
+            : `${tablesWithQr.length} stickers (${isMono ? 'Una tinta / Monocromo' : 'A color oficial'} · 8.8 × 8.5 cm · 6 por hoja A4)`
         }
       </p>
     </div>
@@ -194,7 +228,8 @@ function buildStickersHtml(tenant, tablesWithQr) {
           <div class="corner corner-tr"></div>
           <div class="corner corner-bl"></div>
           <div class="corner corner-br"></div>
-          <div>
+          <div class="sticker-header">
+            ${logoSvg}
             <div class="brand-name">${tenantName}</div>
             <div class="table-num">MESA ${escapeHtml(t.label)}</div>
           </div>
@@ -203,11 +238,10 @@ function buildStickersHtml(tenant, tablesWithQr) {
           </div>
           <div style="width: 100%;">
             <div class="nfc-pill">📲 Toca con tu celular (NFC)</div>
-            <div class="scan-note">O escanea con la cámara</div>
-            <div class="powered"><svg viewBox="6 14 52 41" width="11" height="9" aria-hidden="true" fill="#000"><circle cx="32" cy="19" r="4.5"/><rect x="30" y="21" width="4" height="5"/><path d="M11 45a21 21 0 0 1 42 0z"/><rect x="6" y="47" width="52" height="8" rx="4"/><path d="M26 31v11M37.5 31L29 36.5l8.5 5.5" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Kike's</div>
+            <div class="scan-note">O escanea para ver la carta y pedir</div>
           </div>
         </div>
-        ${isSingle ? `<div class="single-guide header-bar" style="background:none; color:#64748b; margin:6px 0 0 0; font-size:10px;">✂️ Tamaño de corte: 8.8 cm × 8.4 cm</div>` : ''}
+        ${isSingle ? `<div class="single-guide header-bar" style="background:none; color:#56655C; margin:6px 0 0 0; font-size:10px;">✂️ Tamaño de corte: 8.8 cm × 8.5 cm</div>` : ''}
       </div>
     `
       )
@@ -220,6 +254,7 @@ function buildStickersHtml(tenant, tablesWithQr) {
 export default function TableStickersModal({ onClose, tenant, tables = [], initialTableId = 'all' }) {
   const [printing, setPrinting] = useState(false);
   const [selectedTableId, setSelectedTableId] = useState(initialTableId || 'all');
+  const [printMode, setPrintMode] = useState('color'); // 'color' | 'mono'
 
   // Filtrado reactivo de mesas (todas o una específica)
   const targetTables = useMemo(() => {
@@ -237,7 +272,7 @@ export default function TableStickersModal({ onClose, tenant, tables = [], initi
           width: 500,
           margin: 1,
           errorCorrectionLevel: 'M',
-          color: { dark: '#000000', light: '#ffffff' }
+          color: { dark: '#1E2B24', light: '#ffffff' }
         });
         return { ...t, url, qrDataUrl };
       })
@@ -249,7 +284,7 @@ export default function TableStickersModal({ onClose, tenant, tables = [], initi
     setPrinting(true);
     try {
       const tablesWithQr = await prepareTablesWithQr(targetTables);
-      const html = buildStickersHtml(tenant, tablesWithQr);
+      const html = buildStickersHtml(tenant, tablesWithQr, printMode);
 
       const iframe = document.createElement('iframe');
       iframe.style.position = 'fixed';
@@ -289,7 +324,7 @@ export default function TableStickersModal({ onClose, tenant, tables = [], initi
     setPrinting(true);
     try {
       const tablesWithQr = await prepareTablesWithQr(targetTables);
-      const html = buildStickersHtml(tenant, tablesWithQr);
+      const html = buildStickersHtml(tenant, tablesWithQr, printMode);
       const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
       const blobUrl = URL.createObjectURL(blob);
       const win = window.open(blobUrl, '_blank');
@@ -307,18 +342,18 @@ export default function TableStickersModal({ onClose, tenant, tables = [], initi
   const modalNode = (
     <div
       id="print-stickers-overlay"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn overflow-y-auto print-modal-overlay"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-tinta/80 backdrop-blur-sm animate-fadeIn overflow-y-auto print-modal-overlay"
     >
-      <div className="bg-slate-900 border border-slate-800 text-white w-full max-w-4xl rounded-3xl p-5 sm:p-7 shadow-2xl relative space-y-5 my-auto max-h-[92vh] flex flex-col print-modal-content">
+      <div className="bg-plato border border-linea text-tinta w-full max-w-4xl rounded-3xl p-5 sm:p-7 shadow-2xl relative space-y-5 my-auto max-h-[92vh] flex flex-col print-modal-content">
         {/* Header con selector de mesa individual o lote */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-800 pb-4 gap-3 print-hidden">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-linea pb-4 gap-3 print-hidden">
           <div className="space-y-1">
-            <h3 className="font-bold text-lg sm:text-xl text-white flex items-center gap-2">
-              <QrCode className="w-5 h-5 text-amber-400" />
+            <h3 className="font-display font-extrabold text-lg sm:text-xl text-tinta flex items-center gap-2">
+              <QrCode className="w-5 h-5 text-hoja" />
               Stickers para Mesas (NFC + QR)
             </h3>
-            <p className="text-xs text-slate-400">
-              Imprime el lote completo o selecciona una mesa en particular para reponer su sticker.
+            <p className="text-xs text-suave">
+              Imprime el lote completo o selecciona una mesa en particular según el manual de marca Kike's.
             </p>
           </div>
 
@@ -326,16 +361,16 @@ export default function TableStickersModal({ onClose, tenant, tables = [], initi
             <button
               onClick={handleExportNewTab}
               disabled={printing || !targetTables.length}
-              className="flex-1 sm:flex-initial px-3.5 py-2 bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-300 text-xs font-bold rounded-xl border border-slate-700 flex items-center justify-center gap-1.5 transition-all shadow disabled:opacity-50"
+              className="flex-1 sm:flex-initial px-3.5 py-2 bg-mantel hover:bg-linea/60 active:scale-95 text-tinta text-xs font-bold rounded-xl border border-linea flex items-center justify-center gap-1.5 transition-all shadow-sm disabled:opacity-50"
               title="Abre la hoja limpia en una pestaña nueva"
             >
-              <FileDown className="w-4 h-4" /> Exportar / PDF
+              <FileDown className="w-4 h-4 text-suave" /> Exportar / PDF
             </button>
 
             <button
               onClick={handlePrint}
               disabled={printing || !targetTables.length}
-              className="flex-1 sm:flex-initial px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 active:scale-95 text-slate-950 text-xs font-black rounded-xl shadow-lg flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
+              className="flex-1 sm:flex-initial px-4 py-2 bg-hoja hover:opacity-90 active:scale-95 text-sobre-hoja text-xs font-bold rounded-xl shadow-sm flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
             >
               {printing ? (
                 <>
@@ -351,25 +386,25 @@ export default function TableStickersModal({ onClose, tenant, tables = [], initi
             <button
               onClick={onClose}
               aria-label="Cerrar"
-              className="p-2 rounded-full bg-slate-800 text-slate-400 hover:text-white transition-colors shrink-0"
+              className="p-2 rounded-full bg-mantel text-suave hover:text-tinta border border-linea transition-colors shrink-0"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Barra de selección de mesa específica */}
-        <div className="bg-slate-950/70 border border-slate-800 rounded-2xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs print-hidden">
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-amber-400" />
-            <span className="font-bold text-slate-300">Seleccionar qué imprimir:</span>
-          </div>
+        {/* Barra de opciones: selección de mesa y modo color/monocromo */}
+        <div className="bg-mantel/60 border border-linea rounded-2xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs print-hidden">
+          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-hoja" />
+              <span className="font-bold text-tinta">Mesa:</span>
+            </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
             <select
               value={selectedTableId}
               onChange={(e) => setSelectedTableId(e.target.value)}
-              className="w-full sm:w-64 bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-amber-400 font-semibold"
+              className="bg-plato border border-linea rounded-xl px-3 py-1.5 text-xs text-tinta font-semibold focus:outline-none focus:border-hoja"
             >
               <option value="all">Todas las mesas ({tables.length} stickers)</option>
               {tables.map((t) => (
@@ -382,11 +417,38 @@ export default function TableStickersModal({ onClose, tenant, tables = [], initi
             {selectedTableId !== 'all' && (
               <button
                 onClick={() => setSelectedTableId('all')}
-                className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold shrink-0"
+                className="px-2.5 py-1.5 bg-plato hover:bg-mantel border border-linea text-tinta rounded-xl text-xs font-semibold shrink-0"
               >
                 Ver todas
               </button>
             )}
+          </div>
+
+          {/* Toggle de estilo de impresión: A color vs. Una tinta */}
+          <div className="flex items-center gap-1.5 bg-plato p-1 rounded-xl border border-linea">
+            <span className="text-[11px] text-suave font-medium px-1.5">Estilo:</span>
+            <button
+              type="button"
+              onClick={() => setPrintMode('color')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                printMode === 'color'
+                  ? 'bg-hoja text-sobre-hoja shadow-sm'
+                  : 'text-suave hover:text-tinta'
+              }`}
+            >
+              🎨 A color (Oficial)
+            </button>
+            <button
+              type="button"
+              onClick={() => setPrintMode('mono')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                printMode === 'mono'
+                  ? 'bg-tinta text-plato shadow-sm'
+                  : 'text-suave hover:text-tinta'
+              }`}
+            >
+              ⬛ Una tinta
+            </button>
           </div>
         </div>
 
@@ -406,47 +468,44 @@ export default function TableStickersModal({ onClose, tenant, tables = [], initi
               return (
                 <div
                   key={table.id}
-                  className={`bg-white text-slate-900 rounded-xl p-3 border-2 border-slate-950 shadow-sm flex flex-col items-center justify-between text-center relative overflow-hidden sticker-card w-full ${
+                  className={`bg-white text-tinta rounded-2xl p-3 border-2 border-tinta shadow-sm flex flex-col items-center justify-between text-center relative overflow-hidden sticker-card w-full ${
                     targetTables.length === 1 ? 'max-w-[220px]' : ''
                   }`}
-                  style={{ minHeight: '215px', maxHeight: '235px' }}
+                  style={{ minHeight: '225px', maxHeight: '245px' }}
                 >
-                  <div className="absolute top-1.5 left-1.5 w-2 h-2 border-t-2 border-l-2 border-slate-900" />
-                  <div className="absolute top-1.5 right-1.5 w-2 h-2 border-t-2 border-r-2 border-slate-900" />
-                  <div className="absolute bottom-1.5 left-1.5 w-2 h-2 border-b-2 border-l-2 border-slate-900" />
-                  <div className="absolute bottom-1.5 right-1.5 w-2 h-2 border-b-2 border-r-2 border-slate-900" />
+                  <div className="absolute top-1.5 left-1.5 w-2 h-2 border-t-2 border-l-2 border-tinta" />
+                  <div className="absolute top-1.5 right-1.5 w-2 h-2 border-t-2 border-r-2 border-tinta" />
+                  <div className="absolute bottom-1.5 left-1.5 w-2 h-2 border-b-2 border-l-2 border-tinta" />
+                  <div className="absolute bottom-1.5 right-1.5 w-2 h-2 border-b-2 border-r-2 border-tinta" />
 
-                  <div className="space-y-0.5">
-                    <span className="text-[8px] font-black tracking-wider text-slate-800 uppercase block">
+                  <div className="space-y-0.5 flex flex-col items-center">
+                    <Timbre className="w-5 h-5" mono={printMode === 'mono'} />
+                    <span className="text-[8px] font-bold tracking-wider text-suave uppercase block">
                       {tenant.name}
                     </span>
-                    <h4 className="font-black text-base text-slate-950 tracking-tight leading-tight">
+                    <h4 className="font-display font-black text-base text-tinta tracking-tight leading-tight">
                       MESA {tableNum}
                     </h4>
                   </div>
 
-                  <div className="p-1 bg-white rounded-lg border-2 border-slate-900 shadow-sm my-1">
+                  <div className="p-1 bg-white rounded-lg border-2 border-tinta shadow-sm my-1">
                     <QrCodeImage
                       value={targetUrl}
-                      size={130}
+                      size={120}
                       label={`QR Mesa ${tableNum}`}
-                      className="w-28 h-28 object-contain"
+                      className="w-24 h-24 object-contain"
                     />
                   </div>
 
                   <div className="space-y-0.5 w-full">
-                    <div className="bg-slate-950 text-white py-1 px-2 rounded-md flex items-center justify-center gap-1 shadow-sm border border-slate-900">
-                      <Zap className="w-2.5 h-2.5 text-amber-400 shrink-0" />
-                      <span className="text-[8px] font-black tracking-wider uppercase">
+                    <div className="bg-tinta text-plato py-1 px-2 rounded-md flex items-center justify-center gap-1 shadow-sm">
+                      <Zap className="w-2.5 h-2.5 text-maracuya shrink-0" />
+                      <span className="text-[8px] font-bold tracking-wider uppercase">
                         Toca con tu celular (NFC)
                       </span>
                     </div>
-                    <span className="text-[7px] font-bold text-slate-600 block uppercase tracking-wider">
-                      O escanea con la cámara
-                    </span>
-                    <span className="flex items-center justify-center gap-1 text-[7px] font-extrabold text-slate-950">
-                      <Timbre className="w-3 h-3" mono />
-                      Kike's
+                    <span className="text-[7px] font-bold text-suave block uppercase tracking-wider">
+                      O escanea para pedir
                     </span>
                   </div>
                 </div>
@@ -456,19 +515,19 @@ export default function TableStickersModal({ onClose, tenant, tables = [], initi
         </div>
 
         {/* Footer info (No imprimible) */}
-        <div className="text-center pt-2 border-t border-slate-800 text-[11px] text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-2 print-hidden">
+        <div className="text-center pt-2 border-t border-linea text-[11px] text-suave flex flex-col sm:flex-row items-center justify-between gap-2 print-hidden">
           <span>
             {targetTables.length === 1 ? (
               <>
-                Imprimiendo <strong>1 sticker individual</strong> (formato compacto 8.8 × 8.4 cm).
+                Imprimiendo <strong>1 sticker individual</strong> ({printMode === 'mono' ? 'Una tinta' : 'Color oficial'} · 8.8 × 8.5 cm).
               </>
             ) : (
               <>
-                Imprimiendo <strong>{targetTables.length} stickers</strong> (formato estándar 8.8 × 8.4 cm — 6 por hoja A4).
+                Imprimiendo <strong>{targetTables.length} stickers</strong> ({printMode === 'mono' ? 'Una tinta' : 'Color oficial'} · 8.8 × 8.5 cm · 6 por hoja A4).
               </>
             )}
           </span>
-          <span className="font-mono text-amber-400 font-bold">
+          <span className="font-mono text-hoja font-bold">
             {targetTables.length} {targetTables.length === 1 ? 'sticker' : 'stickers'}
           </span>
         </div>

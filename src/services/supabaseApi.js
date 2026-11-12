@@ -101,8 +101,21 @@ export const supabaseApi = {
   // La app anota qué imprimir (print_jobs) y un imprimidor lo saca: el agente local o,
   // de respaldo, el navegador de un equipo del personal. Ver impresora/README.md.
   async listPrintStations(tenantId) {
-    const rows = unwrap(await supabase.from('print_stations').select('*').eq('tenant_id', tenantId).order('sort_order'));
-    return rows.map(printStationFromRow);
+    try {
+      const res = await supabase.from('print_stations').select('*').eq('tenant_id', tenantId).order('sort_order');
+      if (res.error) {
+        if (/schema cache|does not exist/i.test(res.error.message || '')) {
+          return [];
+        }
+        throw toAppError(res.error);
+      }
+      return (res.data || []).map(printStationFromRow);
+    } catch (err) {
+      if (/schema cache|does not exist/i.test(err.message || '')) {
+        return [];
+      }
+      throw err;
+    }
   },
 
   async savePrintStation({ id = null, name, isDefault = false, printsReceipts = false }) {
@@ -121,14 +134,25 @@ export const supabaseApi = {
   },
 
   async listPrintDevices(tenantId) {
-    const rows = unwrap(
-      await supabase
+    try {
+      const res = await supabase
         .from('print_devices')
         .select('id, name, station_ids, pairing_expires_at, paired_at, last_seen_at, agent_version, revoked_at, created_at')
         .eq('tenant_id', tenantId)
-        .order('created_at')
-    );
-    return rows.map(printDeviceFromRow);
+        .order('created_at');
+      if (res.error) {
+        if (/schema cache|does not exist/i.test(res.error.message || '')) {
+          return [];
+        }
+        throw toAppError(res.error);
+      }
+      return (res.data || []).map(printDeviceFromRow);
+    } catch (err) {
+      if (/schema cache|does not exist/i.test(err.message || '')) {
+        return [];
+      }
+      throw err;
+    }
   },
 
   async createPrintDevice({ name, stationIds }) {

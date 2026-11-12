@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360.98 307.32" width="361" height="307" role="img" aria-label="Kike's">
+  <!-- Kike's · Sobre hoja · simbolo. El nombre está en trazados: no necesita la fuente. -->
+  <rect width="360.98" height="307.32" fill="#2F6B3F"/>
+  <circle cx="180.49" cy="78.05" r="21.95" fill="#F6F7F3"/>
+  <rect x="170.73" y="87.80" width="19.51" height="24.39" fill="#F6F7F3"/>
+  <path d="M78.05 204.88A102.44 102.44 0 0 1 282.93 204.88Z" fill="#F3C64B"/>
+  <rect x="53.66" y="214.63" width="253.66" height="39.02" rx="19.51" fill="#F6F7F3"/>
+  <path d="M151.22 136.59 L151.22 190.24 M207.32 136.59 L165.85 163.41 L207.32 190.24" fill="none" stroke="#1E2B24" stroke-width="21.95" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
