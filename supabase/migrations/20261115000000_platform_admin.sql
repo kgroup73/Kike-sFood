@@ -327,3 +327,51 @@ begin
 end $$;
 
 grant execute on function public.redeem_plan_code(text, text) to anon, authenticated;
+
+-- ==============================================================================
+-- 11. Configuración y Políticas para el Bucket 'products' de Supabase Storage
+-- ==============================================================================
+do $$ begin
+  -- Garantizar que el bucket 'products' exista y sea público
+  insert into storage.buckets (id, name, public)
+  values ('products', 'products', true)
+  on conflict (id) do update set public = true;
+
+  -- Lectura pública para que cualquier comensal vea las fotos de los platillos
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'storage' and tablename = 'objects' and policyname = 'Public Access for Product Images'
+  ) then
+    create policy "Public Access for Product Images"
+      on storage.objects for select
+      using (bucket_id = 'products');
+  end if;
+
+  -- Subida y modificación de fotos para personal y administradores
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'storage' and tablename = 'objects' and policyname = 'Upload Access for Product Images'
+  ) then
+    create policy "Upload Access for Product Images"
+      on storage.objects for insert
+      with check (bucket_id = 'products');
+  end if;
+
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'storage' and tablename = 'objects' and policyname = 'Update Access for Product Images'
+  ) then
+    create policy "Update Access for Product Images"
+      on storage.objects for update
+      using (bucket_id = 'products');
+  end if;
+
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'storage' and tablename = 'objects' and policyname = 'Delete Access for Product Images'
+  ) then
+    create policy "Delete Access for Product Images"
+      on storage.objects for delete
+      using (bucket_id = 'products');
+  end if;
+end $$;
