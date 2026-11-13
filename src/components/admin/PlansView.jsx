@@ -115,7 +115,7 @@ export default function PlansView() {
                       <>
                         <Lock className="w-4 h-4 shrink-0 text-amber-600" />
                         <span className="uppercase tracking-wider">
-                          Próximamente / En desarrollo (Bloqueado)
+                          Próximamente...
                         </span>
                       </>
                     )}
