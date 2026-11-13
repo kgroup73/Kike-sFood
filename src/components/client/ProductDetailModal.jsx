@@ -51,6 +51,7 @@ export default function ProductDetailModal({
   ].filter(Boolean);
   const tags = [
     product.isChef && { icon: ChefHat, label: 'Receta del chef' },
+    product.isPopular && { icon: Star, label: 'Más pedido' },
     product.isVeg && { icon: Leaf, label: 'Vegano' },
     product.isGf && { icon: WheatOff, label: 'Sin gluten' },
     product.spicyLevel > 0 && { icon: Flame, label: SPICY[product.spicyLevel] || 'Picante', tone: 'text-aji' }

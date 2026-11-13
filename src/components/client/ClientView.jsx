@@ -48,6 +48,21 @@ export default function ClientView({
   const filter = FILTERS.find((f) => f.id === dietaryFilter);
   const narrowing = !!q || !!filter;
 
+  // Filtros dinámicos: solo aparecen si al menos un plato de la carta cumple con el criterio
+  const activeFilters = useMemo(() => {
+    return FILTERS.filter((f) => {
+      if (f.id === 'fav') return Array.isArray(favorites) && favorites.length > 0;
+      return products.some((p) => p.available !== false && f.test(p, favorites));
+    });
+  }, [products, favorites]);
+
+  // Si el filtro activo ya no tiene platos que lo cumplan, se limpia automáticamente
+  useEffect(() => {
+    if (dietaryFilter && !activeFilters.some((f) => f.id === dietaryFilter)) {
+      setDietaryFilter('');
+    }
+  }, [dietaryFilter, activeFilters, setDietaryFilter]);
+
   const sections = useMemo(
     () =>
       categories
@@ -160,27 +175,29 @@ export default function ClientView({
         )}
       </nav>
 
-      {/* Filtros */}
-      <div className="flex gap-2 overflow-x-auto hide-scrollbar py-4 -mx-4 px-4 sm:-mx-6 sm:px-6" role="group" aria-label="Filtrar platos">
-        {FILTERS.map(({ id, label, icon: Icon }) => {
-          const on = dietaryFilter === id;
-          return (
-            <button
-              key={id}
-              onClick={() => setDietaryFilter(on ? '' : id)}
-              aria-pressed={on}
-              className={`shrink-0 h-9 px-3.5 rounded-full border text-sm flex items-center gap-1.5 transition-colors ${
-                on
-                  ? 'bg-hoja border-hoja text-sobre-hoja font-bold'
-                  : 'border-linea text-tinta hover:border-suave'
-              }`}
-            >
-              <Icon className="w-4 h-4" aria-hidden="true" />
-              {label}
-            </button>
-          );
-        })}
-      </div>
+      {/* Filtros Dinámicos (solo aparecen si hay platos que los cumplen) */}
+      {activeFilters.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto hide-scrollbar py-4 -mx-4 px-4 sm:-mx-6 sm:px-6" role="group" aria-label="Filtrar platos">
+          {activeFilters.map(({ id, label, icon: Icon }) => {
+            const on = dietaryFilter === id;
+            return (
+              <button
+                key={id}
+                onClick={() => setDietaryFilter(on ? '' : id)}
+                aria-pressed={on}
+                className={`shrink-0 h-9 px-3.5 rounded-full border text-sm flex items-center gap-1.5 transition-colors ${
+                  on
+                    ? 'bg-hoja border-hoja text-sobre-hoja font-bold'
+                    : 'border-linea text-tinta hover:border-suave'
+                }`}
+              >
+                <Icon className="w-4 h-4" aria-hidden="true" />
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Recomendados del día */}
       {!narrowing && stories.length > 0 && (
@@ -263,6 +280,7 @@ function DishRow({ product, isFavorite, onOpen, onQuickAdd }) {
   const [added, setAdded] = useState(0);
   const tags = [
     product.isChef && { icon: ChefHat, label: 'Del chef' },
+    product.isPopular && { icon: Star, label: 'Popular' },
     product.isVeg && { icon: Leaf, label: 'Vegano' },
     product.isGf && { icon: WheatOff, label: 'Sin gluten' },
     (product.spicyLevel || 0) > 0 && { icon: Flame, label: 'Picante', tone: 'text-aji' }

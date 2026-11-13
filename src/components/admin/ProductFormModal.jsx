@@ -9,7 +9,13 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
-  Link as LinkIcon
+  Link as LinkIcon,
+  ChefHat,
+  Star,
+  Leaf,
+  WheatOff,
+  Flame,
+  Eye
 } from 'lucide-react';
 import Modal from '../ui/Modal';
 import { fieldClass, labelClass, primaryButton } from './AdminShell';
@@ -22,6 +28,7 @@ export default function ProductFormModal({ product, categories, availableIngredi
   const { tenant } = useTenant();
   const [form, setForm] = useState(() => ({
     ...product,
+    spicyLevel: Number(product.spicyLevel || 0),
     ingredients: Array.isArray(product.ingredients) ? [...product.ingredients] : []
   }));
   const [saving, setSaving] = useState(false);
@@ -479,30 +486,137 @@ export default function ProductFormModal({ product, categories, availableIngredi
           </p>
         )}
 
-        <fieldset className="flex flex-wrap gap-2 pt-1">
-          {[
-            ['isChef', 'Especial del chef'],
-            ['isPopular', 'Popular'],
-            ['isVeg', 'Vegano'],
-            ['isGf', 'Sin gluten'],
-            ['available', 'Visible en la carta']
-          ].map(([key, label]) => (
+        {/* Distintivos y Preferencias de la Carta */}
+        <div className="space-y-4 pt-3 border-t border-linea">
+          <div>
+            <span className={labelClass}>Distintivos y Preferencias del Platillo</span>
+            <p className="help">
+              Activa las etiquetas que correspondan. En la carta digital del comensal solo aparecerán los filtros de las opciones que al menos un plato tenga activas.
+            </p>
+          </div>
+
+          {/* Grupo 1: Impulso Comercial & Ventas */}
+          <div className="space-y-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-suave block">
+              Destacados de Venta
+            </span>
+            <div className="flex flex-wrap gap-2">
+              <label
+                className={`h-9 px-3.5 rounded-full border flex items-center gap-1.5 cursor-pointer select-none font-bold text-xs transition-colors ${
+                  form.isChef ? 'bg-hoja border-hoja text-sobre-hoja' : 'bg-plato border-linea hover:border-tinta'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={Boolean(form.isChef)}
+                  onChange={(e) => set('isChef', e.target.checked)}
+                  className="sr-only"
+                />
+                <ChefHat className="w-3.5 h-3.5" /> Especial del chef
+              </label>
+
+              <label
+                className={`h-9 px-3.5 rounded-full border flex items-center gap-1.5 cursor-pointer select-none font-bold text-xs transition-colors ${
+                  form.isPopular ? 'bg-hoja border-hoja text-sobre-hoja' : 'bg-plato border-linea hover:border-tinta'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={Boolean(form.isPopular)}
+                  onChange={(e) => set('isPopular', e.target.checked)}
+                  className="sr-only"
+                />
+                <Star className="w-3.5 h-3.5" /> Más pedido / Popular
+              </label>
+            </div>
+          </div>
+
+          {/* Grupo 2: Preferencias Dietéticas & Alérgenos */}
+          <div className="space-y-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-suave block">
+              Preferencias Dietéticas
+            </span>
+            <div className="flex flex-wrap gap-2">
+              <label
+                className={`h-9 px-3.5 rounded-full border flex items-center gap-1.5 cursor-pointer select-none font-bold text-xs transition-colors ${
+                  form.isVeg ? 'bg-hoja border-hoja text-sobre-hoja' : 'bg-plato border-linea hover:border-tinta'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={Boolean(form.isVeg)}
+                  onChange={(e) => set('isVeg', e.target.checked)}
+                  className="sr-only"
+                />
+                <Leaf className="w-3.5 h-3.5" /> Vegano
+              </label>
+
+              <label
+                className={`h-9 px-3.5 rounded-full border flex items-center gap-1.5 cursor-pointer select-none font-bold text-xs transition-colors ${
+                  form.isGf ? 'bg-hoja border-hoja text-sobre-hoja' : 'bg-plato border-linea hover:border-tinta'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={Boolean(form.isGf)}
+                  onChange={(e) => set('isGf', e.target.checked)}
+                  className="sr-only"
+                />
+                <WheatOff className="w-3.5 h-3.5" /> Sin gluten
+              </label>
+            </div>
+          </div>
+
+          {/* Grupo 3: Nivel de Picante */}
+          <div className="space-y-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-suave block flex items-center gap-1">
+              <Flame className="w-3.5 h-3.5 text-aji" /> Nivel de Picante
+            </span>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {[
+                { level: 0, label: 'Sin picante' },
+                { level: 1, label: '🌶️ Suave' },
+                { level: 2, label: '🌶️🌶️ Medio' },
+                { level: 3, label: '🌶️🌶️🌶️ Intenso' }
+              ].map(({ level, label }) => {
+                const active = (Number(form.spicyLevel) || 0) === level;
+                return (
+                  <button
+                    key={level}
+                    type="button"
+                    onClick={() => set('spicyLevel', level)}
+                    className={`py-2 px-2.5 rounded-xl border text-center text-xs font-bold transition-colors ${
+                      active
+                        ? level > 0
+                          ? 'border-aji bg-aji text-white'
+                          : 'border-tinta bg-tinta text-mantel'
+                        : 'border-linea bg-plato hover:border-tinta'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Visibilidad del Platillo */}
+          <div className="pt-1">
             <label
-              key={key}
-              className={`h-10 px-4 rounded-full border flex items-center gap-2 cursor-pointer select-none font-bold text-sm transition-colors ${
-                form[key] ? 'bg-hoja border-hoja text-sobre-hoja' : 'bg-plato border-linea hover:border-tinta'
+              className={`h-9 px-3.5 rounded-full border inline-flex items-center gap-1.5 cursor-pointer select-none font-bold text-xs transition-colors ${
+                form.available ? 'bg-tinta border-tinta text-mantel' : 'bg-plato border-linea text-suave'
               }`}
             >
               <input
                 type="checkbox"
-                checked={Boolean(form[key])}
-                onChange={(e) => set(key, e.target.checked)}
+                checked={Boolean(form.available)}
+                onChange={(e) => set('available', e.target.checked)}
                 className="sr-only"
               />
-              {label}
+              <Eye className="w-3.5 h-3.5" /> {form.available ? 'Visible en la carta' : 'Oculto (Borrador)'}
             </label>
-          ))}
-        </fieldset>
+          </div>
+        </div>
 
         <button
           disabled={saving || !form.name.trim()}

@@ -12,7 +12,7 @@ import DishImage from '../client/DishImage';
 
 const EMPTY = {
   id: null, name: '', categoryId: null, price: 25000, image: '', description: '',
-  isChef: false, isVeg: false, isGf: false, isPopular: false, available: true, ingredients: [], modifiers: [], pairing: null
+  isChef: false, isVeg: false, isGf: false, isPopular: false, available: true, spicyLevel: 0, ingredients: [], modifiers: [], pairing: null
 };
 
 export default function ProductsAdmin() {
