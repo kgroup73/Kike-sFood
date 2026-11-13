@@ -1,4 +1,4 @@
-import { Plus, Minus, Flame, ChefHat, Bell, Search, Eye, Edit3, Trash2, Receipt, Settings, Calculator, ArrowRight, ArrowLeft, Volume2, LogOut } from 'lucide-react';
+import { Plus, Minus, Flame, ChefHat, Bell, Search, Eye, Edit3, Trash2, Receipt, Settings, Calculator, ArrowRight, ArrowLeft, Volume2, LogOut, Star, Leaf, WheatOff } from 'lucide-react';
 
 /*
  * Pantallas de muestra para el landing: la carta en el celular del comensal y el
@@ -7,6 +7,52 @@ import { Plus, Minus, Flame, ChefHat, Bell, Search, Eye, Edit3, Trash2, Receipt,
  * Los platos y las fotos son de muestra (public/dishes); los textos de botones y
  * pestañas son los de la app real.
  */
+
+const CATEGORIAS_CARTA = ['Entradas', 'Platos Fuertes', 'Hamburguesas', 'Bebidas', 'Postres'];
+
+const FILTROS_CARTA = [
+  { id: 'chef', label: 'Del chef', icon: ChefHat },
+  { id: 'popular', label: 'Popular', icon: Star },
+  { id: 'vegano', label: 'Vegano', icon: Leaf },
+  { id: 'spicy', label: 'Picante', icon: Flame, tone: 'text-aji' }
+];
+
+const PLATOS_CARTA_REAL = [
+  {
+    id: 'tacos',
+    name: 'Tacos de Camarón al Pastor',
+    desc: 'Tortillas artesanales, camarones al pastor, piña asada y emulsión de aguacate.',
+    price: '$28.000',
+    img: '/dishes/tuna.jpg',
+    tags: [
+      { label: 'Del chef', icon: ChefHat },
+      { label: 'Popular', icon: Star },
+      { label: 'Picante', icon: Flame, tone: 'text-aji' }
+    ]
+  },
+  {
+    id: 'carpaccio',
+    name: 'Carpaccio di Wagyu A5',
+    desc: 'Finas láminas de Wagyu japonés marmoleado, alcaparras y lascas de Parmigiano.',
+    price: '$46.000',
+    img: '/dishes/carpaccio.jpg',
+    tags: [
+      { label: 'Del chef', icon: ChefHat },
+      { label: 'Sin gluten', icon: WheatOff }
+    ]
+  },
+  {
+    id: 'burrata',
+    name: 'Burrata Pugliese con Pesto',
+    desc: 'Burrata fresca artesanal 150g, jamón de Parma y emulsión de albahaca fresca.',
+    price: '$36.000',
+    img: '/dishes/cheesecake.jpg',
+    tags: [
+      { label: 'Popular', icon: Star },
+      { label: 'Sin gluten', icon: WheatOff }
+    ]
+  }
+];
 
 const PLATOS = [
   { name: 'Risotto de hongos', price: '$32.000', img: '/dishes/risotto.jpg', tag: 'Receta del chef' },
@@ -20,55 +66,119 @@ const CATEGORIAS = ['Entradas', 'Platos fuertes', 'Postres', 'Bebidas'];
 
 /* ------------------------------------------------------------ Celular (comensal) */
 
-/** La carta de la mesa: categorías, plato destacado y lista con fotos. */
+/** La carta de la mesa: refleja con fidelidad editorial la interfaz real del comensal. */
 export function CartaScreen() {
   return (
-    <div className="h-full flex flex-col pt-11 text-tinta">
-      <div className="px-5 flex items-end justify-between gap-3">
-        <div>
-          <p className="text-xs text-suave">Mesa 4</p>
-          <p className="font-display font-extrabold text-xl tracking-tight leading-none">La Trattoria</p>
+    <div className="h-full flex flex-col pt-8 text-left text-tinta bg-mantel select-none overflow-hidden">
+      {/* Cabecera del restaurante */}
+      <div className="px-4 pt-1 flex items-start justify-between gap-2 border-b border-linea/60 pb-2 shrink-0 text-left">
+        <div className="min-w-0 text-left">
+          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-hoja/10 text-hoja text-[10px] font-bold">
+            <span className="w-1.5 h-1.5 rounded-full bg-hoja animate-pulse" />
+            <span>Mesa 4 · pide desde aquí</span>
+          </div>
+          <h2 className="mt-0.5 font-display font-extrabold text-[16px] leading-tight tracking-tight text-tinta truncate text-left">
+            La Trattoria Gourmet
+          </h2>
+          <p className="text-[10px] text-suave truncate text-left">Calle 10 # 43-22, El Poblado</p>
         </div>
-        <span className="w-9 h-9 rounded-full bg-plato border border-linea inline-flex items-center justify-center text-suave">
-          <Search className="w-4 h-4" />
-        </span>
+        <button
+          type="button"
+          aria-label="Buscar en la carta"
+          className="w-7 h-7 mt-1 rounded-full bg-plato border border-linea flex items-center justify-center text-tinta shadow-sm shrink-0"
+        >
+          <Search className="w-3.5 h-3.5" />
+        </button>
       </div>
-      <div className="mt-4 px-5 flex gap-2 text-xs font-bold overflow-hidden">
-        {CATEGORIAS.map((c, i) => (
-          <span key={c} className={`h-7 px-3 rounded-full inline-flex items-center whitespace-nowrap ${i === 1 ? 'bg-tinta text-mantel' : 'bg-plato border border-linea'}`}>
-            {c}
+
+      {/* Navegación por categorías fija */}
+      <div className="px-4 py-1.5 flex items-center justify-start gap-1.5 overflow-hidden text-xs border-b border-linea/40 bg-mantel/90 shrink-0 text-left">
+        {CATEGORIAS_CARTA.map((cat, idx) => (
+          <span
+            key={cat}
+            className={`h-6 px-2.5 rounded-full inline-flex items-center whitespace-nowrap text-[11px] transition-colors ${
+              idx === 0
+                ? 'bg-tinta text-mantel font-bold shadow-sm'
+                : 'text-suave font-medium hover:text-tinta'
+            }`}
+          >
+            {cat}
           </span>
         ))}
       </div>
-      <div className="mt-4 mx-4 relative h-32 rounded-2xl overflow-hidden">
-        <img src="/dishes/salmon.jpg" alt="" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-        <div className="absolute bottom-3 left-3 right-3 text-white">
-          <p className="text-[11px] font-bold inline-flex items-center gap-1">
-            <ChefHat className="w-3 h-3" /> Receta del chef
-          </p>
-          <p className="font-display font-extrabold text-lg leading-tight">Salmón a la parrilla</p>
+
+      {/* Píldoras de filtros dietarios dinámicos */}
+      <div className="px-4 py-1.5 flex items-center justify-start gap-1.5 overflow-hidden text-[10px] border-b border-linea/30 shrink-0 text-left">
+        {FILTROS_CARTA.map(({ id, label, icon: Icon, tone }) => (
+          <span
+            key={id}
+            className="h-5 px-2 rounded-full border border-linea bg-plato/60 text-suave inline-flex items-center gap-1 whitespace-nowrap font-medium"
+          >
+            <Icon className={`w-2.5 h-2.5 ${tone || ''}`} />
+            <span>{label}</span>
+          </span>
+        ))}
+      </div>
+
+      {/* Contenido principal: Sección y lista de platos real (DishRow) */}
+      <div className="flex-1 min-h-0 overflow-hidden px-4 pt-2.5 flex flex-col text-left">
+        <div className="flex items-baseline justify-between border-b-2 border-tinta pb-1 mb-1 shrink-0 text-left">
+          <h3 className="font-display font-extrabold text-[14px] tracking-tight leading-none text-left">
+            Entradas
+          </h3>
+          <span className="text-[10px] text-suave font-semibold text-right">3 opciones</span>
+        </div>
+
+        <div className="divide-y divide-linea/50 flex-1 min-h-0 overflow-hidden text-left">
+          {PLATOS_CARTA_REAL.slice(0, 2).map((p) => (
+            <div key={p.id} className="py-2 flex items-start gap-2.5 text-left">
+              <div className="flex-1 min-w-0 text-left">
+                <h4 className="font-display font-bold text-[13px] leading-snug tracking-tight text-tinta line-clamp-1 text-left">
+                  {p.name}
+                </h4>
+                <p className="mt-0.5 text-[10px] text-suave leading-tight line-clamp-2 text-left">
+                  {p.desc}
+                </p>
+                <div className="mt-1 flex items-center justify-start gap-2 text-[9px] text-suave font-medium text-left">
+                  {p.tags.map(({ label, icon: Icon, tone }) => (
+                    <span key={label} className={`inline-flex items-center gap-0.5 ${tone || ''}`}>
+                      <Icon className="w-2.5 h-2.5" />
+                      <span>{label}</span>
+                    </span>
+                  ))}
+                </div>
+                <p className="mt-0.5 font-bold text-xs text-tinta precio text-left">
+                  {p.price}
+                </p>
+              </div>
+
+              {/* Foto a la derecha con botón de agregar superpuesto fiel a la app */}
+              <div className="relative shrink-0 w-16 h-16 rounded-xl overflow-hidden bg-linea/30 shadow-sm">
+                <img
+                  src={p.img}
+                  alt={p.name}
+                  className="w-full h-full object-cover"
+                />
+                <span
+                  className="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-hoja text-sobre-hoja flex items-center justify-center shadow-md ring-2 ring-mantel"
+                  aria-hidden="true"
+                >
+                  <Plus className="w-3 h-3 stroke-[3]" />
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
-      <ul className="mt-3 px-4 space-y-2">
-        {PLATOS.filter((p) => p.name !== 'Salmón a la parrilla').map((p) => (
-          <li key={p.name} className="surface p-2.5 flex items-center gap-3">
-            <img src={p.img} alt="" className="w-14 h-14 rounded-xl object-cover shrink-0" />
-            <div className="min-w-0 flex-1">
-              <p className="font-bold text-sm leading-tight truncate">{p.name}</p>
-              <p className="text-[11px] text-suave truncate">{p.tag}</p>
-              <p className="precio text-sm">{p.price}</p>
-            </div>
-            <span className="w-8 h-8 rounded-full bg-hoja text-sobre-hoja inline-flex items-center justify-center shrink-0">
-              <Plus className="w-4 h-4" />
-            </span>
-          </li>
-        ))}
-      </ul>
-      <div className="mt-auto p-4">
-        <div className="h-12 rounded-full bg-tinta text-mantel px-5 flex items-center justify-between font-bold text-sm">
-          <span>Ver pedido</span>
-          <span className="precio">2 · $61.000</span>
+
+      {/* Barra flotante del pedido (idéntica a FloatingBar de la app) */}
+      <div className="p-3 pt-1 shrink-0 bg-gradient-to-t from-mantel via-mantel to-transparent">
+        <div className="h-10 rounded-full bg-tinta text-mantel px-4 flex items-center justify-between font-bold text-xs shadow-lg">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-hoja animate-pulse" />
+            <span>Ver pedido</span>
+          </div>
+          <span className="precio text-hoja-inversa font-extrabold tracking-tight">2 · $64.000</span>
         </div>
       </div>
     </div>
@@ -78,7 +188,7 @@ export function CartaScreen() {
 /** El detalle de un plato: foto, opciones, adiciones y maridaje. */
 export function PlatoScreen() {
   return (
-    <div className="h-full flex flex-col text-tinta">
+    <div className="h-full flex flex-col text-left text-tinta">
       <div className="relative h-48 shrink-0">
         <img src="/dishes/risotto.jpg" alt="" className="absolute inset-0 w-full h-full object-cover" />
         <span className="absolute top-10 left-4 w-8 h-8 rounded-full bg-plato/95 inline-flex items-center justify-center">
@@ -152,7 +262,7 @@ export function PedidoScreen() {
     { q: 2, name: 'Limonada de flor de saúco', price: '$24.000' }
   ];
   return (
-    <div className="h-full flex flex-col pt-11 text-tinta">
+    <div className="h-full flex flex-col pt-11 text-left text-tinta">
       <div className="px-5">
         <p className="text-xs text-suave">Mesa 4</p>
         <p className="font-display font-extrabold text-xl tracking-tight leading-none">Tu pedido</p>
