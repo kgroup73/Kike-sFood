@@ -1216,7 +1216,11 @@ export const demoApi = {
 
   // ------------------------------------------------------------------ Super Admin (Demo / Vitest)
   async checkIsPlatformAdmin(email = null) {
-    const adminEmails = ['omar6688.oc@gmail.com', 'dueño.local@kikesfood.com', 'dueno@local.dev'];
+    const adminEmails = [
+      import.meta.env.VITE_SUPERADMIN_EMAIL || 'admin@kikesfood.com',
+      'dueño.local@kikesfood.com',
+      'dueno@local.dev'
+    ].map((e) => e.toLowerCase());
     if (email && adminEmails.includes(email.toLowerCase())) return delay(true);
     const user = await this.getAuthUser();
     return delay(Boolean(user?.email && adminEmails.includes(user.email.toLowerCase())));
@@ -1297,8 +1301,8 @@ export const demoApi = {
       redeemed_at: null,
       redeemedSlug: null,
       redeemed_slug: null,
-      createdBy: 'omar6688.oc@gmail.com',
-      created_by: 'omar6688.oc@gmail.com',
+      createdBy: 'admin@kikesfood.com',
+      created_by: 'admin@kikesfood.com',
       createdAt: new Date().toISOString(),
       created_at: new Date().toISOString(),
       isValid: true,

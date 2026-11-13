@@ -86,8 +86,8 @@ export default function CompanySettings() {
           </span>
           <p className="text-sm text-suave leading-relaxed">
             {isDemoMode
-              ? 'Modo demo: los datos viven solo en este navegador. Configura VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY para usar la nube.'
-              : 'Conectado a Supabase. Pedidos, inventario y caja se sincronizan en tiempo real entre dispositivos.'}
+              ? 'Modo demo: los datos viven solo en este navegador.'
+              : 'Sincronización en la nube activa. Pedidos, inventario y caja se sincronizan en tiempo real entre todos los dispositivos del restaurante.'}
           </p>
         </div>
 

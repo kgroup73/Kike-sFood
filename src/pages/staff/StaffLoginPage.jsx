@@ -90,7 +90,7 @@ export default function StaffLoginPage() {
             {staffList === null ? (
               <p className="text-suave">Cargando…</p>
             ) : staffList.length === 0 ? (
-              <p className="text-aji">Este restaurante aún no tiene personal registrado. Revisa el README, sección "Dar de alta un restaurante y su dueño".</p>
+              <p className="text-suave text-sm">Este restaurante aún no tiene personal registrado. Ingresa con la cuenta de dueño desde el portal principal para configurar tu equipo.</p>
             ) : (
               <div className="space-y-2">
                 {staffList.map((s) => {

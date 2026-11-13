@@ -339,7 +339,7 @@ export default function ProductFormModal({ product, categories, availableIngredi
                     <div className="py-2 space-y-2">
                       <Loader2 className="w-8 h-8 animate-spin text-hoja mx-auto" />
                       <p className="text-xs font-bold text-tinta">
-                        Optimizando imagen (~150-300 KB) y guardando en Supabase...
+                        Optimizando imagen (~150-300 KB) y guardando en la nube...
                       </p>
                       <p className="text-[11px] text-suave">
                         Convirtiendo a formato WebP de alta velocidad

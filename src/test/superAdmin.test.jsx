@@ -11,9 +11,9 @@ describe('Super Admin & Sistema de Códigos de Upgrade', () => {
     demoApi.resetDemo();
   });
 
-  it('reconoce el correo omar6688.oc@gmail.com como administrador de plataforma', async () => {
-    const isOmarAdmin = await demoApi.checkIsPlatformAdmin('omar6688.oc@gmail.com');
-    expect(isOmarAdmin).toBe(true);
+  it('reconoce el correo admin@kikesfood.com como administrador de plataforma', async () => {
+    const isAdmin = await demoApi.checkIsPlatformAdmin('admin@kikesfood.com');
+    expect(isAdmin).toBe(true);
 
     const isRandomAdmin = await demoApi.checkIsPlatformAdmin('alguien@otrodominio.com');
     expect(isRandomAdmin).toBe(false);

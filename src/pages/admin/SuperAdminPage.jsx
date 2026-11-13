@@ -108,7 +108,7 @@ export default function SuperAdminPage() {
             </button>
 
             <p className="text-[11px] text-suave">
-              Solo cuentas autorizadas como <strong className="text-tinta">omar6688.oc@gmail.com</strong> tienen acceso.
+              Acceso exclusivo para administradores autorizados de la plataforma.
             </p>
           </div>
 
@@ -132,9 +132,9 @@ export default function SuperAdminPage() {
           </div>
 
           <div className="space-y-1.5">
-            <h1 className="font-display font-bold text-2xl text-tinta">Acceso No Autorizado</h1>
+            <h1 className="font-display font-bold text-2xl text-tinta">Acceso Restringido</h1>
             <p className="text-xs text-suave">
-              La cuenta <strong className="text-tinta">{user.email}</strong> no tiene permisos de administrador de la plataforma Kike's Food.
+              Esta cuenta no cuenta con permisos para administrar la plataforma.
             </p>
           </div>
 
