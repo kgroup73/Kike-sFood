@@ -1363,5 +1363,17 @@ export const demoApi = {
       planExpiresAt: exp,
       message: '¡Plan actualizado con éxito!'
     });
+  },
+
+  async uploadProductImage({ file }) {
+    if (typeof FileReader === 'undefined') {
+      return delay({ path: 'demo-dish.webp', publicUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80' });
+    }
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve({ path: 'demo-dish.webp', publicUrl: reader.result });
+      reader.onerror = () => reject(new Error('Error al leer imagen'));
+      reader.readAsDataURL(file);
+    });
   }
 };

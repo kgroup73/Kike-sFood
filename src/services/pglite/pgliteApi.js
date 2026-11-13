@@ -7,6 +7,7 @@ import {
   stockEventFromRow
 } from '../mappers';
 import { localFloorPlanStore } from '../floorPlanStore';
+import { supabase } from '../../lib/supabaseClient';
 
 let sessionStaff = null;
 const STAFF_SESSION_KEY = 'kikes_pglite_staff_session';
@@ -754,6 +755,44 @@ export const pgliteApi = {
     return rpc('redeem_plan_code', {
       p_slug: slug,
       p_code: code
+    });
+  },
+
+  // ------------------------------------------------------------------ Almacenamiento
+  async uploadProductImage({ file, tenantSlug, fileName = null }) {
+    if (supabase) {
+      try {
+        const slug = tenantSlug || 'general';
+        const cleanName = (fileName || file.name || `dish-${Date.now()}`)
+          .toLowerCase()
+          .replace(/[^a-z0-9.-]/g, '-');
+        const path = `${slug}/${Date.now()}-${cleanName}`;
+
+        const { data, error } = await supabase.storage
+          .from('products')
+          .upload(path, file, {
+            cacheControl: '31536000',
+            upsert: true,
+            contentType: file.type || 'image/webp'
+          });
+
+        if (!error && data?.path) {
+          const { data: publicData } = supabase.storage
+            .from('products')
+            .getPublicUrl(data.path);
+          return { path: data.path, publicUrl: publicData.publicUrl };
+        }
+      } catch (err) {
+        console.warn('Fallback a almacenamiento local de imagen:', err);
+      }
+    }
+
+    // Fallback local en desarrollo/offline: Data URL
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve({ path: 'local', publicUrl: reader.result });
+      reader.onerror = () => reject(new Error('Error al procesar imagen localmente'));
+      reader.readAsDataURL(file);
     });
   }
 };

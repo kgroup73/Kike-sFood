@@ -693,6 +693,37 @@ export const supabaseApi = {
         p_code: code
       })
     );
+  },
+
+  // ------------------------------------------------------------------ Almacenamiento / Supabase Storage
+  async uploadProductImage({ file, tenantSlug, fileName = null }) {
+    if (!supabase) throw new Error('Supabase no está configurado');
+    const slug = tenantSlug || 'general';
+    const cleanName = (fileName || file.name || `dish-${Date.now()}`)
+      .toLowerCase()
+      .replace(/[^a-z0-9.-]/g, '-');
+    const path = `${slug}/${Date.now()}-${cleanName}`;
+
+    const { data, error } = await supabase.storage
+      .from('products')
+      .upload(path, file, {
+        cacheControl: '31536000',
+        upsert: true,
+        contentType: file.type || 'image/webp'
+      });
+
+    if (error) {
+      throw new Error(`Error al subir imagen a Supabase Storage: ${error.message}`);
+    }
+
+    const { data: publicData } = supabase.storage
+      .from('products')
+      .getPublicUrl(data.path);
+
+    return {
+      path: data.path,
+      publicUrl: publicData.publicUrl
+    };
   }
 };
 
