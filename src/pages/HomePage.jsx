@@ -165,11 +165,16 @@ export default function HomePage() {
       <main>
         {/* Portada */}
         <section aria-labelledby="hero-title" className="px-4 sm:px-6 pt-4">
-          <div className="relative max-w-7xl mx-auto rounded-[32px] bg-gradient-to-b from-plato from-35% to-maracuya/40 overflow-hidden px-4 sm:px-8 pt-14 sm:pt-20 text-center">
-            <span className="inline-flex items-center gap-2 h-8 pl-1.5 pr-3 rounded-full bg-plato border border-linea text-sm font-bold">
-              <Timbre className="w-5 h-5" /> Carta digital, cocina y caja
-            </span>
-            <h1 id="hero-title" className="mt-6 font-display font-extrabold text-5xl sm:text-7xl lg:text-[88px] tracking-[-0.04em] leading-[0.92] max-w-4xl mx-auto">
+          <div className="relative max-w-7xl mx-auto rounded-[32px] bg-gradient-to-b from-plato from-35% to-maracuya/40 overflow-hidden px-4 sm:px-8 pt-12 sm:pt-16 text-center">
+            <div className="flex items-center justify-center mb-6">
+              <span className="inline-flex items-center gap-3 select-none">
+                <Timbre className="w-12 h-12 sm:w-16 sm:h-16" />
+                <span className="font-display font-black tracking-tight text-4xl sm:text-5xl text-tinta">
+                  Kike's
+                </span>
+              </span>
+            </div>
+            <h1 id="hero-title" className="font-display font-extrabold text-5xl sm:text-7xl lg:text-[88px] tracking-[-0.04em] leading-[0.92] max-w-4xl mx-auto">
               De la mesa a la cocina, sin papel.
             </h1>
             <p className="mt-6 text-lg sm:text-xl text-suave max-w-xl mx-auto leading-relaxed">
