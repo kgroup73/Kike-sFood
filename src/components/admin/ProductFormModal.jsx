@@ -531,10 +531,10 @@ export default function ProductFormModal({ product, categories, availableIngredi
             </div>
           </div>
 
-          {/* Grupo 2: Preferencias Dietéticas & Alérgenos */}
+          {/* Grupo 2: Preferencias Dietéticas & Sabor */}
           <div className="space-y-1.5">
             <span className="text-[11px] font-bold uppercase tracking-wider text-suave block">
-              Preferencias Dietéticas
+              Preferencias y Características
             </span>
             <div className="flex flex-wrap gap-2">
               <label
@@ -564,39 +564,26 @@ export default function ProductFormModal({ product, categories, availableIngredi
                 />
                 <WheatOff className="w-3.5 h-3.5" /> Sin gluten
               </label>
-            </div>
-          </div>
 
-          {/* Grupo 3: Nivel de Picante */}
-          <div className="space-y-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-suave block flex items-center gap-1">
-              <Flame className="w-3.5 h-3.5 text-aji" /> Nivel de Picante
-            </span>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {[
-                { level: 0, label: 'Sin picante' },
-                { level: 1, label: '🌶️ Suave' },
-                { level: 2, label: '🌶️🌶️ Medio' },
-                { level: 3, label: '🌶️🌶️🌶️ Intenso' }
-              ].map(({ level, label }) => {
-                const active = (Number(form.spicyLevel) || 0) === level;
-                return (
-                  <button
-                    key={level}
-                    type="button"
-                    onClick={() => set('spicyLevel', level)}
-                    className={`py-2 px-2.5 rounded-xl border text-center text-xs font-bold transition-colors ${
-                      active
-                        ? level > 0
-                          ? 'border-aji bg-aji text-white'
-                          : 'border-tinta bg-tinta text-mantel'
-                        : 'border-linea bg-plato hover:border-tinta'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
+              <label
+                className={`h-9 px-3.5 rounded-full border flex items-center gap-1.5 cursor-pointer select-none font-bold text-xs transition-colors ${
+                  form.spicyLevel > 0 || form.isSpicy
+                    ? 'bg-aji border-aji text-white'
+                    : 'bg-plato border-linea hover:border-tinta'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={Boolean(form.spicyLevel > 0 || form.isSpicy)}
+                  onChange={(e) => {
+                    const on = e.target.checked;
+                    set('spicyLevel', on ? 1 : 0);
+                    set('isSpicy', on);
+                  }}
+                  className="sr-only"
+                />
+                <Flame className="w-3.5 h-3.5" /> Picante
+              </label>
             </div>
           </div>
 

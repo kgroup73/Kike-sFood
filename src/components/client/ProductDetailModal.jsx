@@ -5,8 +5,6 @@ import DishImage from './DishImage';
 import { formatCOP } from '../../lib/money';
 import { validateSelections, unitPriceFor, clampQuantity } from '../../lib/pricing';
 
-const SPICY = { 1: 'Picante suave', 2: 'Picante medio', 3: 'Picante intenso' };
-
 /**
  * Detalle del platillo. Un modificador por grupo; los obligatorios se exigen
  * antes de agregar (el servidor también lo valida).
@@ -54,7 +52,7 @@ export default function ProductDetailModal({
     product.isPopular && { icon: Star, label: 'Más pedido' },
     product.isVeg && { icon: Leaf, label: 'Vegano' },
     product.isGf && { icon: WheatOff, label: 'Sin gluten' },
-    product.spicyLevel > 0 && { icon: Flame, label: SPICY[product.spicyLevel] || 'Picante', tone: 'text-aji' }
+    (product.spicyLevel > 0 || product.isSpicy) && { icon: Flame, label: 'Picante', tone: 'text-aji' }
   ].filter(Boolean);
 
   const media = (
