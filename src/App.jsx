@@ -3,6 +3,7 @@ import { Routes, Route, useParams } from 'react-router-dom';
 import { TenantProvider } from './hooks/useTenant';
 import HomePage from './pages/HomePage';
 import MenuPage from './pages/MenuPage';
+import RegisterPage from './pages/RegisterPage';
 import NotFoundPage from './pages/NotFoundPage';
 import { LoadingScreen } from './components/ui/Screens';
 
@@ -23,6 +24,8 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
+      <Route path="/registro" element={<RegisterPage />} />
+      <Route path="/crear-restaurante" element={<RegisterPage />} />
       <Route path="/r/:slug" element={<MenuRoute />} />
       <Route path="/r/:slug/m/:token" element={<MenuRoute />} />
       <Route

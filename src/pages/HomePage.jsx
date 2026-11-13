@@ -151,9 +151,14 @@ export default function HomePage() {
               </a>
             ))}
           </nav>
-          <a href="#entrar" className="btn btn-sm btn-dark ml-auto md:ml-0">
-            {isDemoMode ? 'Probar la demo' : 'Entrar como personal'}
-          </a>
+          <div className="flex items-center gap-2 ml-auto md:ml-0">
+            <Link to="/crear-restaurante" className="btn btn-sm btn-primary">
+              Crea tu restaurante
+            </Link>
+            <a href="#entrar" className="btn btn-sm btn-quiet hidden sm:inline-flex">
+              {isDemoMode ? 'Probar demo' : 'Entrar'}
+            </a>
+          </div>
         </div>
       </header>
 
@@ -171,21 +176,24 @@ export default function HomePage() {
               El comensal pide desde su mesa con el QR, la cocina lo ve al instante y la caja cobra la cuenta completa.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+              <Link to="/crear-restaurante" className="btn btn-primary text-base px-6 h-12 shadow-lg">
+                Crea tu restaurante
+              </Link>
               {isDemoMode ? (
                 <>
-                  <Link to={DEMO_MENU} className="btn btn-primary">
+                  <Link to={DEMO_MENU} className="btn bg-hoja/10 text-hoja hover:bg-hoja/15 h-12">
                     Abrir la carta de la Mesa 4
                   </Link>
-                  <Link to={DEMO_LOGIN} className="btn bg-hoja/10 text-hoja hover:bg-hoja/15">
+                  <Link to={DEMO_LOGIN} className="btn bg-hoja/10 text-hoja hover:bg-hoja/15 h-12">
                     Entrar como personal
                   </Link>
                 </>
               ) : (
                 <>
-                  <a href="#entrar" className="btn btn-primary">
+                  <a href="#entrar" className="btn bg-hoja/10 text-hoja hover:bg-hoja/15 h-12">
                     Entrar como personal
                   </a>
-                  <a href="#planes" className="btn bg-hoja/10 text-hoja hover:bg-hoja/15">
+                  <a href="#planes" className="btn btn-quiet h-12">
                     Ver los planes
                   </a>
                 </>

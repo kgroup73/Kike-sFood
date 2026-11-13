@@ -62,7 +62,9 @@ export default function StaffLoginPage() {
   return (
     <main className="min-h-screen grid lg:grid-cols-2">
       <section className="px-6 sm:px-10 pt-10 pb-6 lg:py-16 flex flex-col justify-between gap-8 lg:border-r border-linea">
-        <BrandMark size="sm" />
+        <Link to="/" className="inline-flex self-start hover:opacity-80 transition-opacity" title="Volver al inicio">
+          <BrandMark size="sm" />
+        </Link>
         <div className="space-y-3">
           <p className="text-suave text-lg">Ingreso del personal</p>
           <h1 className="font-display font-extrabold text-5xl sm:text-6xl lg:text-7xl tracking-tight leading-[0.92]">{tenant.name}</h1>

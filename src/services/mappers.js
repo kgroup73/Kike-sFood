@@ -195,3 +195,36 @@ export const printJobFromRow = (r) => ({
   error: r.error || '',
   createdAt: r.created_at
 });
+
+export const ingredientFromRow = (r) => ({
+  key: r.ingredient_key,
+  name: r.name,
+  category: r.category || 'otros',
+  unit: r.unit || 'unidad',
+  currentStock: Number(r.current_stock ?? 0),
+  minStock: Number(r.min_stock ?? 0),
+  unitCost: Number(r.unit_cost ?? 0),
+  autoDeplete: Boolean(r.auto_deplete),
+  supplier: r.supplier || '',
+  isSoldOut: Boolean(r.is_sold_out),
+  note: r.note || '',
+  reportedBy: r.reported_by || '',
+  updatedAt: r.updated_at
+});
+
+export const inventoryMovementFromRow = (r) => ({
+  id: r.id,
+  ingredientKey: r.ingredient_key,
+  ingredientName: r.ingredient_name || r.ingredient_key,
+  type: r.type,
+  quantity: Number(r.quantity),
+  previousStock: Number(r.previous_stock ?? 0),
+  newStock: Number(r.new_stock ?? 0),
+  cost: Number(r.cost ?? 0),
+  supplier: r.supplier || '',
+  invoiceRef: r.invoice_ref || '',
+  note: r.note || '',
+  createdBy: r.created_by || '',
+  createdAt: r.created_at
+});
+

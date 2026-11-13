@@ -5,7 +5,7 @@ import AdminHome from '../../components/admin/AdminHome';
 import CompanySettings from '../../components/admin/CompanySettings';
 import ProductsAdmin from '../../components/admin/ProductsAdmin';
 import TablesAdmin from '../../components/admin/TablesAdmin';
-import InventoryReport from '../../components/admin/InventoryReport';
+import InventoryAdmin from '../../components/admin/InventoryAdmin';
 import PlansView from '../../components/admin/PlansView';
 import BillingSettings from '../../components/admin/BillingSettings';
 import StaffAdmin from '../../components/admin/StaffAdmin';
@@ -26,7 +26,7 @@ export default function AdminPage() {
       <Route path="personal" element={<StaffAdmin />} />
       <Route path="mesas" element={<TablesAdmin />} />
       <Route path="cocina" element={<Gate feature="kitchen"><KitchenSettings /></Gate>} />
-      <Route path="inventario" element={<Gate feature="inventory"><InventoryReport /></Gate>} />
+      <Route path="inventario" element={<Gate feature="inventory"><InventoryAdmin /></Gate>} />
       <Route path="planes" element={<PlansView />} />
       <Route path="facturacion" element={<Gate feature="pos"><BillingSettings /></Gate>} />
       <Route path="*" element={<Navigate to="." replace />} />

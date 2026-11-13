@@ -3,6 +3,59 @@ export const STOCK_EVENT_TYPES = {
   RESTOCKED: 'REPUESTO'
 };
 
+export const INVENTORY_UNITS = [
+  { id: 'kg', label: 'Kilogramos (kg)', short: 'kg' },
+  { id: 'g', label: 'Gramos (g)', short: 'g' },
+  { id: 'lt', label: 'Litros (lt)', short: 'lt' },
+  { id: 'ml', label: 'Mililitros (ml)', short: 'ml' },
+  { id: 'unidad', label: 'Unidades (ud)', short: 'ud' },
+  { id: 'paquete', label: 'Paquetes (paq)', short: 'paq' },
+  { id: 'porcion', label: 'Porciones (porc)', short: 'porc' }
+];
+
+export const MOVEMENT_TYPES = {
+  ENTRADA: { id: 'ENTRADA', label: 'Entrada / Compra', tone: 'text-hoja', sign: '+' },
+  MERMA: { id: 'MERMA', label: 'Merma / Desperdicio', tone: 'text-aji', sign: '-' },
+  AJUSTE: { id: 'AJUSTE', label: 'Ajuste manual', tone: 'text-maracuya-tinta', sign: '=' },
+  SALIDA: { id: 'SALIDA', label: 'Salida de cocina', tone: 'text-tinta', sign: '-' }
+};
+
+export function formatQuantity(qty, unit = 'unidad') {
+  const n = Number(qty) || 0;
+  const formatted = n % 1 === 0 ? String(n) : n.toFixed(2);
+  const found = INVENTORY_UNITS.find((u) => u.id === unit);
+  const unitLabel = found ? found.short : unit;
+  return `${formatted} ${unitLabel}`;
+}
+
+export function getInventoryStatus(item = {}) {
+  const isSoldOut = Boolean(item.isSoldOut || (item.autoDeplete && (Number(item.currentStock) || 0) <= 0));
+  if (isSoldOut) {
+    return {
+      id: 'agotado',
+      label: 'Agotado',
+      badgeClass: 'chip chip-alerta',
+      tone: 'text-aji'
+    };
+  }
+  const current = Number(item.currentStock) || 0;
+  const min = Number(item.minStock) || 0;
+  if (min > 0 && current <= min) {
+    return {
+      id: 'bajo',
+      label: 'Stock bajo',
+      badgeClass: 'chip chip-aviso',
+      tone: 'text-aviso'
+    };
+  }
+  return {
+    id: 'disponible',
+    label: 'Disponible',
+    badgeClass: 'chip chip-disponible',
+    tone: 'text-hoja'
+  };
+}
+
 export function timeAgo(isoDate) {
   if (!isoDate) return '';
   const diffMs = Date.now() - new Date(isoDate).getTime();
@@ -111,4 +164,76 @@ export function deriveProductsWithStock(products, ingredientsStock = {}) {
       }
     };
   });
+}
+
+/**
+ * Combina el inventario persistido con los ingredientes usados en la carta de platillos,
+ * garantizando que todo insumo tenga su lista de platillos vinculados (`usedBy`) y que
+ * ningún ingrediente de la carta quede invisible si aún no se ha dado de alta formalmente.
+ */
+export function mergeIngredientsWithProducts(inventoryItems = [], products = [], ingredientsStock = {}) {
+  const map = new Map();
+
+  // 1. Inicializar con los insumos formalmente guardados en el inventario
+  (inventoryItems || []).forEach((item) => {
+    const key = normalizeIngredient(item.name || item.key);
+    if (!key) return;
+    const stockInfo = ingredientsStock[key];
+    const isSoldOut = Boolean(
+      item.isSoldOut ||
+      stockInfo?.soldOut ||
+      (item.autoDeplete && (Number(item.currentStock) || 0) <= 0)
+    );
+    map.set(key, {
+      key,
+      name: item.name,
+      category: item.category || getIngredientCategory(item.name),
+      unit: item.unit || 'unidad',
+      currentStock: Number(item.currentStock ?? 0),
+      minStock: Number(item.minStock ?? 0),
+      unitCost: Number(item.unitCost ?? 0),
+      autoDeplete: Boolean(item.autoDeplete),
+      supplier: item.supplier || '',
+      isSoldOut,
+      note: item.note || stockInfo?.note || '',
+      reportedBy: item.reportedBy || stockInfo?.by || '',
+      updatedAt: item.updatedAt || stockInfo?.at || null,
+      usedBy: [],
+      isPersisted: true
+    });
+  });
+
+  // 2. Asociar los platillos de la carta y detectar ingredientes no formalizados
+  (products || []).forEach((p) => {
+    (p.ingredients || []).forEach((ing) => {
+      const key = normalizeIngredient(ing);
+      if (!key) return;
+      if (!map.has(key)) {
+        const stockInfo = ingredientsStock[key];
+        map.set(key, {
+          key,
+          name: ing,
+          category: getIngredientCategory(ing),
+          unit: 'unidad',
+          currentStock: 0,
+          minStock: 0,
+          unitCost: 0,
+          autoDeplete: false,
+          supplier: '',
+          isSoldOut: Boolean(stockInfo?.soldOut),
+          note: stockInfo?.note || '',
+          reportedBy: stockInfo?.by || '',
+          updatedAt: stockInfo?.at || null,
+          usedBy: [],
+          isPersisted: false
+        });
+      }
+      const entry = map.get(key);
+      if (!entry.usedBy.includes(p.name)) {
+        entry.usedBy.push(p.name);
+      }
+    });
+  });
+
+  return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
 }

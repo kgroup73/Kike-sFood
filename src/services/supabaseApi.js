@@ -6,7 +6,7 @@ import { localFloorPlanStore } from './floorPlanStore';
 import {
   tenantFromRow, tenantToRow, orderFromRow, invoiceFromRow, dailyCloseFromRow, stockEventFromRow,
   customerFromRow, staffFromRow, tableFromRow, sequenceFromRow, sequenceToRow, waiterCallFromRow,
-  printStationFromRow, printDeviceFromRow, printJobFromRow
+  printStationFromRow, printDeviceFromRow, printJobFromRow, ingredientFromRow, inventoryMovementFromRow
 } from './mappers';
 
 let channelSeq = 0;
@@ -200,7 +200,7 @@ export const supabaseApi = {
   // ------------------------------------------------------------------ Sesión del personal
   async listStaffForLogin(slug) {
     const rows = unwrap(await supabase.rpc('list_staff_for_login', { p_slug: slug }));
-    return rows.map((s) => ({ id: s.id, displayName: s.display_name, role: s.role }));
+    return (rows || []).map((s) => ({ id: s.id, displayName: s.display_name, role: s.role }));
   },
 
   async loginStaff({ slug, staffId, pin }) {
@@ -277,6 +277,87 @@ export const supabaseApi = {
     return unwrap(
       await supabase.rpc('set_ingredient_stock', { p_name: name, p_sold_out: soldOut, p_note: note || null })
     );
+  },
+
+  async listIngredients(tenantId) {
+    try {
+      const res = await supabase.from('ingredients_stock').select('*').eq('tenant_id', tenantId).order('name');
+      if (res.error) {
+        if (/schema cache|does not exist/i.test(res.error.message || '')) return [];
+        throw toAppError(res.error);
+      }
+      return (res.data || []).map(ingredientFromRow);
+    } catch (err) {
+      if (/schema cache|does not exist/i.test(err.message || '')) return [];
+      throw err;
+    }
+  },
+
+  async saveIngredient(tenantId, item) {
+    try {
+      const res = await supabase.rpc('admin_save_ingredient', {
+        p_name: item.name,
+        p_category: item.category || 'otros',
+        p_unit: item.unit || 'unidad',
+        p_current_stock: Number(item.currentStock || 0),
+        p_min_stock: Number(item.minStock || 0),
+        p_unit_cost: Number(item.unitCost || 0),
+        p_auto_deplete: Boolean(item.autoDeplete),
+        p_supplier: item.supplier || null,
+        p_is_sold_out: item.isSoldOut ?? null
+      });
+      if (!res.error) return unwrap(res);
+    } catch {
+      // Fallback si la función RPC aún no se ha migrado en Supabase
+    }
+    return unwrap(
+      await supabase.rpc('set_ingredient_stock', {
+        p_name: item.name,
+        p_sold_out: Boolean(item.isSoldOut),
+        p_note: item.note || null
+      })
+    );
+  },
+
+  async deleteIngredient(tenantId, key) {
+    try {
+      const res = await supabase.rpc('admin_delete_ingredient', { p_key: key });
+      if (!res.error) return unwrap(res);
+    } catch {
+      // Fallback
+    }
+    unwrap(await supabase.from('ingredients_stock').delete().eq('tenant_id', tenantId).eq('ingredient_key', key));
+    return { ok: true };
+  },
+
+  async registerStockMovement(tenantId, mov) {
+    try {
+      const res = await supabase.rpc('admin_register_stock_movement', {
+        p_name: mov.name,
+        p_type: mov.type,
+        p_quantity: Number(mov.quantity),
+        p_cost: Number(mov.cost || 0),
+        p_supplier: mov.supplier || null,
+        p_invoice_ref: mov.invoiceRef || null,
+        p_note: mov.note || null
+      });
+      if (!res.error) return unwrap(res);
+    } catch {
+      // Fallback
+    }
+    return { ok: true };
+  },
+
+  async listInventoryMovements(tenantId, ingredientKey = null) {
+    try {
+      let query = supabase.from('inventory_movements').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false }).limit(100);
+      if (ingredientKey) query = query.eq('ingredient_key', ingredientKey);
+      const res = await query;
+      if (res.error) return [];
+      return (res.data || []).map(inventoryMovementFromRow);
+    } catch {
+      return [];
+    }
   },
 
   async listStockEvents(tenantId) {
@@ -477,6 +558,87 @@ export const supabaseApi = {
           .upsert(sequenceToRow(seq, tenantId), { onConflict: 'tenant_id,kind' })
       );
     }
+  },
+
+  // ------------------------------------------------------------------ Registro de nuevo restaurante (Multi-tenant)
+  async signInWithGoogle() {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/registro`
+      }
+    });
+    if (error) throw error;
+    return data;
+  },
+
+  async getAuthUser() {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user;
+  },
+
+  async signOutAuth() {
+    await supabase.auth.signOut();
+  },
+
+  async sendOnboardingOtp(email) {
+    const { data, error } = await supabase.functions.invoke('send-onboarding-otp', {
+      body: { email }
+    });
+    if (error) {
+      let msg = 'No se pudo enviar el código de confirmación';
+      try {
+        const body = await error.context?.json();
+        if (body?.error) msg = body.error;
+      } catch {
+        /* ignorar fallo al leer context json */
+      }
+      throw new Error(msg);
+    }
+    return data;
+  },
+
+  async verifyOnboardingOtp({ email, code }) {
+    const res = unwrap(
+      await supabase.rpc('verify_onboarding_code', {
+        p_email: email,
+        p_code: code
+      })
+    );
+    if (!res.ok) {
+      throw new Error(res.error || 'Código incorrecto o expirado');
+    }
+    return res;
+  },
+
+  async checkSlugAvailable(slug) {
+    const res = unwrap(
+      await supabase.rpc('check_slug_available', {
+        p_slug: slug
+      })
+    );
+    return res;
+  },
+
+  async registerTenant(data) {
+    const res = unwrap(
+      await supabase.rpc('register_tenant', {
+        p_email: data.email,
+        p_code: data.code,
+        p_name: data.name,
+        p_slug: data.slug,
+        p_phone: data.phone || null,
+        p_city: data.city || null,
+        p_owner_name: data.ownerName || 'Dueño',
+        p_pin: data.pin
+      })
+    );
+
+    if (res?.staffId) {
+      await this.loginStaff({ slug: data.slug, staffId: res.staffId, pin: data.pin }).catch(() => null);
+    }
+
+    return res;
   }
 };
 

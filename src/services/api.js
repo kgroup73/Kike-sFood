@@ -1,9 +1,19 @@
 import { isSupabaseConfigured } from '../lib/supabaseClient';
 import { supabaseApi } from './supabaseApi';
 import { demoApi } from './demo/demoApi';
+import { pgliteApi } from './pglite/pgliteApi';
 
-/** Sin VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY la app funciona en modo demo. */
-export const isDemoMode = !isSupabaseConfigured;
+/**
+ * REGLA ESTRICTA DE ENTORNO:
+ * - En desarrollo local (npm run dev / import.meta.env.DEV): PGlite (PostgreSQL local en disco).
+ * - En pruebas unitarias (Vitest / MODE === 'test'): demoApi (en memoria aislado).
+ * - En despliegue de producción (Vercel / import.meta.env.PROD): Supabase Cloud.
+ */
+const isLocalDev = import.meta.env.DEV && import.meta.env.MODE !== 'test';
 
-/** Única puerta de acceso a datos: los componentes nunca llaman a Supabase directo. */
-export const api = isDemoMode ? demoApi : supabaseApi;
+export const isLocalDbMode = isLocalDev;
+export const isDemoMode = !isLocalDev && !isSupabaseConfigured;
+
+export const api = isLocalDev
+  ? pgliteApi
+  : (isSupabaseConfigured ? supabaseApi : demoApi);

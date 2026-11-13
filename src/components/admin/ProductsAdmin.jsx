@@ -99,6 +99,7 @@ export default function ProductsAdmin() {
         <ProductFormModal
           product={editing}
           categories={menu.categories}
+          availableIngredients={menu.masterIngredients || []}
           onClose={() => setEditing(null)}
           onSave={async (product) => {
             const ok = await act(() => api.saveProduct(tenant.id, product), product.id ? 'Platillo actualizado' : 'Platillo creado');

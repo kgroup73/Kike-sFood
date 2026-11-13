@@ -18,7 +18,7 @@ const GROUPS = [
     title: 'Operación',
     items: [
       { to: 'admin/cocina', icon: Printer, title: 'Cocina e impresión', text: 'Pantalla de cocina o comandas impresas, y qué equipo imprime.', feature: 'kitchen' },
-      { to: 'admin/inventario', icon: Package, title: 'Inventario', text: 'Qué se ha agotado y qué conviene comprar.', feature: 'inventory' },
+      { to: 'admin/inventario', icon: Package, title: 'Inventario', text: 'Control de existencias, insumos, compras y agotados en carta.', feature: 'inventory' },
       { to: 'admin/facturacion', icon: ShieldCheck, title: 'Facturación', text: 'Numeración de comprobantes y resolución de la DIAN.', feature: 'pos' },
       { to: 'admin/planes', icon: Gem, title: 'Plan', text: 'Qué incluye tu suscripción.' }
     ]

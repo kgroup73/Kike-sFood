@@ -86,6 +86,8 @@ function seed() {
     products,
     ingredientsStock: {},
     stockEvents: [],
+    inventoryItems: {},
+    inventoryMovements: [],
     tables,
     staff: DEMO_STAFF.map((s) => ({ ...s, isActive: true, failedAttempts: 0, lockedUntil: null, createdAt: new Date().toISOString() })),
     orders,
@@ -624,6 +626,155 @@ export const demoApi = {
     return delay(load().stockEvents);
   },
 
+  async listIngredients() {
+    requireStaff(['owner', 'admin', 'cocina']);
+    const db = load();
+    const items = Object.values(db.inventoryItems || {});
+    return delay(items);
+  },
+
+  async saveIngredient(_tenantId, item) {
+    const s = requireStaff(['owner', 'admin']);
+    const key = normalizeIngredient(item.name);
+    if (!key) return fail('Nombre de ingrediente inválido');
+    const isSoldOut = item.isSoldOut !== undefined
+      ? Boolean(item.isSoldOut)
+      : (Boolean(item.autoDeplete) && (Number(item.currentStock) || 0) <= 0);
+
+    const saved = {
+      key,
+      name: item.name.trim(),
+      category: item.category || 'otros',
+      unit: item.unit || 'unidad',
+      currentStock: Number(item.currentStock ?? 0),
+      minStock: Number(item.minStock ?? 0),
+      unitCost: Number(item.unitCost ?? 0),
+      autoDeplete: Boolean(item.autoDeplete),
+      supplier: item.supplier ? item.supplier.trim() : '',
+      isSoldOut,
+      note: item.note || '',
+      reportedBy: s.displayName,
+      updatedAt: new Date().toISOString()
+    };
+
+    commit((d) => {
+      d.inventoryItems = d.inventoryItems || {};
+      d.inventoryItems[key] = saved;
+      if (isSoldOut) {
+        d.ingredientsStock[key] = {
+          name: saved.name,
+          soldOut: true,
+          at: saved.updatedAt,
+          by: s.displayName,
+          note: saved.note
+        };
+      } else {
+        delete d.ingredientsStock[key];
+      }
+    }, ['menu']);
+
+    return delay({ ok: true, key, item: saved });
+  },
+
+  async deleteIngredient(_tenantId, key) {
+    requireStaff(['owner', 'admin']);
+    commit((d) => {
+      d.inventoryItems = d.inventoryItems || {};
+      delete d.inventoryItems[key];
+      delete d.ingredientsStock[key];
+    }, ['menu']);
+    return delay({ ok: true });
+  },
+
+  async registerStockMovement(_tenantId, mov) {
+    const s = requireStaff(['owner', 'admin']);
+    const key = normalizeIngredient(mov.name);
+    if (!key) return fail('Ingrediente inválido');
+    const qty = Number(mov.quantity);
+    if (!qty || isNaN(qty)) return fail('Cantidad inválida');
+
+    const db = load();
+    const existing = db.inventoryItems?.[key] || {
+      key,
+      name: mov.name.trim(),
+      category: 'otros',
+      unit: 'unidad',
+      currentStock: 0,
+      minStock: 0,
+      unitCost: 0,
+      autoDeplete: false,
+      supplier: '',
+      isSoldOut: false
+    };
+
+    const prevStock = Number(existing.currentStock) || 0;
+    let newStock = prevStock;
+    if (mov.type === 'ENTRADA') newStock = prevStock + Math.abs(qty);
+    else if (mov.type === 'MERMA' || mov.type === 'SALIDA') newStock = Math.max(0, prevStock - Math.abs(qty));
+    else if (mov.type === 'AJUSTE') newStock = Math.max(0, qty);
+
+    let isSoldOut = existing.isSoldOut;
+    if (existing.autoDeplete) {
+      if (newStock > 0 && isSoldOut) isSoldOut = false;
+      else if (newStock <= 0 && !isSoldOut) isSoldOut = true;
+    }
+
+    const updated = {
+      ...existing,
+      currentStock: newStock,
+      isSoldOut,
+      updatedAt: new Date().toISOString()
+    };
+
+    const movementRecord = {
+      id: `mov-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      ingredientKey: key,
+      ingredientName: mov.name.trim(),
+      type: mov.type,
+      quantity: qty,
+      previousStock: prevStock,
+      newStock,
+      cost: Number(mov.cost || 0),
+      supplier: mov.supplier || '',
+      invoiceRef: mov.invoiceRef || '',
+      note: mov.note || '',
+      createdBy: s.displayName,
+      createdAt: new Date().toISOString()
+    };
+
+    commit((d) => {
+      d.inventoryItems = d.inventoryItems || {};
+      d.inventoryItems[key] = updated;
+      d.inventoryMovements = d.inventoryMovements || [];
+      d.inventoryMovements.unshift(movementRecord);
+      d.inventoryMovements = d.inventoryMovements.slice(0, 300);
+
+      if (isSoldOut) {
+        d.ingredientsStock[key] = {
+          name: updated.name,
+          soldOut: true,
+          at: updated.updatedAt,
+          by: s.displayName,
+          note: updated.note
+        };
+      } else {
+        delete d.ingredientsStock[key];
+      }
+    }, ['menu']);
+
+    return delay({ ok: true, previousStock: prevStock, newStock, isSoldOut });
+  },
+
+  async listInventoryMovements(_tenantId, ingredientKey = null) {
+    requireStaff(['owner', 'admin']);
+    const db = load();
+    let list = db.inventoryMovements || [];
+    if (ingredientKey) {
+      list = list.filter((m) => m.ingredientKey === ingredientKey);
+    }
+    return delay(list);
+  },
+
   // ---------------------------------------------------------------- caja
   async listCustomers() {
     requireStaff(['owner', 'admin', 'caja']);
@@ -932,5 +1083,130 @@ export const demoApi = {
         else d.sequences.push(clean);
       }
     });
+  },
+
+  // ------------------------------------------------------------------ Registro de nuevo restaurante (Multi-tenant)
+  async sendOnboardingOtp(email) {
+    const cleanEmail = String(email || '').trim().toLowerCase();
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      return fail('Ingresa un correo electrónico válido');
+    }
+    const code = '123456';
+    commit((d) => {
+      d.onboardingCodes = d.onboardingCodes || {};
+      d.onboardingCodes[cleanEmail] = {
+        code,
+        attempts: 0,
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString()
+      };
+    });
+    return delay({ ok: true, simulated: true, code });
+  },
+
+  async verifyOnboardingOtp({ email, code }) {
+    const cleanEmail = String(email || '').trim().toLowerCase();
+    const cleanCode = String(code || '').trim();
+    const db = load();
+    const entry = db.onboardingCodes?.[cleanEmail];
+    if (!entry) return fail('No hay un código solicitado para este correo');
+    if (new Date(entry.expiresAt).getTime() < Date.now()) return fail('El código ha expirado');
+    if (entry.code !== cleanCode) return fail('Código de verificación incorrecto');
+    return delay({ ok: true });
+  },
+
+  async checkSlugAvailable(slug) {
+    const s = String(slug || '').trim().toLowerCase();
+    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(s) || s.length < 3 || s.length > 60) {
+      return delay({ available: false, error: 'El enlace debe tener entre 3 y 60 letras, números o guiones' });
+    }
+    const db = load();
+    if (db.tenant?.slug === s) {
+      return delay({ available: false, error: 'Este enlace ya está ocupado por otro restaurante' });
+    }
+    return delay({ available: true, slug: s });
+  },
+
+  async registerTenant(data) {
+    const name = String(data.name || '').trim();
+    const slug = String(data.slug || '').trim().toLowerCase();
+    const email = String(data.email || '').trim().toLowerCase();
+    const pin = String(data.pin || '').trim();
+    const ownerName = String(data.ownerName || 'Dueño').trim();
+
+    if (!name) return fail('Escribe el nombre del restaurante');
+    if (!slug) return fail('El enlace del restaurante es obligatorio');
+    if (!/^[0-9]{4,6}$/.test(pin)) return fail('El PIN debe tener de 4 a 6 dígitos');
+
+    const tenantId = `tenant-${Date.now()}`;
+    const staffId = `staff-${Date.now()}`;
+
+    commit((d) => {
+      d.tenant = {
+        id: tenantId,
+        slug,
+        name,
+        email,
+        phone: data.phone || '',
+        city: data.city || '',
+        plan: 'basic',
+        taxType: 'INC',
+        taxRate: 8,
+        tipRate: 10,
+        footerText: '',
+        kitchenDisplay: true
+      };
+      d.staff = [
+        {
+          id: staffId,
+          displayName: ownerName,
+          role: 'owner',
+          pin,
+          isActive: true,
+          failedAttempts: 0,
+          lockedUntil: null,
+          createdAt: new Date().toISOString()
+        }
+      ];
+      d.tables = [
+        { id: 't-1', label: '1', token: `mesa-${slug}-1`, isActive: true, sortOrder: 1 },
+        { id: 't-2', label: '2', token: `mesa-${slug}-2`, isActive: true, sortOrder: 2 },
+        { id: 't-3', label: '3', token: `mesa-${slug}-3`, isActive: true, sortOrder: 3 },
+        { id: 't-4', label: '4', token: `mesa-${slug}-4`, isActive: true, sortOrder: 4 }
+      ];
+      d.categories = [
+        { id: 'c-1', name: 'Entradas', sortOrder: 1 },
+        { id: 'c-2', name: 'Platos Fuertes', sortOrder: 2 },
+        { id: 'c-3', name: 'Bebidas', sortOrder: 3 }
+      ];
+      d.products = [];
+      d.orders = [];
+      d.invoices = [];
+      d.dailyCloses = [];
+      if (d.onboardingCodes) delete d.onboardingCodes[email];
+    });
+
+    // Iniciar sesión del dueño inmediatamente
+    await this.loginStaff({ slug, staffId, pin });
+
+    return delay({
+      ok: true,
+      tenantId,
+      slug,
+      name,
+      staffId,
+      ownerName
+    });
+  },
+
+  async signInWithGoogle() {
+    return delay({ url: `${window.location.origin}/registro` });
+  },
+
+  async getAuthUser() {
+    return null;
+  },
+
+  async signOutAuth() {
+    return delay(true);
   }
 };

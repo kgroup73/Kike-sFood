@@ -8,3 +8,7 @@ sql_paths = ["./seed.sql"]
 # El login con PIN se llama antes de tener sesión: no exige JWT de usuario.
 [functions.staff-login]
 verify_jwt = false
+
+# El envío de OTP para onboarding se llama antes de tener sesión: no exige JWT de usuario.
+[functions.send-onboarding-otp]
+verify_jwt = false
