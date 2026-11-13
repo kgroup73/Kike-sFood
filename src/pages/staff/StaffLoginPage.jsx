@@ -19,12 +19,17 @@ export default function StaffLoginPage() {
 
   useEffect(() => {
     let cancelled = false;
+    if (typeof api?.listStaffForLogin !== 'function') {
+      setError('Servicio de autenticación no inicializado');
+      return;
+    }
     api
       .listStaffForLogin(tenant.slug)
       .then((list) => {
         if (cancelled) return;
-        setStaffList(list);
-        if (list.length === 1) setStaffId(list[0].id);
+        const safeList = Array.isArray(list) ? list : (list ? [list] : []);
+        setStaffList(safeList);
+        if (safeList.length === 1) setStaffId(safeList[0].id);
       })
       .catch((err) => !cancelled && setError(err.message));
     return () => {

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Printer, QrCode, Zap, FileDown, Loader2, Filter } from 'lucide-react';
+import { X, Printer, QrCode, Radio, FileDown, Loader2, Filter } from 'lucide-react';
 import QRCode from 'qrcode';
 import Timbre from '../ui/Timbre';
 import QrCodeImage from '../ui/QrCode';
@@ -499,7 +499,7 @@ export default function TableStickersModal({ onClose, tenant, tables = [], initi
 
                   <div className="space-y-0.5 w-full">
                     <div className="bg-tinta text-plato py-1 px-2 rounded-md flex items-center justify-center gap-1 shadow-sm">
-                      <Zap className="w-2.5 h-2.5 text-maracuya shrink-0" />
+                      <Radio className="w-2.5 h-2.5 text-maracuya shrink-0" />
                       <span className="text-[8px] font-bold tracking-wider uppercase">
                         Toca con tu celular (NFC)
                       </span>

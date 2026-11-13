@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Receipt, Zap, X, MapPin, LayoutGrid } from 'lucide-react';
+import { Receipt, FastForward, X, MapPin, LayoutGrid } from 'lucide-react';
 import { formatCOP } from '../../lib/money';
 import { ORDER_STATUS } from '../../lib/orderStatus';
 import { TABLE_SHAPES } from '../../lib/environments';
@@ -280,7 +280,7 @@ export default function RestaurantFloorPlan({
                         disabled={advancingKey === selected.group.key}
                         className="btn btn-dark w-full h-12"
                       >
-                        <Zap className="w-4 h-4" aria-hidden="true" />
+                        <FastForward className="w-4 h-4" aria-hidden="true" />
                         {advancingKey === selected.group.key ? 'Pasando a caja…' : 'Cobrar ya, sin esperar cocina'}
                       </button>
                       <p className="text-sm text-suave">

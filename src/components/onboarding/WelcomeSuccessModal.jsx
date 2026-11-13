@@ -1,4 +1,4 @@
-import { Check, Copy, ArrowRight, Sparkles, QrCode, ShieldCheck } from 'lucide-react';
+import { Check, Copy, ArrowRight, QrCode, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { primaryButton } from '../admin/AdminShell';
@@ -25,9 +25,9 @@ export default function WelcomeSuccessModal({ tenant }) {
 
   return (
     <div className="text-center space-y-6 py-2">
-      {/* Icono de celebración */}
+      {/* Icono de confirmación */}
       <div className="w-16 h-16 rounded-full bg-hoja/10 border-2 border-hoja/30 text-hoja flex items-center justify-center mx-auto shadow-sm animate-scaleIn">
-        <Sparkles className="w-8 h-8" />
+        <Check className="w-8 h-8" />
       </div>
 
       <div className="space-y-1.5">

@@ -10,6 +10,7 @@ import { LoadingScreen } from './components/ui/Screens';
 // El panel del personal (cocina, caja, admin) se descarga solo cuando se usa:
 // el comensal no carga ese código.
 const StaffApp = lazy(() => import('./pages/staff/StaffApp'));
+const SuperAdminPage = lazy(() => import('./pages/admin/SuperAdminPage'));
 
 function MenuRoute() {
   const { slug, token } = useParams();
@@ -24,6 +25,14 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
+      <Route
+        path="/admin/*"
+        element={
+          <Suspense fallback={<LoadingScreen label="Cargando panel de administración..." />}>
+            <SuperAdminPage />
+          </Suspense>
+        }
+      />
       <Route path="/registro" element={<RegisterPage />} />
       <Route path="/crear-restaurante" element={<RegisterPage />} />
       <Route path="/r/:slug" element={<MenuRoute />} />

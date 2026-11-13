@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { QrCode, ChefHat, Receipt, Settings, LogIn, Zap, Smartphone, KeyRound, Percent, Coins, ClipboardCheck, Check } from 'lucide-react';
+import { QrCode, ChefHat, Receipt, Settings, LogIn, Radio, Smartphone, KeyRound, Percent, Coins, ClipboardCheck, Check } from 'lucide-react';
 import BrandMark from '../components/ui/BrandMark';
 import Timbre from '../components/ui/Timbre';
 import HeroDevices from '../components/landing/HeroDevices';
@@ -73,7 +73,7 @@ const PANTALLAS = [
 ];
 
 const HECHOS = [
-  { icon: Zap, title: 'Tiempo real', text: 'La carta, la cocina y la caja se actualizan solas, sin recargar.' },
+  { icon: Radio, title: 'Tiempo real', text: 'La carta, la cocina y la caja se actualizan solas, sin recargar.' },
   { icon: Smartphone, title: 'Sin instalar nada', text: 'Funciona en el navegador: el celular del comensal, la tablet de la cocina y el computador de la caja.' },
   { icon: KeyRound, title: 'PIN por persona', text: 'Dueño, administrador, cocina, caja y mesero. Cada quien entra a lo suyo.' },
   { icon: Percent, title: 'Impuesto al consumo desglosado', text: 'Los precios de la carta lo incluyen y el tiquete lo separa.' },

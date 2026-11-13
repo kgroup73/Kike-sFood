@@ -181,6 +181,13 @@ export function pglitePlugin() {
             return res.end(JSON.stringify({ rows: result.rows }));
           }
 
+          // Endpoint: Exec DDL directo
+          if (req.url === '/api/pglite/exec' && req.method === 'POST') {
+            const { sql } = await parseBody();
+            await db.exec(sql);
+            return res.end(JSON.stringify({ ok: true }));
+          }
+
           // Endpoint: RPC (Llamada a función de Postgres)
           if (req.url === '/api/pglite/rpc' && req.method === 'POST') {
             const { name, args = {}, auth = {} } = await parseBody();
@@ -196,17 +203,17 @@ export function pglitePlugin() {
             const params = keys.map((k) => args[k]);
 
             const result = await db.transaction(async (tx) => {
-              if (userId) {
-                await tx.exec(`
-                  set local "request.jwt.claim.sub" = '${userId}';
-                  set local "request.jwt.claims" = '${JSON.stringify({ sub: userId, email: userEmail })}';
-                  set local role authenticated;
-                `);
-              } else {
+              if (auth.role === 'service_role' || !userId) {
                 await tx.exec(`
                   set local "request.jwt.claim.sub" = '';
                   set local "request.jwt.claims" = '{}';
                   set local role service_role;
+                `);
+              } else {
+                await tx.exec(`
+                  set local "request.jwt.claim.sub" = '${userId}';
+                  set local "request.jwt.claims" = '${JSON.stringify({ sub: userId, email: userEmail })}';
+                  set local role authenticated;
                 `);
               }
               return tx.query(querySql, params);

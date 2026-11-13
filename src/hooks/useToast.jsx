@@ -42,4 +42,10 @@ export function ToastProvider({ children }) {
   );
 }
 
-export const useToast = () => useContext(ToastContext);
+export const useToast = () => {
+  const fn = useContext(ToastContext);
+  if (fn && typeof fn === 'function') {
+    fn.showToast = fn;
+  }
+  return fn;
+};

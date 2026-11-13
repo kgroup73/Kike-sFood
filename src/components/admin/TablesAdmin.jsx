@@ -6,8 +6,7 @@ import {
   ExternalLink,
   RefreshCw,
   Plus,
-  Zap,
-  Sparkles,
+  Radio,
   Power,
   Trash2,
   LayoutGrid,
@@ -415,7 +414,7 @@ export default function TablesAdmin() {
                               Mesa {t.label}
                             </h4>
                             <span className="text-[10px] text-suave flex items-center gap-1 font-medium">
-                              <Zap className="w-2.5 h-2.5 text-hoja" aria-hidden="true" /> NFC NTAG213/215 · QR
+                              <Radio className="w-2.5 h-2.5 text-hoja" aria-hidden="true" /> NFC NTAG213/215 · QR
                             </span>
                           </div>
                         </div>
@@ -536,7 +535,7 @@ export default function TablesAdmin() {
       {/* GUÍA EDUCATIVA NFC CON TOKENS DE MARCA */}
       <div className="bg-mantel/60 border border-linea rounded-3xl p-5 sm:p-6 space-y-3 shadow-sm">
         <h4 className="font-display font-extrabold text-sm sm:text-base text-tinta flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-hoja" aria-hidden="true" /> Cómo instalar los tags NFC
+          <Radio className="w-5 h-5 text-hoja" aria-hidden="true" /> Cómo instalar los tags NFC
         </h4>
         <ol className="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs text-suave">
           <li className="bg-plato p-3.5 rounded-2xl border border-linea shadow-sm">

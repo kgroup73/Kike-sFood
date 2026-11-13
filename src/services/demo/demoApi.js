@@ -251,7 +251,11 @@ export const demoApi = {
 
   async getTenantBySlug(slug) {
     const db = load();
-    return delay(db.tenant.slug === slug ? db.tenant : null);
+    if (db.tenant.slug === slug) return delay(db.tenant);
+    const found = (db.tenants || []).find((t) => t.slug === slug);
+    if (found) return delay(found);
+    if (slug) return delay({ ...db.tenant, slug, name: slug, plan: 'basic' });
+    return delay(null);
   },
 
   async getMenu() {
@@ -1208,5 +1212,156 @@ export const demoApi = {
 
   async signOutAuth() {
     return delay(true);
+  },
+
+  // ------------------------------------------------------------------ Super Admin (Demo / Vitest)
+  async checkIsPlatformAdmin(email = null) {
+    const adminEmails = ['omar6688.oc@gmail.com', 'dueño.local@kikesfood.com', 'dueno@local.dev'];
+    if (email && adminEmails.includes(email.toLowerCase())) return delay(true);
+    const user = await this.getAuthUser();
+    return delay(Boolean(user?.email && adminEmails.includes(user.email.toLowerCase())));
+  },
+
+  async superadminListTenants() {
+    const db = load();
+    const t = db.tenant;
+    const paidOrders = (db.orders || []).filter((o) => ['paid', 'delivered'].includes(o.status));
+    const totalSales = paidOrders.reduce((acc, o) => acc + (o.total || 0), 0);
+    return delay([
+      {
+        id: t.id,
+        slug: t.slug,
+        name: t.name,
+        email: 'demo@kikesfood.com',
+        phone: t.phone || '3001234567',
+        city: t.city || 'Bogotá',
+        plan: t.plan || 'basic',
+        plan_expires_at: t.planExpiresAt || null,
+        is_active: t.isActive !== false,
+        created_at: new Date().toISOString(),
+        orders_count: (db.orders || []).length,
+        total_sales: totalSales,
+        last_order_at: db.orders?.[db.orders.length - 1]?.createdAt || null
+      }
+    ]);
+  },
+
+  async superadminToggleTenant(tenantId, isActive) {
+    commit((d) => {
+      if (d.tenant.id === tenantId) {
+        d.tenant.isActive = isActive;
+      }
+    });
+    return delay({ ok: true, tenantId, isActive });
+  },
+
+  async superadminChangeTenantPlan(tenantId, plan, durationDays = null) {
+    const db = load();
+    const isTrattoria = tenantId === db.tenant.id;
+    if (plan === 'premium' && !isTrattoria) {
+      return fail('El plan Premium se encuentra en desarrollo y solo está disponible para pruebas en el restaurante "la-trattoria"');
+    }
+
+    let exp = null;
+    if (durationDays) {
+      exp = new Date(Date.now() + durationDays * 86400000).toISOString();
+    }
+    commit((d) => {
+      if (d.tenant.id === tenantId) {
+        d.tenant.plan = plan;
+        d.tenant.planExpiresAt = exp;
+      }
+    });
+    return delay({ ok: true, tenantId, plan, planExpiresAt: exp });
+  },
+
+  async superadminCreateUpgradeCode({ plan, durationDays = null, targetSlug = null }) {
+    if (plan === 'premium' && targetSlug !== 'la-trattoria') {
+      return fail('El plan Premium solo está disponible para pruebas en el restaurante "la-trattoria"');
+    }
+
+    const prefix = plan === 'intermedio' ? 'INT' : (plan === 'premium' ? 'PREM' : 'BAS');
+    const randomHex = Math.random().toString(36).slice(2, 6).toUpperCase();
+    const code = `KIKE-${prefix}-${randomHex}`;
+    const codeObj = {
+      id: `code-${Date.now()}`,
+      code,
+      targetSlug: targetSlug || null,
+      target_slug: targetSlug || null,
+      plan,
+      durationDays: durationDays ? Number(durationDays) : null,
+      duration_days: durationDays ? Number(durationDays) : null,
+      expiresAt: new Date(Date.now() + 30 * 86400000).toISOString(),
+      expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
+      redeemedAt: null,
+      redeemed_at: null,
+      redeemedSlug: null,
+      redeemed_slug: null,
+      createdBy: 'omar6688.oc@gmail.com',
+      created_by: 'omar6688.oc@gmail.com',
+      createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      isValid: true,
+      is_valid: true
+    };
+    commit((d) => {
+      d.upgradeCodes = d.upgradeCodes || [];
+      d.upgradeCodes.unshift(codeObj);
+    });
+    return delay({
+      ok: true,
+      code,
+      plan,
+      durationDays,
+      targetSlug,
+      expiresAt: codeObj.expiresAt,
+      createdAt: codeObj.createdAt
+    });
+  },
+
+  async superadminListUpgradeCodes() {
+    const db = load();
+    return delay(db.upgradeCodes || []);
+  },
+
+  async redeemPlanCode({ slug, code }) {
+    const db = load();
+    const cleanCode = (code || '').trim().toUpperCase();
+    const codeObj = (db.upgradeCodes || []).find((c) => c.code === cleanCode);
+    if (!codeObj) {
+      return fail(`El código de activación "${cleanCode}" no es válido`);
+    }
+    if (codeObj.redeemed_at) {
+      return fail('Este código ya fue canjeado');
+    }
+    if (codeObj.target_slug && codeObj.target_slug !== slug) {
+      return fail('Este código fue emitido para otro restaurante');
+    }
+    if (codeObj.plan === 'premium' && slug !== 'la-trattoria') {
+      return fail('El plan Premium se encuentra en desarrollo y no está disponible para activación pública');
+    }
+
+    let exp = null;
+    if (codeObj.duration_days) {
+      exp = new Date(Date.now() + codeObj.duration_days * 86400000).toISOString();
+    }
+
+    commit((d) => {
+      d.tenant.plan = codeObj.plan;
+      d.tenant.planExpiresAt = exp;
+      const target = (d.upgradeCodes || []).find((c) => c.code === cleanCode);
+      if (target) {
+        target.redeemed_at = new Date().toISOString();
+        target.redeemed_slug = slug;
+        target.is_valid = false;
+      }
+    });
+
+    return delay({
+      ok: true,
+      plan: codeObj.plan,
+      planExpiresAt: exp,
+      message: '¡Plan actualizado con éxito!'
+    });
   }
 };

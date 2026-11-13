@@ -541,7 +541,7 @@ export const pgliteApi = {
       p_slug: slug,
       p_staff_id: staffId,
       p_pin: pin
-    });
+    }, { role: 'service_role' });
 
     if (!res?.ok) {
       throw new Error(res?.error || 'PIN incorrecto');
@@ -707,5 +707,53 @@ export const pgliteApi = {
     }
 
     return res;
+  },
+
+  // ------------------------------------------------------------------ Plataforma / Super Admin
+  async checkIsPlatformAdmin(email = null) {
+    const user = await this.getAuthUser();
+    const targetEmail = email || user?.email;
+    if (!targetEmail) return false;
+    const res = await rpc('is_platform_admin', { p_email: targetEmail });
+    return Boolean(res);
+  },
+
+  async superadminListTenants() {
+    const res = await rpc('superadmin_list_tenants');
+    return Array.isArray(res) ? res : (res ? [res] : []);
+  },
+
+  async superadminToggleTenant(tenantId, isActive) {
+    return rpc('superadmin_toggle_tenant', { p_tenant_id: tenantId, p_is_active: isActive });
+  },
+
+  async superadminChangeTenantPlan(tenantId, plan, durationDays = null) {
+    return rpc('superadmin_change_tenant_plan', {
+      p_tenant_id: tenantId,
+      p_plan: plan,
+      p_duration_days: durationDays ? Number(durationDays) : null
+    });
+  },
+
+  async superadminCreateUpgradeCode({ plan, durationDays = null, targetSlug = null }) {
+    const user = await this.getAuthUser();
+    return rpc('superadmin_create_upgrade_code', {
+      p_plan: plan,
+      p_duration_days: durationDays ? Number(durationDays) : null,
+      p_target_slug: targetSlug || null,
+      p_created_by: user?.email || 'admin'
+    });
+  },
+
+  async superadminListUpgradeCodes() {
+    const res = await rpc('superadmin_list_upgrade_codes');
+    return Array.isArray(res) ? res : (res ? [res] : []);
+  },
+
+  async redeemPlanCode({ slug, code }) {
+    return rpc('redeem_plan_code', {
+      p_slug: slug,
+      p_code: code
+    });
   }
 };

@@ -13,7 +13,10 @@ export function StaffSessionProvider({ children }) {
 
   useEffect(() => {
     refresh();
-    return api.onAuthChange(refresh);
+    if (typeof api?.onAuthChange === 'function') {
+      return api.onAuthChange(refresh);
+    }
+    return () => {};
   }, [refresh]);
 
   const login = useCallback(
