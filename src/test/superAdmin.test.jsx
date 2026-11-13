@@ -138,8 +138,8 @@ describe('Super Admin & Sistema de Códigos de Upgrade', () => {
       expect(screen.getByText('Plan')).toBeInTheDocument();
     });
 
-    // Debe mostrar la etiqueta "Próximamente / En desarrollo (Bloqueado)" en el plan Premium
-    expect(screen.getByText(/Próximamente \/ En desarrollo/i)).toBeInTheDocument();
+    // Debe mostrar la etiqueta "Próximamente..." en el plan Premium
+    expect(screen.getByText(/Próximamente/i)).toBeInTheDocument();
 
     // Debe mostrar la sección de canje de código
     expect(screen.getByText(/Canjear código de actualización/i)).toBeInTheDocument();

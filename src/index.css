@@ -277,6 +277,9 @@ html.carta body {
   .animate-fadeIn {
     animation: fade-in 0.2s ease-out both;
   }
+  .animate-scaleIn {
+    animation: scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
   .animate-sheet {
     animation: sheet-up 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
@@ -366,6 +369,11 @@ html.carta body {
 @keyframes fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 @keyframes sheet-up {

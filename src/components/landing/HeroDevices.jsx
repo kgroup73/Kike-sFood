@@ -19,30 +19,30 @@ export default function HeroDevices() {
       ref={ref}
       role="img"
       aria-label="Tres pantallas de la carta en el celular del comensal: la lista de platos con fotos, el detalle de un plato con sus opciones y el pedido listo para enviar a la cocina"
-      className="relative h-[460px] sm:h-[500px] lg:h-[580px] mt-10 sm:mt-14 text-left"
+      className="relative h-[460px] sm:h-[500px] lg:h-[580px] mt-10 sm:mt-14"
     >
-      <div className="absolute inset-x-0 top-0 flex items-start justify-center text-left">
-        <div className="hidden sm:block animate-rise [animation-delay:120ms] text-left">
-          <div className="hero-fan-left text-left">
-            <div className="w-[250px] lg:w-[290px] h-[480px] lg:h-[560px] translate-x-10 translate-y-10 text-left">
+      <div className="absolute inset-x-0 top-0 flex items-start justify-center">
+        <div className="hidden sm:block animate-rise [animation-delay:120ms]">
+          <div className="hero-fan-left">
+            <div className="w-[250px] lg:w-[290px] h-[480px] lg:h-[560px] translate-x-10 translate-y-10">
               <PhoneFrame className="h-full">
                 <PlatoScreen />
               </PhoneFrame>
             </div>
           </div>
         </div>
-        <div className="relative z-10 animate-rise text-left">
-          <div className="hero-fan-center text-left">
-            <div className="w-[270px] lg:w-[320px] h-[540px] lg:h-[620px] text-left">
+        <div className="relative z-10 animate-rise">
+          <div className="hero-fan-center">
+            <div className="w-[270px] lg:w-[320px] h-[540px] lg:h-[620px]">
               <PhoneFrame className="h-full">
                 <CartaScreen />
               </PhoneFrame>
             </div>
           </div>
         </div>
-        <div className="hidden sm:block animate-rise [animation-delay:200ms] text-left">
-          <div className="hero-fan-right text-left">
-            <div className="w-[250px] lg:w-[290px] h-[480px] lg:h-[560px] -translate-x-10 translate-y-10 text-left">
+        <div className="hidden sm:block animate-rise [animation-delay:200ms]">
+          <div className="hero-fan-right">
+            <div className="w-[250px] lg:w-[290px] h-[480px] lg:h-[560px] -translate-x-10 translate-y-10">
               <PhoneFrame className="h-full">
                 <PedidoScreen />
               </PhoneFrame>

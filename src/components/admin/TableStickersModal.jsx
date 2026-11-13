@@ -25,7 +25,7 @@ export default function TableStickersModal({ onClose, tenant, tables = [], initi
       id="print-stickers-overlay"
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-tinta/80 backdrop-blur-sm animate-fadeIn overflow-y-auto print-modal-overlay"
     >
-      <div className="bg-plato border border-linea text-tinta w-full max-w-4xl rounded-3xl p-5 sm:p-7 shadow-2xl relative space-y-5 my-auto max-h-[92vh] flex flex-col print-modal-content">
+      <div className="bg-plato border border-linea text-tinta w-full max-w-4xl rounded-3xl p-5 sm:p-7 shadow-2xl relative space-y-5 my-auto max-h-[92vh] flex flex-col print-modal-content animate-scaleIn">
         {/* Header con acciones */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-linea pb-4 gap-3 print-hidden">
           <div className="space-y-1">
