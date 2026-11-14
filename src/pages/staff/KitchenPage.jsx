@@ -77,6 +77,19 @@ export default function KitchenPage() {
 
   return (
     <div className="space-y-6">
+      {/* Región accesible permanente para lectores de pantalla (A11y - WCAG 4.1.3 / HERA) */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+        data-testid="kitchen-live-region"
+      >
+        {orders?.length
+          ? `${orders.length} comandas en cocina. Última comanda: Mesa ${orders[0]?.tableLabel || orders[0]?.table_label || 'sin mesa'}.`
+          : 'No hay comandas activas en cocina.'}
+      </div>
+
       {error && <InlineError message={`No se pudieron cargar las comandas: ${error}`} onRetry={reload} />}
       {tenant.kitchenDisplay === false ? (
         <OrdersListView orders={orders} withPos={withPos} onFinish={finish} onReprint={reprint} />

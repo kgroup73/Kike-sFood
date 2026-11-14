@@ -53,4 +53,29 @@ describe('pricing', () => {
     const payload = toOrderPayload([makeCartItem(burger, { Término: 'Medio' }, 2)]);
     expect(payload).toEqual([{ productId: 'p1', quantity: 2, selections: { Término: 'Medio' } }]);
   });
+
+  describe('cálculo de precios unitarios table-driven (it.each)', () => {
+    it.each([
+      { selections: { Término: 'Medio' }, expected: 34000, desc: 'Solo modificador obligatorio sin costo' },
+      { selections: { Término: 'Bien cocida' }, expected: 34000, desc: 'Otro modificador obligatorio sin costo' },
+      { selections: { Término: 'Medio', Adicionales: 'Queso' }, expected: 39000, desc: 'Obligatorio + adicional Queso (+5.000)' },
+      { selections: { Término: 'Bien cocida', Adicionales: 'Tocineta' }, expected: 38500, desc: 'Obligatorio + adicional Tocineta (+4.500)' },
+    ])('$desc -> Precio final: $expected COP', ({ selections, expected }) => {
+      expect(unitPriceFor(burger, selections)).toBe(expected);
+    });
+  });
+
+  describe('validación de selecciones table-driven (it.each)', () => {
+    it.each([
+      { selections: {}, expectedOk: false, expectedErrorsCount: 1, desc: 'Falta modificador obligatorio Término' },
+      { selections: { Término: 'Medio' }, expectedOk: true, expectedErrorsCount: 0, desc: 'Modificador obligatorio presente y válido' },
+      { selections: { Término: 'Bien cocida', Adicionales: 'Queso' }, expectedOk: true, expectedErrorsCount: 0, desc: 'Obligatorio y opcional válidos' },
+      { selections: { Término: 'Crudo' }, expectedOk: false, expectedErrorsCount: 1, desc: 'Opción no existente en el grupo' },
+      { selections: { Inexistente: 'Cualquiera' }, expectedOk: false, expectedErrorsCount: 2, desc: 'Grupo inexistente y falta obligatorio' },
+    ])('$desc (ok: $expectedOk)', ({ selections, expectedOk, expectedErrorsCount }) => {
+      const res = validateSelections(burger, selections);
+      expect(res.ok).toBe(expectedOk);
+      expect(res.errors).toHaveLength(expectedErrorsCount);
+    });
+  });
 });
