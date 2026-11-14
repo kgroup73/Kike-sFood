@@ -2,6 +2,8 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { useTenant } from '../../../hooks/useTenant';
 import { api } from '../../../services/api';
 import { optimizeProductImage, formatFileSize } from '../../../lib/imageOptimizer';
+import { validateProductDTO } from '../../../services/mappers';
+import { createValidationError } from '../../../services/errors';
 
 /**
  * Custom Hook de Orquestación para el formulario de Platillo (SoC - Capa 3).
@@ -41,8 +43,18 @@ export function useProductForm({ product = {}, categories = [], availableIngredi
   const [optimizationStats, setOptimizationStats] = useState(null);
   const [uploadError, setUploadError] = useState('');
   const [isDragging, setIsDragging] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
 
-  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const set = (k, v) => {
+    setForm((f) => ({ ...f, [k]: v }));
+    if (fieldErrors[k]) {
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[k];
+        return next;
+      });
+    }
+  };
 
   // Procesa y optimiza el archivo de imagen para subir a Supabase Storage
   const processAndUploadFile = async (file) => {
@@ -179,16 +191,30 @@ export function useProductForm({ product = {}, categories = [], availableIngredi
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!form.name.trim()) return;
+    e?.preventDefault?.();
+
+    // Validación canónica RFC 7807 antes de enviar
+    const validation = validateProductDTO(form);
+    if (!validation.valid) {
+      setFieldErrors(validation.errors);
+      return;
+    }
+    setFieldErrors({});
+
     setSaving(true);
     try {
       await onSave?.({
         ...form,
+        name: form.name.trim(),
         price: Math.max(0, Math.round(Number(form.price) || 0)),
         category: categories.find((c) => c.id === form.categoryId)?.name || '',
         ingredients: form.ingredients.map((s) => s.trim()).filter(Boolean)
       });
+    } catch (err) {
+      if (err?.fieldErrors && Object.keys(err.fieldErrors).length > 0) {
+        setFieldErrors(err.fieldErrors);
+      }
+      throw err;
     } finally {
       setSaving(false);
     }
@@ -199,6 +225,8 @@ export function useProductForm({ product = {}, categories = [], availableIngredi
     set,
     saving,
     handleSubmit,
+    fieldErrors,
+    setFieldErrors,
     // Imagen
     imageMode,
     setImageMode,

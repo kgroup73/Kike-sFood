@@ -23,6 +23,7 @@ export default function ProductFormModal({
     set,
     saving,
     handleSubmit,
+    fieldErrors,
     // Subida y optimización de imagen
     imageMode,
     setImageMode,
@@ -65,10 +66,13 @@ export default function ProductFormModal({
             value={form.name || ''}
             onChange={(e) => set('name', e.target.value)}
             placeholder="Ej: Hamburguesa Suprema"
-            className={fieldClass}
+            className={`${fieldClass} ${fieldErrors?.name ? 'border-red-500 focus:border-red-500' : ''}`}
             required
             autoFocus
           />
+          {fieldErrors?.name && (
+            <p className="text-xs text-red-500 font-semibold mt-1">{fieldErrors.name}</p>
+          )}
         </label>
 
         {/* Categoría y Precio */}
@@ -96,8 +100,11 @@ export default function ProductFormModal({
               step="100"
               value={form.price ?? ''}
               onChange={(e) => set('price', e.target.value)}
-              className={fieldClass}
+              className={`${fieldClass} ${fieldErrors?.price ? 'border-red-500 focus:border-red-500' : ''}`}
             />
+            {fieldErrors?.price && (
+              <p className="text-xs text-red-500 font-semibold mt-1">{fieldErrors.price}</p>
+            )}
           </label>
         </div>
 

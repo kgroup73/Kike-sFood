@@ -228,3 +228,93 @@ export const inventoryMovementFromRow = (r) => ({
   createdAt: r.created_at
 });
 
+export const categoryFromRow = (c) => ({
+  id: c.id,
+  name: c.name,
+  sortOrder: c.sort_order ?? 0,
+  printStationId: c.print_station_id ?? null
+});
+
+// Re-exportar mappers de catálogo para mantener src/services/mappers.js como punto único de DTOs
+export { productFromRow, productToRow, stockFromRows } from '../lib/catalog';
+
+/* ==========================================================================
+ * VALIDACIONES CANÓNICAS DE DTOs (Capa 3 - Arquitectura Hexagonal/Clean)
+ * Aseguran paridad entre Supabase, PGlite y Demo, detectando anomalías antes de
+ * persistir o consumir en componentes de UI.
+ * ========================================================================== */
+
+/** Valida que un DTO de platillo cumpla con los tipos e invariantes de negocio requeridos. */
+export function validateProductDTO(product) {
+  const errors = {};
+  if (!product || typeof product !== 'object') {
+    return { valid: false, errors: { _global: 'El platillo debe ser un objeto válido' } };
+  }
+  if (!product.name || !String(product.name).trim()) {
+    errors.name = 'El nombre del platillo es obligatorio';
+  }
+  const price = Number(product.price);
+  if (isNaN(price) || price < 0) {
+    errors.price = 'El precio debe ser un número mayor o igual a 0';
+  }
+  if (product.ingredients && !Array.isArray(product.ingredients)) {
+    errors.ingredients = 'La lista de ingredientes debe ser un arreglo';
+  }
+  return {
+    valid: Object.keys(errors).length === 0,
+    errors
+  };
+}
+
+/** Valida que un DTO de restaurante / tenant tenga su slug y nombre canónicos. */
+export function validateTenantDTO(tenant) {
+  const errors = {};
+  if (!tenant || typeof tenant !== 'object') {
+    return { valid: false, errors: { _global: 'El tenant debe ser un objeto válido' } };
+  }
+  if (!tenant.name || !String(tenant.name).trim()) {
+    errors.name = 'El nombre del restaurante es obligatorio';
+  }
+  if (!tenant.slug || !String(tenant.slug).trim()) {
+    errors.slug = 'El slug o identificador único es obligatorio';
+  }
+  return {
+    valid: Object.keys(errors).length === 0,
+    errors
+  };
+}
+
+/** Valida que un DTO de mesa tenga identificadores e índices válidos. */
+export function validateTableDTO(table) {
+  const errors = {};
+  if (!table || typeof table !== 'object') {
+    return { valid: false, errors: { _global: 'La mesa debe ser un objeto válido' } };
+  }
+  if (table.label === undefined || table.label === null || String(table.label).trim() === '') {
+    errors.label = 'El número o etiqueta de la mesa es obligatorio';
+  }
+  return {
+    valid: Object.keys(errors).length === 0,
+    errors
+  };
+}
+
+/** Valida la estructura básica de una comanda u orden. */
+export function validateOrderDTO(order) {
+  const errors = {};
+  if (!order || typeof order !== 'object') {
+    return { valid: false, errors: { _global: 'La orden debe ser un objeto válido' } };
+  }
+  if (!order.tableLabel && !order.tableId) {
+    errors.table = 'La comanda debe estar asignada a una mesa';
+  }
+  if (!Array.isArray(order.items) || order.items.length === 0) {
+    errors.items = 'La comanda debe contener al menos un elemento';
+  }
+  return {
+    valid: Object.keys(errors).length === 0,
+    errors
+  };
+}
+
+
