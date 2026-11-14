@@ -1,29 +1,49 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../services/api';
 import { defaultEnvironments, environmentId, resolveTableLayout } from '../lib/environments';
 
 /**
  * Plano de sala del restaurante (ambientes + ubicación de cada mesa), sincronizado
- * entre la administración y la caja. No sabe dónde se guarda: solo usa `api.*`.
+ * entre la administración y la caja. Resiliente ante concurrencia con AbortController.
  */
 export function useFloorPlan(tenantId) {
   const [plan, setPlan] = useState(() => ({ environments: defaultEnvironments(), tables: {} }));
   const [error, setError] = useState(null);
+  const activeControllerRef = useRef(null);
 
   const reload = useCallback(async () => {
     if (!tenantId) return;
+
+    activeControllerRef.current?.abort();
+    const controller = new AbortController();
+    activeControllerRef.current = controller;
+
     try {
-      setPlan(await api.getFloorPlan(tenantId));
-      setError(null);
+      const data = await api.getFloorPlan(tenantId, { signal: controller.signal });
+      if (!controller.signal.aborted) {
+        setPlan(data || { environments: defaultEnvironments(), tables: {} });
+        setError(null);
+      }
     } catch (err) {
-      setError(err.message);
+      if (!controller.signal.aborted && err?.name !== 'AbortError') {
+        setError(err.message || 'Error al cargar plano de sala');
+      }
     }
   }, [tenantId]);
 
   useEffect(() => {
     reload();
+
     if (!tenantId) return undefined;
-    return api.subscribeFloorPlan(tenantId, reload);
+
+    const unsubscribe = api.subscribeFloorPlan(tenantId, reload);
+
+    return () => {
+      activeControllerRef.current?.abort();
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
   }, [tenantId, reload]);
 
   const { environments, tables: saved } = plan;
