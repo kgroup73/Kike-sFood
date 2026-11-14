@@ -13,7 +13,7 @@
     "test:watch": "vitest",
     "test:db": "node scripts/test-db.mjs",
     "create-owner": "node scripts/create-owner.mjs",
-    "test:impresora": "node --test impresora/test/"
+    "test:impresora": "node --test impresora/test/agente.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.109.0",

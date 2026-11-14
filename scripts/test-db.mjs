@@ -25,10 +25,14 @@ await db.exec(`
   create table auth.users (id uuid primary key default gen_random_uuid(), email text);
   create function auth.uid() returns uuid language sql stable as
     $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
+  create schema if not exists storage;
+  create table if not exists storage.buckets (id text primary key, name text, public boolean default false);
+  create table if not exists storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text, name text, owner uuid, created_at timestamptz default now(), updated_at timestamptz default now());
   create role anon nologin;
   create role authenticated nologin;
   create role service_role nologin bypassrls;
-  grant usage on schema public, auth, extensions to anon, authenticated, service_role;
+  grant usage on schema public, auth, extensions, storage to anon, authenticated, service_role;
+  grant all on all tables in schema storage to anon, authenticated, service_role;
   grant execute on function auth.uid() to anon, authenticated, service_role;
   -- Igual que Supabase: privilegios amplios por defecto (la migración debe restringirlos)
   alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
