@@ -794,5 +794,36 @@ export const pgliteApi = {
       reader.onerror = () => reject(new Error('Error al procesar imagen localmente'));
       reader.readAsDataURL(file);
     });
+  },
+
+  // ------------------------------------------------------------------ Analítica y Recetas (Dashboard)
+  async getSalesAnalytics({ period = 'month', startDate = null, endDate = null } = {}) {
+    return await rpc('get_sales_analytics', {
+      p_period: period,
+      p_start: startDate,
+      p_end: endDate
+    });
+  },
+  async getTopSellingProducts({ limit = 10, startDate = null, endDate = null } = {}) {
+    return await rpc('get_top_selling_products', {
+      p_limit: limit,
+      p_start: startDate,
+      p_end: endDate
+    });
+  },
+  async getInventoryAnalytics({ startDate = null, endDate = null } = {}) {
+    return await rpc('get_inventory_analytics', {
+      p_start: startDate,
+      p_end: endDate
+    });
+  },
+  async getFoodCostAnalytics() {
+    return await rpc('get_food_cost_analytics', {});
+  },
+  async saveProductRecipe({ productId, items = [] }) {
+    return await rpc('admin_save_product_recipe', {
+      p_product_id: productId,
+      p_items: items
+    });
   }
 };

@@ -724,6 +724,56 @@ export const supabaseApi = {
       path: data.path,
       publicUrl: publicData.publicUrl
     };
+  },
+
+  // ------------------------------------------------------------------ Analítica y Recetas (Dashboard)
+  async getSalesAnalytics({ period = 'month', startDate = null, endDate = null } = {}) {
+    if (!supabase) throw new Error('Supabase no está configurado');
+    const { data, error } = await supabase.rpc('get_sales_analytics', {
+      p_period: period,
+      p_start: startDate,
+      p_end: endDate
+    });
+    if (error) throw toAppError(error);
+    return data || [];
+  },
+
+  async getTopSellingProducts({ limit = 10, startDate = null, endDate = null } = {}) {
+    if (!supabase) throw new Error('Supabase no está configurado');
+    const { data, error } = await supabase.rpc('get_top_selling_products', {
+      p_limit: limit,
+      p_start: startDate,
+      p_end: endDate
+    });
+    if (error) throw toAppError(error);
+    return data || [];
+  },
+
+  async getInventoryAnalytics({ startDate = null, endDate = null } = {}) {
+    if (!supabase) throw new Error('Supabase no está configurado');
+    const { data, error } = await supabase.rpc('get_inventory_analytics', {
+      p_start: startDate,
+      p_end: endDate
+    });
+    if (error) throw toAppError(error);
+    return data || [];
+  },
+
+  async getFoodCostAnalytics() {
+    if (!supabase) throw new Error('Supabase no está configurado');
+    const { data, error } = await supabase.rpc('get_food_cost_analytics');
+    if (error) throw toAppError(error);
+    return data || [];
+  },
+
+  async saveProductRecipe({ productId, items = [] }) {
+    if (!supabase) throw new Error('Supabase no está configurado');
+    const { data, error } = await supabase.rpc('admin_save_product_recipe', {
+      p_product_id: productId,
+      p_items: items
+    });
+    if (error) throw toAppError(error);
+    return data;
   }
 };
 

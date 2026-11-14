@@ -1379,5 +1379,77 @@ export const demoApi = {
       reader.onerror = () => reject(new Error('Error al leer imagen'));
       reader.readAsDataURL(file);
     });
+  },
+
+  // ------------------------------------------------------------------ Analítica y Recetas (Dashboard Mockeado)
+  async getSalesAnalytics({ period = 'month' } = {}) {
+    const isDay = period === 'day';
+    const isWeek = period === 'week';
+
+    const mockData = isDay ? [
+      { period_label: '2026-11-08', total_sales: 1120000, invoice_count: 24, average_ticket: 46666, cash_sales: 420000, card_sales: 550000, transfer_sales: 150000, total_tax: 82962, total_tip: 112000 },
+      { period_label: '2026-11-09', total_sales: 890000, invoice_count: 19, average_ticket: 46842, cash_sales: 310000, card_sales: 450000, transfer_sales: 130000, total_tax: 65925, total_tip: 89000 },
+      { period_label: '2026-11-10', total_sales: 1350000, invoice_count: 28, average_ticket: 48214, cash_sales: 500000, card_sales: 680000, transfer_sales: 170000, total_tax: 100000, total_tip: 135000 },
+      { period_label: '2026-11-11', total_sales: 1620000, invoice_count: 35, average_ticket: 46285, cash_sales: 620000, card_sales: 820000, transfer_sales: 180000, total_tax: 120000, total_tip: 162000 },
+      { period_label: '2026-11-12', total_sales: 1980000, invoice_count: 41, average_ticket: 48292, cash_sales: 750000, card_sales: 980000, transfer_sales: 250000, total_tax: 146666, total_tip: 198000 },
+      { period_label: '2026-11-13', total_sales: 2450000, invoice_count: 52, average_ticket: 47115, cash_sales: 920000, card_sales: 1250000, transfer_sales: 280000, total_tax: 181481, total_tip: 245000 },
+      { period_label: '2026-11-14', total_sales: 2890000, invoice_count: 60, average_ticket: 48166, cash_sales: 1100000, card_sales: 1450000, transfer_sales: 340000, total_tax: 214074, total_tip: 289000 }
+    ] : isWeek ? [
+      { period_label: 'Sem 41, 2026', total_sales: 8450000, invoice_count: 180, average_ticket: 46944, cash_sales: 3200000, card_sales: 4250000, transfer_sales: 1000000, total_tax: 625925, total_tip: 845000 },
+      { period_label: 'Sem 42, 2026', total_sales: 9120000, invoice_count: 195, average_ticket: 46769, cash_sales: 3450000, card_sales: 4600000, transfer_sales: 1070000, total_tax: 675555, total_tip: 912000 },
+      { period_label: 'Sem 43, 2026', total_sales: 9850000, invoice_count: 210, average_ticket: 46904, cash_sales: 3700000, card_sales: 5000000, transfer_sales: 1150000, total_tax: 729629, total_tip: 985000 },
+      { period_label: 'Sem 44, 2026', total_sales: 10450000, invoice_count: 220, average_ticket: 47500, cash_sales: 3950000, card_sales: 5250000, transfer_sales: 1250000, total_tax: 774074, total_tip: 1045000 }
+    ] : [
+      { period_label: 'Junio 2026', total_sales: 24800000, invoice_count: 530, average_ticket: 46792, cash_sales: 9400000, card_sales: 12500000, transfer_sales: 2900000, total_tax: 1837037, total_tip: 2480000 },
+      { period_label: 'Julio 2026', total_sales: 28500000, invoice_count: 605, average_ticket: 47107, cash_sales: 10800000, card_sales: 14400000, transfer_sales: 3300000, total_tax: 2111111, total_tip: 2850000 },
+      { period_label: 'Agosto 2026', total_sales: 31200000, invoice_count: 660, average_ticket: 47272, cash_sales: 11800000, card_sales: 15800000, transfer_sales: 3600000, total_tax: 2311111, total_tip: 3120000 },
+      { period_label: 'Septiembre 2026', total_sales: 34500000, invoice_count: 730, average_ticket: 47260, cash_sales: 13000000, card_sales: 17500000, transfer_sales: 4000000, total_tax: 2555555, total_tip: 3450000 },
+      { period_label: 'Octubre 2026', total_sales: 38200000, invoice_count: 810, average_ticket: 47160, cash_sales: 14400000, card_sales: 19400000, transfer_sales: 4400000, total_tax: 2829629, total_tip: 3820000 },
+      { period_label: 'Noviembre 2026', total_sales: 42100000, invoice_count: 890, average_ticket: 47303, cash_sales: 15900000, card_sales: 21300000, transfer_sales: 4900000, total_tax: 3118518, total_tip: 4210000 }
+    ];
+
+    return delay(mockData);
+  },
+
+  async getTopSellingProducts({ limit = 10 } = {}) {
+    const products = [
+      { product_id: 'p1', product_name: 'Hamburguesa Suprema', category_name: 'Platos Fuertes', total_quantity: 342, total_revenue: 11628000, order_occurrences: 280 },
+      { product_id: 'p2', product_name: 'Tacos de Camarón al Pastor', category_name: 'Entradas', total_quantity: 268, total_revenue: 7504000, order_occurrences: 215 },
+      { product_id: 'p3', product_name: 'Carpaccio di Wagyu A5', category_name: 'Entradas', total_quantity: 184, total_revenue: 8464000, order_occurrences: 160 },
+      { product_id: 'p4', product_name: 'Pizza Margherita Artesanal', category_name: 'Platos Fuertes', total_quantity: 165, total_revenue: 5775000, order_occurrences: 142 },
+      { product_id: 'p5', product_name: 'Cerveza Artesanal IPA', category_name: 'Bebidas', total_quantity: 410, total_revenue: 6150000, order_occurrences: 310 },
+      { product_id: 'p6', product_name: 'Limonada de Coco', category_name: 'Bebidas', total_quantity: 295, total_revenue: 3540000, order_occurrences: 240 }
+    ];
+    return delay(products.slice(0, limit));
+  },
+
+  async getInventoryAnalytics() {
+    const items = [
+      { ingredient_key: 'pan-brioche', ingredient_name: 'Pan Brioche', category: 'panaderia', current_stock: 45, min_stock: 20, unit: 'unidad', unit_cost: 1200, is_low_stock: false, total_entries: 200, total_waste: 4, waste_cost: 4800 },
+      { ingredient_key: 'carne-angus', ingredient_name: 'Carne Angus Molida', category: 'carnes', current_stock: 4.5, min_stock: 10, unit: 'kg', unit_cost: 28000, is_low_stock: true, total_entries: 50, total_waste: 1.2, waste_cost: 33600 },
+      { ingredient_key: 'queso-cheddar', ingredient_name: 'Queso Cheddar', category: 'lacteos', current_stock: 3.2, min_stock: 5, unit: 'kg', unit_cost: 24000, is_low_stock: true, total_entries: 30, total_waste: 0.5, waste_cost: 12000 },
+      { ingredient_key: 'camaron-tigre', ingredient_name: 'Camarón Tigre', category: 'pescados', current_stock: 8.0, min_stock: 5, unit: 'kg', unit_cost: 42000, is_low_stock: false, total_entries: 40, total_waste: 0.8, waste_cost: 33600 },
+      { ingredient_key: 'aguacate-hass', ingredient_name: 'Aguacate Hass', category: 'verduras', current_stock: 12, min_stock: 15, unit: 'unidad', unit_cost: 2500, is_low_stock: true, total_entries: 80, total_waste: 6, waste_cost: 15000 }
+    ];
+    return delay(items);
+  },
+
+  async getFoodCostAnalytics() {
+    const items = [
+      { product_id: 'p1', product_name: 'Hamburguesa Suprema', category_name: 'Platos Fuertes', sale_price: 34000, recipe_cost: 10200, gross_profit: 23800, food_cost_percentage: 30.0, ingredients_count: 5 },
+      { product_id: 'p2', product_name: 'Tacos de Camarón al Pastor', category_name: 'Entradas', sale_price: 28000, recipe_cost: 7840, gross_profit: 20160, food_cost_percentage: 28.0, ingredients_count: 4 },
+      { product_id: 'p3', product_name: 'Carpaccio di Wagyu A5', category_name: 'Entradas', sale_price: 46000, recipe_cost: 14720, gross_profit: 31280, food_cost_percentage: 32.0, ingredients_count: 3 },
+      { product_id: 'p4', product_name: 'Pizza Margherita Artesanal', category_name: 'Platos Fuertes', sale_price: 35000, recipe_cost: 8750, gross_profit: 26250, food_cost_percentage: 25.0, ingredients_count: 4 },
+      { product_id: 'p5', product_name: 'Limonada de Coco', category_name: 'Bebidas', sale_price: 12000, recipe_cost: 2400, gross_profit: 9600, food_cost_percentage: 20.0, ingredients_count: 3 }
+    ];
+    return delay(items);
+  },
+
+  async saveProductRecipe({ productId, items = [] }) {
+    commit((d) => {
+      if (!d.productRecipes) d.productRecipes = {};
+      d.productRecipes[productId] = items;
+    });
+    return delay({ ok: true, count: items.length });
   }
 };
