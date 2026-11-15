@@ -122,6 +122,7 @@ describe('flujo del restaurante (modo demo)', () => {
     fireEvent.click(within(modal).getByRole('radio', { name: /Sugerida/ }));
 
     // Al quitar una comanda, el total se recalcula
+    fireEvent.click(within(modal).getByRole('button', { name: /Por comandas/i }));
     fireEvent.click(within(modal).getByRole('checkbox', { name: /Comanda 2\b/ }));
     expect(totalRow).toHaveTextContent('$28.600'); // 26.000 + 10 %
     fireEvent.click(within(modal).getByRole('checkbox', { name: /Comanda 2\b/ }));

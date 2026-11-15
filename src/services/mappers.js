@@ -46,8 +46,11 @@ export const orderFromRow = (o) => ({
   createdAt: o.created_at,
   printedAt: o.printed_at ?? null,
   items: (o.order_items || []).map((it) => ({
+    id: it.id,
+    orderId: it.order_id || o.id,
     name: it.name,
     quantity: it.quantity,
+    billedQuantity: it.billed_quantity || 0,
     unitPrice: it.unit_price,
     totalPrice: it.total_price,
     selectedOptions: it.selected_options || []

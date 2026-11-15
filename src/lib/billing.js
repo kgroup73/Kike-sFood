@@ -106,16 +106,46 @@ export function mergeInvoiceItems(orders) {
   const lines = new Map();
   for (const order of orders || []) {
     for (const it of order.items || []) {
+      const billed = Number(it.billedQuantity) || 0;
+      const unbilled = Math.max(0, it.quantity - billed);
+      if (unbilled <= 0) continue;
       const options = it.selectedOptions || [];
       const key = JSON.stringify([it.name, it.unitPrice, options]);
       const line = lines.get(key);
       if (line) {
-        line.quantity += it.quantity;
-        line.totalPrice += it.totalPrice;
+        line.quantity += unbilled;
+        line.totalPrice += unbilled * it.unitPrice;
       } else {
-        lines.set(key, { name: it.name, quantity: it.quantity, unitPrice: it.unitPrice, totalPrice: it.totalPrice, selectedOptions: [...options] });
+        lines.set(key, { name: it.name, quantity: unbilled, unitPrice: it.unitPrice, totalPrice: unbilled * it.unitPrice, selectedOptions: [...options] });
       }
     }
   }
   return [...lines.values()].sort((a, b) => a.name.localeCompare(b.name) || a.unitPrice - b.unitPrice);
+}
+
+/**
+ * Extrae y desglosa todos los platillos pendientes de cobro de un grupo de comandas.
+ * Considera billedQuantity para no cobrar platillos que ya fueron saldados previamente.
+ */
+export function getPendingItemsForOrders(orders) {
+  const pending = [];
+  for (const order of orders || []) {
+    for (const it of order.items || []) {
+      const billed = Number(it.billedQuantity) || 0;
+      const unbilledQty = Math.max(0, it.quantity - billed);
+      if (unbilledQty > 0) {
+        pending.push({
+          id: it.id || `${order.id}-${it.name}-${it.unitPrice}`,
+          orderId: order.id,
+          name: it.name,
+          unitPrice: it.unitPrice,
+          quantity: unbilledQty,
+          maxQuantity: unbilledQty,
+          totalPrice: unbilledQty * it.unitPrice,
+          selectedOptions: it.selectedOptions || []
+        });
+      }
+    }
+  }
+  return pending;
 }
