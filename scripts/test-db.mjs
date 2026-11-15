@@ -273,6 +273,42 @@ await test('caja no puede escribir en invoice_orders; anon no lo puede leer', as
   await anon(() => rejects(rows(`select * from invoice_orders`), /permission denied/));
 });
 
+console.log('\nCobro fraccionado por platillos (split bill)');
+await test('permite cobrar parte de los platillos dejando la comanda en Por Cobrar', async () => {
+  const o = (await anon(() => createOrder([
+    burgerItem({ quantity: 2 }),
+    { productId: SANGRIA, quantity: 1 }
+  ], table2.token, false))).r;
+  await toPay(o.orderId);
+
+  const items = await db.query(`select id, name, unit_price, quantity from order_items where order_id = $1 order by name`, [o.orderId]);
+  const burgerRow = items.rows.find((it) => it.name === 'Burger Trufada Gourmet');
+  const sangriaRow = items.rows.find((it) => it.name.includes('Sangr'));
+
+  // Factura 1: Solo 1 burger
+  const partialItems1 = [
+    { id: burgerRow.id, name: burgerRow.name, unitPrice: burgerRow.unit_price, quantity: 1 }
+  ];
+  const inv1 = await asStaff('caja', () => one(`select * from issue_invoice($1::bigint[], 'pos', null, 'efectivo', 0, $2::jsonb)`, [[o.orderId], JSON.stringify(partialItems1)]));
+  assert.equal(inv1.items_total, burgerRow.unit_price);
+
+  // La comanda sigue en 'Por Cobrar' porque queda 1 burger y 1 sangria
+  const check1 = await one(`select status from orders where id = $1`, [o.orderId]);
+  assert.equal(check1.status, 'Por Cobrar');
+
+  // Factura 2: El resto (1 burger y 1 sangria)
+  const partialItems2 = [
+    { id: burgerRow.id, name: burgerRow.name, unitPrice: burgerRow.unit_price, quantity: 1 },
+    { id: sangriaRow.id, name: sangriaRow.name, unitPrice: sangriaRow.unit_price, quantity: 1 }
+  ];
+  const inv2 = await asStaff('caja', () => one(`select * from issue_invoice($1::bigint[], 'pos', null, 'efectivo', 0, $2::jsonb)`, [[o.orderId], JSON.stringify(partialItems2)]));
+  assert.equal(inv2.items_total, burgerRow.unit_price + sangriaRow.unit_price);
+
+  // Ahora la comanda no tiene ítems pendientes y pasa a 'Cobrado'
+  const check2 = await one(`select status from orders where id = $1`, [o.orderId]);
+  assert.equal(check2.status, 'Cobrado');
+});
+
 console.log('\nPropina en caja');
 async function tableOrder(token, tip = false) {
   const { r } = await anon(() => createOrder([{ productId: SANGRIA, quantity: 1 }], token, tip));

@@ -799,7 +799,7 @@ export const demoApi = {
     return delay(customer);
   },
 
-  async issueInvoice({ orderIds, kind, customerId, paymentMethod, tip: tipInput = null }) {
+  async issueInvoice({ orderIds, kind, customerId, paymentMethod, tip: tipInput = null, items: itemsInput = null }) {
     const s = requireStaff(['owner', 'admin', 'caja']);
     const db = load();
     if (!hasFeature(db.tenant.plan, 'pos')) return fail('La caja requiere el plan Premium');
@@ -821,9 +821,15 @@ export const demoApi = {
     }
     const customer = customerId ? db.customers.find((c) => c.id === customerId) : CONSUMIDOR_FINAL;
     if (!customer) return fail('Cliente no encontrado');
-    const { subtotal, tip: ordersTip } = sumOrders(orders);
+
+    const hasPartialItems = Array.isArray(itemsInput) && itemsInput.length > 0;
+    const itemsList = hasPartialItems ? itemsInput : mergeInvoiceItems(orders);
+    const subtotal = hasPartialItems
+      ? itemsInput.reduce((s, it) => s + (Number(it.unitPrice) || 0) * (Number(it.quantity) || 1), 0)
+      : sumOrders(orders).subtotal;
+
     // Propina voluntaria: la confirma la caja al cobrar. Sin valor, la de las comandas.
-    let tip = ordersTip;
+    let tip = sumOrders(orders).tip;
     if (tipInput !== null && tipInput !== undefined) {
       tip = Math.round(Number(tipInput));
       if (!Number.isFinite(tip) || tip < 0) return fail('La propina no puede ser negativa');
@@ -846,7 +852,7 @@ export const demoApi = {
           customer: { ...customer },
           paymentMethod,
           tableLabel: orders[0].tableLabel,
-          items: mergeInvoiceItems(orders),
+          items: itemsList,
           itemsTotal: subtotal,
           taxBase: base,
           tax,
@@ -860,12 +866,40 @@ export const demoApi = {
           createdAt: new Date().toISOString()
         };
         d.invoices.unshift(inv);
-        for (const o of d.orders) if (ids.includes(o.id)) o.status = ORDER_STATUS.PAID;
+
+        if (hasPartialItems) {
+          for (const item of itemsInput) {
+            for (const o of d.orders) {
+              if (!ids.includes(o.id)) continue;
+              const foundItem = (o.items || []).find((it) => (it.id && it.id === item.id) || (it.name === item.name && it.unitPrice === item.unitPrice));
+              if (foundItem) {
+                foundItem.billedQuantity = (foundItem.billedQuantity || 0) + item.quantity;
+              }
+            }
+          }
+          // Si una comanda ya no tiene ítems pendientes, se marca como pagada
+          for (const o of d.orders) {
+            if (ids.includes(o.id)) {
+              const hasUnbilled = (o.items || []).some((it) => (it.quantity - (it.billedQuantity || 0)) > 0);
+              if (!hasUnbilled) {
+                o.status = ORDER_STATUS.PAID;
+              }
+            }
+          }
+        } else {
+          for (const o of d.orders) {
+            if (ids.includes(o.id)) {
+              o.status = ORDER_STATUS.PAID;
+              for (const it of (o.items || [])) it.billedQuantity = it.quantity;
+            }
+          }
+        }
+
         return inv;
       },
       ['billing']
     );
-    for (const order of orders) emit('orders', { type: 'update', order: { ...order, status: ORDER_STATUS.PAID } });
+    for (const order of orders) emit('orders', { type: 'update', order });
     return delay(invoice);
   },
 
