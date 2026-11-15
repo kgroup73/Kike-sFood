@@ -482,7 +482,10 @@ export default function AnalyticsDashboard() {
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {foodCostData.map((dish) => {
-                const fc = dish.food_cost_percentage;
+                const fc = Number(String(dish.food_cost_percentage ?? 0).replace('%', '')) || 0;
+                const salePrice = Number(dish.sale_price) || 0;
+                const recipeCost = Number(dish.recipe_cost) || 0;
+                const grossProfit = Number(dish.gross_profit ?? (salePrice - recipeCost)) || 0;
                 const isGreat = fc <= 28;
                 const isFair = fc > 28 && fc <= 33;
                 const badgeColor = isGreat
@@ -506,15 +509,15 @@ export default function AnalyticsDashboard() {
                     <div className="space-y-2 pt-2 border-t border-linea text-xs">
                       <div className="flex justify-between">
                         <span className="text-suave">Precio de venta en carta:</span>
-                        <span className="font-bold text-tinta">{formatCOP(dish.sale_price)}</span>
+                        <span className="font-bold text-tinta">{formatCOP(salePrice)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-suave">Costo de ingredientes (Receta):</span>
-                        <span className="font-medium text-aji">{formatCOP(dish.recipe_cost)}</span>
+                        <span className="font-medium text-aji">{formatCOP(recipeCost)}</span>
                       </div>
                       <div className="flex justify-between pt-1 border-t border-linea/60 font-bold text-sm">
                         <span className="text-tinta">Margen Bruto de Contribución:</span>
-                        <span className="text-hoja">{formatCOP(dish.gross_profit)}</span>
+                        <span className="text-hoja">{formatCOP(grossProfit)}</span>
                       </div>
                     </div>
 
@@ -522,19 +525,19 @@ export default function AnalyticsDashboard() {
                     <div className="space-y-1">
                       <div className="w-full bg-mantel h-2 rounded-full overflow-hidden flex border border-linea/40">
                         <div
-                          className="bg-aji/70 h-full"
-                          style={{ width: `${fc}%` }}
+                          className="bg-aji/70 h-full transition-all duration-500"
+                          style={{ width: `${Math.min(100, Math.max(0, fc))}%` }}
                           title={`Costo: ${fc.toFixed(1)}%`}
                         />
                         <div
-                          className="bg-hoja h-full"
-                          style={{ width: `${100 - fc}%` }}
+                          className="bg-hoja h-full transition-all duration-500"
+                          style={{ width: `${Math.min(100, Math.max(0, 100 - fc))}%` }}
                           title={`Margen: ${(100 - fc).toFixed(1)}%`}
                         />
                       </div>
                       <div className="flex justify-between text-[10px] text-suave">
                         <span>Costo ({fc.toFixed(0)}%)</span>
-                        <span>Margen ({(100 - fc).toFixed(0)}%)</span>
+                        <span>Margen ({Math.max(0, 100 - fc).toFixed(0)}%)</span>
                       </div>
                     </div>
                   </div>

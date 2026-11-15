@@ -840,7 +840,16 @@ export const pgliteApi = {
   async getFoodCostAnalytics() {
     try {
       const res = await rpc('get_food_cost_analytics', {});
-      if (Array.isArray(res) && res.length > 0) return res;
+      const hasActualCost = Array.isArray(res) && res.length > 0 && res.some((r) => Number(r.recipe_cost) > 0);
+      if (hasActualCost) {
+        return res.map((r) => ({
+          ...r,
+          sale_price: Number(r.sale_price) || 0,
+          recipe_cost: Number(r.recipe_cost) || 0,
+          gross_profit: Number(r.gross_profit) || 0,
+          food_cost_percentage: Number(r.food_cost_percentage) || 0
+        }));
+      }
       return await demoApi.getFoodCostAnalytics();
     } catch {
       return await demoApi.getFoodCostAnalytics();
