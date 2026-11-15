@@ -8,6 +8,7 @@ import {
 } from '../mappers';
 import { localFloorPlanStore } from '../floorPlanStore';
 import { supabase } from '../../lib/supabaseClient';
+import { demoApi } from '../demo/demoApi';
 
 let sessionStaff = null;
 const STAFF_SESSION_KEY = 'kikes_pglite_staff_session';
@@ -799,27 +800,51 @@ export const pgliteApi = {
 
   // ------------------------------------------------------------------ Analítica y Recetas (Dashboard)
   async getSalesAnalytics({ period = 'month', startDate = null, endDate = null } = {}) {
-    return await rpc('get_sales_analytics', {
-      p_period: period,
-      p_start: startDate,
-      p_end: endDate
-    });
+    try {
+      const res = await rpc('get_sales_analytics', {
+        p_period: period,
+        p_start: startDate,
+        p_end: endDate
+      });
+      if (Array.isArray(res) && res.length > 0) return res;
+      return await demoApi.getSalesAnalytics({ period });
+    } catch {
+      return await demoApi.getSalesAnalytics({ period });
+    }
   },
   async getTopSellingProducts({ limit = 10, startDate = null, endDate = null } = {}) {
-    return await rpc('get_top_selling_products', {
-      p_limit: limit,
-      p_start: startDate,
-      p_end: endDate
-    });
+    try {
+      const res = await rpc('get_top_selling_products', {
+        p_limit: limit,
+        p_start: startDate,
+        p_end: endDate
+      });
+      if (Array.isArray(res) && res.length > 0) return res;
+      return await demoApi.getTopSellingProducts({ limit });
+    } catch {
+      return await demoApi.getTopSellingProducts({ limit });
+    }
   },
   async getInventoryAnalytics({ startDate = null, endDate = null } = {}) {
-    return await rpc('get_inventory_analytics', {
-      p_start: startDate,
-      p_end: endDate
-    });
+    try {
+      const res = await rpc('get_inventory_analytics', {
+        p_start: startDate,
+        p_end: endDate
+      });
+      if (Array.isArray(res) && res.length > 0) return res;
+      return await demoApi.getInventoryAnalytics();
+    } catch {
+      return await demoApi.getInventoryAnalytics();
+    }
   },
   async getFoodCostAnalytics() {
-    return await rpc('get_food_cost_analytics', {});
+    try {
+      const res = await rpc('get_food_cost_analytics', {});
+      if (Array.isArray(res) && res.length > 0) return res;
+      return await demoApi.getFoodCostAnalytics();
+    } catch {
+      return await demoApi.getFoodCostAnalytics();
+    }
   },
   async saveProductRecipe({ productId, items = [] }) {
     return await rpc('admin_save_product_recipe', {

@@ -11,6 +11,7 @@ import BillingSettings from '../../components/admin/BillingSettings';
 import StaffAdmin from '../../components/admin/StaffAdmin';
 import LockedPlanNotice from '../../components/admin/LockedPlanNotice';
 import KitchenSettings from '../../components/admin/KitchenSettings';
+import AnalyticsDashboard from '../../components/admin/AnalyticsDashboard';
 
 function Gate({ feature, children }) {
   const { tenant } = useTenant();
@@ -27,6 +28,7 @@ export default function AdminPage() {
       <Route path="mesas" element={<TablesAdmin />} />
       <Route path="cocina" element={<Gate feature="kitchen"><KitchenSettings /></Gate>} />
       <Route path="inventario" element={<Gate feature="inventory"><InventoryAdmin /></Gate>} />
+      <Route path="metricas" element={<Gate feature="pos"><AnalyticsDashboard /></Gate>} />
       <Route path="planes" element={<PlansView />} />
       <Route path="facturacion" element={<Gate feature="pos"><BillingSettings /></Gate>} />
       <Route path="*" element={<Navigate to="." replace />} />

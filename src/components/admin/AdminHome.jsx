@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Building2, UtensilsCrossed, Users, Package, CreditCard, Smartphone, ShieldCheck, ChevronRight, Lock, RotateCcw, Printer } from 'lucide-react';
+import { Building2, UtensilsCrossed, Users, Package, CreditCard, Smartphone, ShieldCheck, ChevronRight, Lock, RotateCcw, Printer, BarChart3 } from 'lucide-react';
 import { useTenant } from '../../hooks/useTenant';
 import { hasFeature, requiredPlanFor, planLabel } from '../../lib/plans';
 import { api, isDemoMode } from '../../services/api';
@@ -19,6 +19,7 @@ const GROUPS = [
     items: [
       { to: 'admin/cocina', icon: Printer, title: 'Cocina e impresión', text: 'Pantalla de cocina o comandas impresas, y qué equipo imprime.', feature: 'kitchen' },
       { to: 'admin/inventario', icon: Package, title: 'Inventario', text: 'Control de existencias, insumos, compras y agotados en carta.', feature: 'inventory' },
+      { to: 'admin/metricas', icon: BarChart3, title: 'Métricas y Analítica', text: 'Ventas por periodo, platillos estrella, control de mermas y Food Cost.', feature: 'pos' },
       { to: 'admin/facturacion', icon: ShieldCheck, title: 'Facturación', text: 'Numeración de comprobantes y resolución de la DIAN.', feature: 'pos' },
       { to: 'admin/planes', icon: CreditCard, title: 'Plan', text: 'Qué incluye tu suscripción.' }
     ]
