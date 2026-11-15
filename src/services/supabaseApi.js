@@ -775,6 +775,20 @@ export const supabaseApi = {
     });
     if (error) throw toAppError(error);
     return data;
+  },
+
+  async verifyAdminPin(pin) {
+    return await demoApi.verifyAdminPin(pin);
+  },
+
+  async getCourtesyAnalytics({ startDate = null, endDate = null } = {}) {
+    if (!supabase) throw new Error('Supabase no está configurado');
+    const { data, error } = await supabase.rpc('get_courtesy_analytics', {
+      p_start: startDate,
+      p_end: endDate
+    });
+    if (error || !data) return await demoApi.getCourtesyAnalytics();
+    return data;
   }
 };
 

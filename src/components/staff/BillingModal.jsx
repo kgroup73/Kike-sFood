@@ -1,8 +1,17 @@
 import { useState, useMemo } from 'react';
-import { Lock, Receipt, Loader2, UtensilsCrossed, Layers } from 'lucide-react';
+import { Lock, Receipt, Loader2, UtensilsCrossed, Layers, Gift, X, ShieldCheck } from 'lucide-react';
 import Modal from '../ui/Modal';
 import { formatCOP, splitTaxIncluded, effectiveTaxRate, computeTip, toPesos } from '../../lib/money';
 import { PAYMENT_METHODS, INVOICE_KINDS, CONSUMIDOR_FINAL, sumOrders, getPendingItemsForOrders } from '../../lib/billing';
+import { useStaffSession } from '../../hooks/useStaffSession';
+import { api } from '../../services/api';
+
+const COURTESY_REASONS = [
+  { key: 'fidelizacion', label: 'Fidelización / Cliente VIP', short: 'VIP' },
+  { key: 'compensacion_servicio', label: 'Compensación por demora o servicio', short: 'Demora' },
+  { key: 'degustacion', label: 'Muestra o degustación comercial', short: 'Muestra' },
+  { key: 'invitacion_casa', label: 'Invitación de la casa / Dueño', short: 'Casa' }
+];
 
 export default function BillingModal({ group, tenant, customers, canDian, onClose, onNewCustomer, onIssue }) {
   const [kind, setKind] = useState(canDian ? 'electronica' : 'pos');
@@ -11,6 +20,23 @@ export default function BillingModal({ group, tenant, customers, canDian, onClos
   const [customerId, setCustomerId] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('efectivo');
   const [submitting, setSubmitting] = useState(false);
+
+  // Cortesías aplicadas por platillo: { [itemId]: { reason, authorizedByName } }
+  const [courtesies, setCourtesies] = useState({});
+  const [courtesyTarget, setCourtesyTarget] = useState(null);
+  const [courtesyReason, setCourtesyReason] = useState('fidelizacion');
+  const [adminPin, setAdminPin] = useState('');
+  const [pinError, setPinError] = useState('');
+  const [verifyingPin, setVerifyingPin] = useState(false);
+
+  // Obtener sesión de personal para autorización de cortesías
+  let currentStaff = null;
+  try {
+    currentStaff = useStaffSession()?.staff;
+  } catch {
+    currentStaff = null;
+  }
+  const isAdminSession = currentStaff && ['owner', 'admin'].includes(currentStaff.role);
 
   // Platillos pendientes por cobrar en la mesa
   const pendingItems = useMemo(() => getPendingItemsForOrders(group.orders), [group.orders]);
@@ -43,6 +69,60 @@ export default function BillingModal({ group, tenant, customers, canDian, onClos
     setItemQuantities(none);
   };
 
+  const openCourtesyModal = (it) => {
+    setCourtesyTarget(it);
+    setCourtesyReason('fidelizacion');
+    setAdminPin('');
+    setPinError('');
+  };
+
+  const removeCourtesy = (itemId) => {
+    setCourtesies((prev) => {
+      const next = { ...prev };
+      delete next[itemId];
+      return next;
+    });
+  };
+
+  const confirmCourtesy = async () => {
+    if (!courtesyTarget) return;
+
+    if (isAdminSession) {
+      setCourtesies((prev) => ({
+        ...prev,
+        [courtesyTarget.id]: {
+          reason: courtesyReason,
+          authorizedByName: currentStaff?.displayName || 'Dueño'
+        }
+      }));
+      setCourtesyTarget(null);
+      return;
+    }
+
+    // Si no es admin, validar PIN
+    setVerifyingPin(true);
+    setPinError('');
+    try {
+      const res = await api.verifyAdminPin(adminPin);
+      if (res?.ok) {
+        setCourtesies((prev) => ({
+          ...prev,
+          [courtesyTarget.id]: {
+            reason: courtesyReason,
+            authorizedByName: res.displayName || 'Administrador'
+          }
+        }));
+        setCourtesyTarget(null);
+      } else {
+        setPinError(res?.error || 'PIN incorrecto o no pertenece a un administrador');
+      }
+    } catch {
+      setPinError('Error al verificar autorización');
+    } finally {
+      setVerifyingPin(false);
+    }
+  };
+
   // Cálculo según modo de cobro
   const selectedItems = useMemo(() => {
     return pendingItems
@@ -55,8 +135,9 @@ export default function BillingModal({ group, tenant, customers, canDian, onClos
 
   const selectedOrders = group.orders.filter((o) => !excluded.has(o.id));
 
+  // Las cortesías descuentan el 100% del platillo al comensal ($0)
   const subtotal = splitMode === 'platillos'
-    ? selectedItems.reduce((s, it) => s + (it.unitPrice * it.quantity), 0)
+    ? selectedItems.reduce((s, it) => s + (courtesies[it.id] ? 0 : it.unitPrice * it.quantity), 0)
     : sumOrders(selectedOrders).subtotal;
 
   const orderIds = splitMode === 'platillos'
@@ -92,7 +173,12 @@ export default function BillingModal({ group, tenant, customers, canDian, onClos
         customerId: customerId || null,
         paymentMethod,
         tip,
-        items: splitMode === 'platillos' ? selectedItems : null
+        items: splitMode === 'platillos' ? selectedItems.map((it) => ({
+          ...it,
+          isCourtesy: !!courtesies[it.id],
+          courtesyReason: courtesies[it.id]?.reason || null,
+          authorizedByName: courtesies[it.id]?.authorizedByName || null
+        })) : null
       });
     } finally {
       setSubmitting(false);
@@ -175,7 +261,31 @@ export default function BillingModal({ group, tenant, customers, canDian, onClos
                             )}
                           </div>
                         </label>
-                        <div className="flex items-center gap-3 shrink-0">
+                        <div className="flex items-center gap-2.5 shrink-0">
+                          {isChecked && (
+                            courtesies[it.id] ? (
+                              <button
+                                type="button"
+                                onClick={() => removeCourtesy(it.id)}
+                                className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded bg-hoja/10 text-hoja border border-hoja/30 hover:bg-aji/10 hover:text-aji hover:border-aji/30 transition-colors"
+                                title="Haz clic para quitar la cortesía"
+                              >
+                                <Gift className="w-3 h-3" aria-hidden="true" />
+                                Cortesía ({COURTESY_REASONS.find((r) => r.key === courtesies[it.id].reason)?.short || '100%'})
+                                <X className="w-3 h-3 ml-0.5" />
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => openCourtesyModal(it)}
+                                className="text-[11px] font-bold px-2 py-0.5 rounded border border-linea hover:border-hoja hover:text-hoja transition-colors text-suave flex items-center gap-1"
+                                title="Aplicar cortesía comercial a este platillo"
+                              >
+                                <Gift className="w-3 h-3" aria-hidden="true" />
+                                Cortesía
+                              </button>
+                            )
+                          )}
                           {it.quantity > 1 && isChecked ? (
                             <div className="flex items-center gap-1.5 border border-linea rounded-md px-1.5 py-0.5 bg-plato">
                               <button
@@ -202,7 +312,16 @@ export default function BillingModal({ group, tenant, customers, canDian, onClos
                             </span>
                           )}
                           <span className="precio min-w-[70px] text-right">
-                            {formatCOP(it.unitPrice * (isChecked ? selectedQty : it.quantity))}
+                            {courtesies[it.id] ? (
+                              <span className="flex items-center justify-end gap-1.5">
+                                <span className="line-through text-xs text-suave">
+                                  {formatCOP(it.unitPrice * (isChecked ? selectedQty : it.quantity))}
+                                </span>
+                                <span className="text-hoja font-black">$0</span>
+                              </span>
+                            ) : (
+                              formatCOP(it.unitPrice * (isChecked ? selectedQty : it.quantity))
+                            )}
                           </span>
                         </div>
                       </div>
@@ -356,6 +475,95 @@ export default function BillingModal({ group, tenant, customers, canDian, onClos
           )}
         </aside>
       </div>
+
+      {/* Modal de Autorización y Selección de Motivo de Cortesía */}
+      {courtesyTarget && (
+        <Modal onClose={() => setCourtesyTarget(null)} size="sm">
+          <div className="space-y-4">
+            <div className="flex items-between justify-between">
+              <h3 className="font-bold text-base flex items-center gap-2">
+                <Gift className="w-5 h-5 text-hoja" aria-hidden="true" />
+                Aplicar Cortesía Comercial
+              </h3>
+              <button
+                type="button"
+                onClick={() => setCourtesyTarget(null)}
+                className="icon-btn -mr-2 -mt-1"
+                aria-label="Cerrar cortesía"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-3 bg-mantel/60 rounded-xl border border-linea text-sm space-y-1">
+              <p className="font-bold text-tinta">{courtesyTarget.name}</p>
+              <p className="text-xs text-suave">
+                Valor comercial: <span className="font-bold text-tinta">{formatCOP(courtesyTarget.unitPrice * (itemQuantities[courtesyTarget.id] ?? courtesyTarget.quantity))}</span> (100% descuento para cliente)
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="label text-xs font-bold">Motivo de la cortesía</label>
+              <select
+                aria-label="Motivo de la cortesía"
+                value={courtesyReason}
+                onChange={(e) => setCourtesyReason(e.target.value)}
+                className="field text-sm"
+              >
+                {COURTESY_REASONS.map((r) => (
+                  <option key={r.key} value={r.key}>{r.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Verificación de Autorización */}
+            {isAdminSession ? (
+              <p className="text-xs text-hoja font-bold flex items-center gap-1.5 bg-hoja/10 p-2.5 rounded-lg border border-hoja/20">
+                <ShieldCheck className="w-4 h-4 shrink-0" />
+                Autorizado por: {currentStaff?.displayName || 'Dueño'} (Sesión activa)
+              </p>
+            ) : (
+              <div className="space-y-1.5 pt-1">
+                <label className="label text-xs font-bold flex items-center justify-between">
+                  <span>PIN de Dueño o Administrador</span>
+                  <Lock className="w-3.5 h-3.5 text-suave" />
+                </label>
+                <input
+                  type="password"
+                  maxLength={4}
+                  value={adminPin}
+                  onChange={(e) => {
+                    setAdminPin(e.target.value);
+                    setPinError('');
+                  }}
+                  placeholder="••••"
+                  className="field text-center text-lg tracking-widest font-mono"
+                  autoFocus
+                />
+                {pinError && <p className="text-xs text-aji font-bold">{pinError}</p>}
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setCourtesyTarget(null)}
+                className="btn btn-outline flex-1 text-sm py-2"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmCourtesy}
+                disabled={verifyingPin || (!isAdminSession && adminPin.length < 4)}
+                className="btn btn-primary flex-1 text-sm py-2"
+              >
+                {verifyingPin ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirmar Cortesía'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </Modal>
   );
 }

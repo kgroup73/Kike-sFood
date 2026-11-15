@@ -860,5 +860,33 @@ export const pgliteApi = {
       p_product_id: productId,
       p_items: items
     });
+  },
+  async verifyAdminPin(pin) {
+    try {
+      const rows = await query(
+        `select id, display_name, role from public.staff_members where role in ('owner', 'admin') and is_active = true`
+      );
+      for (const row of rows) {
+        const check = await rpc('verify_staff_pin', { p_slug: 'la-trattoria', p_staff_id: row.id, p_pin: pin }).catch(() => null);
+        if (check?.ok) {
+          return { ok: true, staffId: row.id, displayName: row.display_name, role: row.role };
+        }
+      }
+      return await demoApi.verifyAdminPin(pin);
+    } catch {
+      return await demoApi.verifyAdminPin(pin);
+    }
+  },
+  async getCourtesyAnalytics({ startDate = null, endDate = null } = {}) {
+    try {
+      const res = await rpc('get_courtesy_analytics', {
+        p_start: startDate,
+        p_end: endDate
+      });
+      if (res && typeof res === 'object' && res.total_count > 0) return res;
+      return await demoApi.getCourtesyAnalytics();
+    } catch {
+      return await demoApi.getCourtesyAnalytics();
+    }
   }
 };

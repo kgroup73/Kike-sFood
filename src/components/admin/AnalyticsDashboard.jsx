@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   TrendingUp, BarChart3, DollarSign, Receipt, Calendar,
   AlertTriangle, Package, PieChart, Award, ArrowUpRight,
-  UtensilsCrossed, Sparkles, RefreshCw, Layers
+  UtensilsCrossed, Sparkles, RefreshCw, Layers, Gift
 } from 'lucide-react';
 import AdminShell from './AdminShell';
 import { api, isDemoMode } from '../../services/api';
@@ -14,6 +14,13 @@ const PERIODS = [
   { key: 'month', label: 'Por Mes (Últimos 6 meses)' }
 ];
 
+const COURTESY_REASON_LABELS = {
+  fidelizacion: 'Fidelización / VIP',
+  compensacion_servicio: 'Compensación de servicio',
+  degustacion: 'Degustación / Marketing',
+  invitacion_casa: 'Invitación de la casa'
+};
+
 export default function AnalyticsDashboard() {
   const [period, setPeriod] = useState('month');
   const [loading, setLoading] = useState(true);
@@ -21,21 +28,24 @@ export default function AnalyticsDashboard() {
   const [topProducts, setTopProducts] = useState([]);
   const [inventoryData, setInventoryData] = useState([]);
   const [foodCostData, setFoodCostData] = useState([]);
-  const [activeTab, setActiveTab] = useState('ventas'); // 'ventas' | 'inventario' | 'escandallos'
+  const [courtesyData, setCourtesyData] = useState(null);
+  const [activeTab, setActiveTab] = useState('ventas'); // 'ventas' | 'inventario' | 'cortesias' | 'escandallos'
 
   const loadData = async (selectedPeriod) => {
     setLoading(true);
     try {
-      const [sales, top, inv, food] = await Promise.all([
+      const [sales, top, inv, food, courtesy] = await Promise.all([
         api.getSalesAnalytics({ period: selectedPeriod }),
         api.getTopSellingProducts({ limit: 6 }),
         api.getInventoryAnalytics(),
-        api.getFoodCostAnalytics()
+        api.getFoodCostAnalytics(),
+        typeof api.getCourtesyAnalytics === 'function' ? api.getCourtesyAnalytics() : null
       ]);
       setSalesData(sales || []);
       setTopProducts(top || []);
       setInventoryData(inv || []);
       setFoodCostData(food || []);
+      setCourtesyData(courtesy || null);
     } catch (err) {
       console.error('Error al cargar analítica:', err);
     } finally {
@@ -118,6 +128,20 @@ export default function AnalyticsDashboard() {
             {lowStockItems.length > 0 && (
               <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-aji text-white font-bold">
                 {lowStockItems.length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('cortesias')}
+            className={`pb-3 border-b-2 flex items-center gap-2 transition-colors ${
+              activeTab === 'cortesias' ? 'border-hoja text-hoja' : 'border-transparent text-suave hover:text-tinta'
+            }`}
+          >
+            <Gift className="w-4 h-4" aria-hidden="true" />
+            Cortesías e Inversión
+            {courtesyData?.total_count > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-hoja/20 text-hoja font-bold">
+                {courtesyData.total_count}
               </span>
             )}
           </button>
@@ -466,7 +490,118 @@ export default function AnalyticsDashboard() {
           </div>
         )}
 
-        {/* -------------------- TAB 3: FOOD COST & ESCANDALLOS -------------------- */}
+        {/* -------------------- TAB 3: CORTESÍAS E INVERSIÓN -------------------- */}
+        {activeTab === 'cortesias' && (
+          <div className="space-y-6">
+            <div className="surface p-6 rounded-2xl border border-linea space-y-2">
+              <h3 className="font-bold text-lg text-tinta flex items-center gap-2">
+                <Gift className="w-5 h-5 text-hoja" aria-hidden="true" />
+                Control de Cortesías & Inversión en Atenciones
+              </h3>
+              <p className="text-sm text-suave leading-relaxed max-w-3xl">
+                A diferencia de las mermas o desperdicios, las <strong>cortesías</strong> representan una inversión comercial:
+                fidelización de clientes VIP, resolución de demoras del servicio o degustaciones.
+                Aquí monitoreas el <strong>valor comercial otorgado</strong> frente al <strong>costo real de materia prima</strong> consumido.
+              </p>
+            </div>
+
+            {/* KPI Cards de Cortesías */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="surface p-5 rounded-2xl border border-linea space-y-1">
+                <span className="text-xs text-suave font-bold uppercase tracking-wider">Valor Comercial Otorgado</span>
+                <p className="text-2xl sm:text-3xl font-display font-black text-tinta" data-testid="courtesy-commercial-total">
+                  {formatCOP(courtesyData?.total_commercial_value || 0)}
+                </p>
+                <p className="text-xs text-suave">Precio de carta regalado al cliente (100% desc.)</p>
+              </div>
+
+              <div className="surface p-5 rounded-2xl border border-linea space-y-1">
+                <span className="text-xs text-suave font-bold uppercase tracking-wider">Costo Real de Materia Prima</span>
+                <p className="text-2xl sm:text-3xl font-display font-black text-maracuya" data-testid="courtesy-cost-total">
+                  {formatCOP(courtesyData?.total_estimated_cost || 0)}
+                </p>
+                <p className="text-xs text-suave">Costo de inventario/ingredientes consumidos</p>
+              </div>
+
+              <div className="surface p-5 rounded-2xl border border-linea space-y-1">
+                <span className="text-xs text-suave font-bold uppercase tracking-wider">Atenciones Brindadas</span>
+                <p className="text-2xl sm:text-3xl font-display font-black text-hoja" data-testid="courtesy-count-total">
+                  {courtesyData?.total_count || 0} platos
+                </p>
+                <p className="text-xs text-suave">Cortesías autorizadas en el periodo</p>
+              </div>
+            </div>
+
+            {/* Distribución por Motivo */}
+            <div className="surface p-6 rounded-2xl border border-linea space-y-4">
+              <h4 className="font-bold text-base text-tinta">Distribución de Cortesías por Motivo</h4>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                <div className="p-3.5 rounded-xl bg-mantel/60 border border-linea space-y-1">
+                  <span className="text-xs font-bold text-suave block">Fidelización / VIP</span>
+                  <span className="font-bold text-base text-tinta">{formatCOP(courtesyData?.by_reason?.fidelizacion || 0)}</span>
+                </div>
+                <div className="p-3.5 rounded-xl bg-mantel/60 border border-linea space-y-1">
+                  <span className="text-xs font-bold text-suave block">Compensación por Demoras</span>
+                  <span className="font-bold text-base text-tinta">{formatCOP(courtesyData?.by_reason?.compensacion_servicio || 0)}</span>
+                </div>
+                <div className="p-3.5 rounded-xl bg-mantel/60 border border-linea space-y-1">
+                  <span className="text-xs font-bold text-suave block">Degustación / Muestras</span>
+                  <span className="font-bold text-base text-tinta">{formatCOP(courtesyData?.by_reason?.degustacion || 0)}</span>
+                </div>
+                <div className="p-3.5 rounded-xl bg-mantel/60 border border-linea space-y-1">
+                  <span className="text-xs font-bold text-suave block">Invitación de la Casa</span>
+                  <span className="font-bold text-base text-tinta">{formatCOP(courtesyData?.by_reason?.invitacion_casa || 0)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Tabla de Auditoría de Cortesías Recientes */}
+            <div className="surface rounded-2xl border border-linea overflow-hidden">
+              <div className="p-5 border-b border-linea flex justify-between items-center">
+                <h4 className="font-bold text-base text-tinta">Auditoría de Cortesías Recientes</h4>
+                <span className="text-xs text-suave">{courtesyData?.recent_items?.length || 0} registros</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-mantel/80 text-suave text-xs uppercase tracking-wider border-b border-linea">
+                    <tr>
+                      <th className="py-3 px-4">Fecha</th>
+                      <th className="py-3 px-4">Platillo</th>
+                      <th className="py-3 px-4 text-right">Cant.</th>
+                      <th className="py-3 px-4 text-right">Valor Comercial</th>
+                      <th className="py-3 px-4 text-right">Costo Receta</th>
+                      <th className="py-3 px-4">Motivo</th>
+                      <th className="py-3 px-4">Autorizado Por</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-linea">
+                    {courtesyData?.recent_items?.map((log) => (
+                      <tr key={log.id} className="hover:bg-mantel/40 transition-colors">
+                        <td className="py-3 px-4 text-xs text-suave whitespace-nowrap">
+                          {new Date(log.created_at || log.createdAt).toLocaleDateString('es-CO')}
+                        </td>
+                        <td className="py-3 px-4 font-bold text-tinta">{log.product_name || log.productName}</td>
+                        <td className="py-3 px-4 text-right font-bold">{log.quantity}x</td>
+                        <td className="py-3 px-4 text-right text-suave">{formatCOP(log.commercial_value || log.commercialValue)}</td>
+                        <td className="py-3 px-4 text-right text-maracuya font-medium">{formatCOP(log.estimated_cost || log.estimatedCost)}</td>
+                        <td className="py-3 px-4">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-plato border border-linea">
+                            {COURTESY_REASON_LABELS[log.reason] || log.reason}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-xs text-tinta font-bold">
+                          {log.authorized_by_name || log.authorizedByName}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* -------------------- TAB 4: FOOD COST & ESCANDALLOS -------------------- */}
         {activeTab === 'escandallos' && (
           <div className="space-y-6">
             <div className="surface p-6 rounded-2xl border border-linea space-y-2">

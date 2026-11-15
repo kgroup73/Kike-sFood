@@ -99,6 +99,41 @@ function seed() {
     dailyCloses: [],
     waiterCalls: [],
     nextCallId: 1,
+    courtesyLogs: [
+      {
+        id: 'courtesy-seed-1',
+        tenantId: DEMO_TENANT.id,
+        productName: 'Carpaccio di Wagyu A5',
+        quantity: 1,
+        commercialValue: 46000,
+        estimatedCost: 14720,
+        reason: 'fidelizacion',
+        authorizedByName: 'Kike (Dueño)',
+        createdAt: new Date(Date.now() - 86400000 * 2).toISOString()
+      },
+      {
+        id: 'courtesy-seed-2',
+        tenantId: DEMO_TENANT.id,
+        productName: 'Tacos de Camarón al Pastor',
+        quantity: 2,
+        commercialValue: 56000,
+        estimatedCost: 15680,
+        reason: 'compensacion_servicio',
+        authorizedByName: 'Kike (Dueño)',
+        createdAt: new Date(Date.now() - 86400000 * 4).toISOString()
+      },
+      {
+        id: 'courtesy-seed-3',
+        tenantId: DEMO_TENANT.id,
+        productName: 'Limonada de Coco',
+        quantity: 3,
+        commercialValue: 36000,
+        estimatedCost: 7200,
+        reason: 'degustacion',
+        authorizedByName: 'Kike (Dueño)',
+        createdAt: new Date(Date.now() - 86400000 * 7).toISOString()
+      }
+    ],
     ...printSeed()
   };
 }
@@ -825,7 +860,7 @@ export const demoApi = {
     const hasPartialItems = Array.isArray(itemsInput) && itemsInput.length > 0;
     const itemsList = hasPartialItems ? itemsInput : mergeInvoiceItems(orders);
     const subtotal = hasPartialItems
-      ? itemsInput.reduce((s, it) => s + (Number(it.unitPrice) || 0) * (Number(it.quantity) || 1), 0)
+      ? itemsInput.reduce((s, it) => s + (it.isCourtesy ? 0 : Number(it.unitPrice) || 0) * (Number(it.quantity) || 1), 0)
       : sumOrders(orders).subtotal;
 
     // Propina voluntaria: la confirma la caja al cobrar. Sin valor, la de las comandas.
@@ -869,6 +904,22 @@ export const demoApi = {
 
         if (hasPartialItems) {
           for (const item of itemsInput) {
+            if (item.isCourtesy) {
+              if (!d.courtesyLogs) d.courtesyLogs = [];
+              d.courtesyLogs.unshift({
+                id: `courtesy-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                tenantId: d.tenant.id,
+                invoiceId: inv.id,
+                orderId: item.orderId,
+                productName: item.name,
+                quantity: item.quantity,
+                commercialValue: (Number(item.unitPrice) || 0) * (Number(item.quantity) || 1),
+                estimatedCost: Math.round(((Number(item.unitPrice) || 0) * (Number(item.quantity) || 1)) * 0.3),
+                reason: item.courtesyReason || 'fidelizacion',
+                authorizedByName: item.authorizedByName || s.displayName,
+                createdAt: new Date().toISOString()
+              });
+            }
             for (const o of d.orders) {
               if (!ids.includes(o.id)) continue;
               const foundItem = (o.items || []).find((it) => (it.id && it.id === item.id) || (it.name === item.name && it.unitPrice === item.unitPrice));
@@ -1485,5 +1536,31 @@ export const demoApi = {
       d.productRecipes[productId] = items;
     });
     return delay({ ok: true, count: items.length });
+  },
+
+  async verifyAdminPin(pin) {
+    const db = load();
+    const admin = db.staff.find((s) => ['owner', 'admin'].includes(s.role) && s.pin === pin && s.isActive);
+    if (!admin) {
+      return delay({ ok: false, error: 'PIN incorrecto o no pertenece a un administrador' });
+    }
+    return delay({ ok: true, staffId: admin.id, displayName: admin.displayName, role: admin.role });
+  },
+
+  async getCourtesyAnalytics() {
+    const logs = load().courtesyLogs || [];
+    const sum = (list, key) => list.reduce((a, b) => a + (Number(b[key]) || 0), 0);
+    return delay({
+      total_commercial_value: sum(logs, 'commercialValue'),
+      total_estimated_cost: sum(logs, 'estimatedCost'),
+      total_count: logs.length,
+      by_reason: {
+        fidelizacion: sum(logs.filter((l) => l.reason === 'fidelizacion'), 'commercialValue'),
+        compensacion_servicio: sum(logs.filter((l) => l.reason === 'compensacion_servicio'), 'commercialValue'),
+        degustacion: sum(logs.filter((l) => l.reason === 'degustacion'), 'commercialValue'),
+        invitacion_casa: sum(logs.filter((l) => l.reason === 'invitacion_casa'), 'commercialValue')
+      },
+      recent_items: logs.slice(0, 15)
+    });
   }
 };
