@@ -53,7 +53,11 @@ export const supabaseApi = {
   async resolveTable(slug, token) {
     const rows = unwrap(await supabase.rpc('resolve_table', { p_slug: slug, p_token: token }));
     const row = rows?.[0];
-    return row ? { id: row.table_id, label: row.label } : null;
+    return row ? { id: row.table_id, label: row.label, isClosed: Boolean(row.is_closed) } : null;
+  },
+
+  async startNewTableSession(_slug, _token) {
+    return { ok: true };
   },
 
   async createOrder({ slug, tableToken, items, includeTip }) {

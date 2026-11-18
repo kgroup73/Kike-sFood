@@ -111,7 +111,11 @@ export const pgliteApi = {
   async resolveTable(slug, token) {
     const res = await rpc('resolve_table', { p_slug: slug, p_token: token });
     const row = Array.isArray(res) ? res[0] : res;
-    return row ? { id: row.table_id, label: row.label } : null;
+    return row ? { id: row.table_id, label: row.label, isClosed: Boolean(row.is_closed) } : null;
+  },
+
+  async startNewTableSession(slug, token) {
+    return demoApi.startNewTableSession(slug, token);
   },
 
   async createOrder({ slug, tableToken, items, includeTip }) {

@@ -47,10 +47,10 @@ export function groupOrdersByTable(orders, { toPay = 'Por Cobrar', closed = ['Co
   return [...groups.values()]
     .filter((g) => g.orders.length > 0)
     .map((g) => {
-      const orders = [...g.orders].sort((a, b) => a.id - b.id);
+      const orders = g.orders.toSorted((a, b) => a.id - b.id);
       return { ...g, orders, ...sumOrders(orders) };
     })
-    .sort((a, b) => a.orders[0].id - b.orders[0].id);
+    .toSorted((a, b) => a.orders[0].id - b.orders[0].id);
 }
 
 export function sumOrders(orders) {
@@ -80,7 +80,7 @@ export function groupAllActiveTables(orders, { closed = ['Cobrado', 'Cancelado']
   }
   return [...groups.values()]
     .map((g) => {
-      const sortedOrders = [...g.orders].sort((a, b) => a.id - b.id);
+      const sortedOrders = g.orders.toSorted((a, b) => a.id - b.id);
       const toPayOrders = sortedOrders.filter((o) => o.status === 'Por Cobrar');
       const kitchenOrders = sortedOrders.filter((o) => o.status !== 'Por Cobrar');
       const totals = sumOrders(sortedOrders);

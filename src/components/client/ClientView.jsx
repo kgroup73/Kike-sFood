@@ -63,19 +63,21 @@ export default function ClientView({
     }
   }, [dietaryFilter, activeFilters, setDietaryFilter]);
 
-  const sections = useMemo(
-    () =>
-      categories
-        .map((name) => ({
+  const sections = useMemo(() => {
+    const matchingProducts = products.filter(
+      (p) => matchesSearch(p, q) && (!filter || filter.test(p, favorites))
+    );
+    const byCategory = Object.groupBy?.(matchingProducts, (p) => p.category) ?? {};
+    return categories
+      .map((name) => {
+        const items = byCategory[name] ?? matchingProducts.filter((p) => p.category === name);
+        return {
           name,
-          items: products
-            .filter((p) => p.category === name && matchesSearch(p, q) && (!filter || filter.test(p, favorites)))
-            // Los agotados van al final de su sección.
-            .sort((a, b) => (a.soldOut ? 1 : 0) - (b.soldOut ? 1 : 0))
-        }))
-        .filter((s) => s.items.length > 0),
-    [categories, products, q, filter, favorites]
-  );
+          items: items.toSorted((a, b) => (a.soldOut ? 1 : 0) - (b.soldOut ? 1 : 0))
+        };
+      })
+      .filter((s) => s.items.length > 0);
+  }, [categories, products, q, filter, favorites]);
 
   const [current, setCurrent] = useState(null);
   const listRef = useRef(null);

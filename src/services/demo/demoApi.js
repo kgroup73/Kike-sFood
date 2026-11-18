@@ -99,6 +99,7 @@ function seed() {
     dailyCloses: [],
     waiterCalls: [],
     nextCallId: 1,
+    closedTables: {},
     ...printSeed()
   };
 }
@@ -275,7 +276,23 @@ export const demoApi = {
     const db = load();
     if (db.tenant.slug !== slug) return delay(null);
     const t = db.tables.find((x) => x.token === token && x.isActive);
-    return delay(t ? { id: t.id, label: t.label } : null);
+    if (!t) return delay(null);
+    const tblKey = t.id || t.label;
+    const isClosed = Boolean(db.closedTables?.[tblKey]);
+    return delay({ id: t.id, label: t.label, isClosed });
+  },
+
+  async startNewTableSession(slug, token) {
+    const db = load();
+    if (db.tenant.slug !== slug) return fail('Restaurante no encontrado');
+    const t = db.tables.find((x) => x.token === token && x.isActive);
+    if (!t) return fail('Mesa no encontrada');
+    const tblKey = t.id || t.label;
+    commit((d) => {
+      d.closedTables ??= {};
+      delete d.closedTables[tblKey];
+    }, ['tables']);
+    return delay({ ok: true, tableId: t.id, label: t.label });
   },
 
   async createOrder({ slug, tableToken, items, includeTip }) {
@@ -284,6 +301,10 @@ export const demoApi = {
     if (!hasFeature(db.tenant.plan, 'ordering')) return fail('Este restaurante no recibe pedidos desde la mesa. Pide a tu mesero.');
     const table = db.tables.find((t) => t.token === tableToken && t.isActive);
     if (!table) return fail('Código de mesa inválido. Escanea de nuevo el código de tu mesa.');
+    const tblKey = table.id || table.label;
+    if (db.closedTables?.[tblKey]) {
+      return fail('Esta cuenta ya fue cerrada y la mesa fue liberada. Inicia una nueva visita para pedir.');
+    }
     if (!Array.isArray(items) || !items.length || items.length > 30) return fail('El pedido no tiene productos válidos');
 
     const lines = [];
@@ -893,6 +914,19 @@ export const demoApi = {
               for (const it of (o.items || [])) it.billedQuantity = it.quantity;
             }
           }
+        }
+
+        // Cierre de sesión de mesa: si ya no quedan órdenes abiertas para esta mesa, se marca liberada
+        const currentTableLabel = orders[0]?.tableLabel;
+        const currentTableId = orders[0]?.tableId || d.tables.find((t) => t.label === currentTableLabel)?.id;
+        const hasOpenRemaining = d.orders.some(
+          (o) => (o.tableId === currentTableId || o.tableLabel === currentTableLabel) &&
+                 OPEN_STATUSES.includes(o.status)
+        );
+        if (!hasOpenRemaining) {
+          d.closedTables ??= {};
+          const tblKey = currentTableId || currentTableLabel;
+          d.closedTables[tblKey] = true;
         }
 
         return inv;

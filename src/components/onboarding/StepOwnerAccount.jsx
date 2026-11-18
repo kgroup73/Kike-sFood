@@ -63,6 +63,7 @@ export default function StepOwnerAccount({
                 pattern="[0-9]*"
                 maxLength={6}
                 required
+                autoComplete="new-password"
                 value={pin}
                 onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
                 placeholder="••••"
@@ -82,6 +83,7 @@ export default function StepOwnerAccount({
                 pattern="[0-9]*"
                 maxLength={6}
                 required
+                autoComplete="new-password"
                 value={pinConfirm}
                 onChange={(e) => setPinConfirm(e.target.value.replace(/\D/g, ''))}
                 placeholder="••••"

@@ -151,6 +151,15 @@
   ::selection {
     background: rgb(var(--c-hoja) / 0.2);
   }
+
+  /* Contención de scroll nativa para modales <dialog> (elimina bloqueo manual de body) */
+  dialog:modal {
+    overscroll-behavior: contain;
+  }
+  dialog::backdrop {
+    overflow: hidden;
+    overscroll-behavior: contain;
+  }
 }
 
 /* Carta del comensal: sigue el modo oscuro del celular. MenuPage pone .carta en <html>. */
@@ -363,6 +372,31 @@ html.carta body {
   .tilt-in.is-done .drop-in {
     opacity: 1;
     transform: none;
+  }
+
+  /* Animación de desplazamiento nativa (Scroll-Driven Animations) en el hilo del compositor */
+  @supports ((animation-timeline: view()) and (animation-range: entry)) {
+    @keyframes drive-scroll-p {
+      from { --p: 0; }
+      to { --p: 1; }
+    }
+    .hero-fan-left,
+    .hero-fan-right,
+    .hero-fan-center,
+    .tilt-in {
+      animation: drive-scroll-p linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 65%;
+    }
+  }
+
+  /* View Transitions API para transiciones suaves de interfaz */
+  @supports (view-transition-name: root) {
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation-duration: 0.22s;
+      animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    }
   }
 }
 

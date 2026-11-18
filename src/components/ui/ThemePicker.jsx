@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Palette, X, Check } from 'lucide-react';
 import { THEMES, THEME_GROUPS } from '../../lib/themes';
 import { useTheme } from '../../hooks/useTheme';
+import { startViewTransition } from '../../lib/viewTransitions';
 
 /**
  * Selector de temas para probar fondos y paletas. Pestaña fija en el borde
@@ -75,7 +76,7 @@ export default function ThemePicker() {
                     <li key={t.id}>
                       <button
                         type="button"
-                        onClick={() => setTheme(t.id)}
+                        onClick={() => startViewTransition(() => setTheme(t.id))}
                         aria-pressed={active}
                         className={`w-full text-left rounded-xl border p-2 transition-colors ${
                           active ? 'border-hoja ring-2 ring-hoja/30' : 'border-linea hover:border-tinta'

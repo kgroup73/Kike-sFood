@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { useTenant } from '../hooks/useTenant';
 import { useMenu } from '../hooks/useMenu';
 import { useToast } from '../hooks/useToast';
@@ -15,6 +16,7 @@ import CartDrawer from '../components/client/CartDrawer';
 import ProductDetailModal from '../components/client/ProductDetailModal';
 import StoryReelModal from '../components/client/StoryReelModal';
 import TableRequiredModal from '../components/client/TableRequiredModal';
+import { startViewTransition } from '../lib/viewTransitions';
 
 function readJSON(storage, key, fallback) {
   try {
@@ -61,18 +63,48 @@ function Menu({ tenant, tableToken }) {
   const [submitting, setSubmitting] = useState(false);
   const [waiter, setWaiter] = useState('idle'); // 'idle' | 'sending' | 'called'
 
-  // Valida el token de la mesa en el servidor (antes bastaba con ?mesa=4 en la URL).
+  // Valida el estado real de la mesa y de la sesión en el servidor
   useEffect(() => {
     if (!tableToken) return undefined;
     let cancelled = false;
     api
       .resolveTable(tenant.slug, tableToken)
-      .then((t) => !cancelled && setTable(t ? { status: 'ok', label: t.label } : { status: 'invalid', label: null }))
+      .then((t) => {
+        if (cancelled) return;
+        if (!t) setTable({ status: 'invalid', label: null });
+        else if (t.isClosed) setTable({ status: 'closed', label: t.label });
+        else setTable({ status: 'ok', label: t.label });
+      })
       .catch(() => !cancelled && setTable({ status: 'invalid', label: null }));
     return () => {
       cancelled = true;
     };
   }, [tenant.slug, tableToken]);
+
+  // Revalidación al volver a la pestaña (si el cliente se fue del restaurante y vuelve a abrir Chrome)
+  useEffect(() => {
+    if (!tableToken || table.status !== 'ok') return undefined;
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        api.resolveTable(tenant.slug, tableToken)
+          .then((t) => {
+            if (t?.isClosed) {
+              setTable({ status: 'closed', label: t.label });
+              setCart([]);
+            }
+          })
+          .catch(() => {
+            // Falla de red transitoria: mantenemos el estado local sin interrumpir
+          });
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('focus', onVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('focus', onVisibilityChange);
+    };
+  }, [tenant.slug, tableToken, table.status]);
 
   useEffect(() => writeJSON(sessionStorage, cartKey, cart), [cartKey, cart]);
 
@@ -179,6 +211,46 @@ function Menu({ tenant, tableToken }) {
     }
   };
 
+  if (table.status === 'closed') {
+    return (
+      <main className="carta min-h-screen flex items-center justify-center p-6 text-center">
+        <div className="max-w-md w-full surface p-8 space-y-4 shadow-xl animate-fadeIn">
+          <div className="w-16 h-16 rounded-full bg-hoja/10 text-hoja flex items-center justify-center mx-auto">
+            <CheckCircle2 className="w-8 h-8" aria-hidden="true" />
+          </div>
+          <h1 className="font-display font-extrabold text-2xl sm:text-3xl tracking-tight text-tinta">
+            ¡Cuenta finalizada!
+          </h1>
+          <p className="text-suave leading-relaxed">
+            La cuenta de la <b>Mesa {table.label}</b> ya fue cancelada en caja y el servicio concluyó con éxito.
+          </p>
+          <p className="text-sm text-suave">
+            Esta sesión se cerró para evitar pedidos involuntarios. Si te encuentras de nuevo en el restaurante, puedes iniciar un nuevo servicio.
+          </p>
+          <div className="pt-2 space-y-2">
+            <button
+              onClick={() => {
+                api.startNewTableSession?.(tenant.slug, tableToken).then(() => {
+                  setTable({ status: 'ok', label: table.label });
+                  showToast(`Nueva visita iniciada en Mesa ${table.label}`, 'success');
+                });
+              }}
+              className="btn btn-primary w-full"
+            >
+              Iniciar nueva orden en Mesa {table.label}
+            </button>
+            <button
+              onClick={() => setTable({ status: 'none', label: null })}
+              className="btn btn-quiet w-full"
+            >
+              Ver carta en modo consulta
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <div className="carta min-h-screen pb-28">
       <div className="max-w-3xl mx-auto px-4 sm:px-6">
@@ -202,6 +274,28 @@ function Menu({ tenant, tableToken }) {
         </header>
 
         <main>
+          {!tableToken && (
+            <div className="mb-6 p-4 rounded-2xl bg-maracuya/15 border border-maracuya/30 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-maracuya shrink-0 mt-0.5" aria-hidden="true" />
+              <div className="text-sm">
+                <p className="font-bold text-tinta">Modo Consulta (Sin mesa asignada)</p>
+                <p className="text-suave mt-0.5">
+                  Estás consultando nuestra carta digital. Para que tus pedidos lleguen a cocina, debes escanear el código QR colocado en tu mesa física.
+                </p>
+              </div>
+            </div>
+          )}
+          {table.status === 'invalid' && (
+            <div className="mb-6 p-4 rounded-2xl bg-aji/10 border border-aji/20 flex items-start gap-3" role="alert">
+              <AlertCircle className="w-5 h-5 text-aji shrink-0 mt-0.5" aria-hidden="true" />
+              <div className="text-sm">
+                <p className="font-bold text-aji">Código de mesa no reconocido</p>
+                <p className="text-suave mt-0.5">
+                  El código escaneado no corresponde a una mesa activa. Si necesitas pedir, solicita asistencia a nuestro personal o escanea nuevamente tu código QR.
+                </p>
+              </div>
+            </div>
+          )}
           {menu.error && <InlineError message={`No se pudo cargar la carta: ${menu.error}`} onRetry={menu.reload} />}
           {menu.loading ? (
             <p className="py-24 text-center text-suave">Cargando la carta…</p>
@@ -228,7 +322,7 @@ function Menu({ tenant, tableToken }) {
 
       <FloatingClientBar
         cart={cart}
-        onOpenCart={() => setIsCartOpen(true)}
+        onOpenCart={() => startViewTransition(() => setIsCartOpen(true))}
         mode={orderingEnabled ? 'order' : 'consult'}
         onCallWaiter={canCallWaiter ? callWaiter : undefined}
         waiter={waiter}
@@ -239,7 +333,7 @@ function Menu({ tenant, tableToken }) {
           cart={cart}
           tableLabel={table.label}
           onChangeQuantity={(key, q) => setCart((prev) => setCartQuantity(prev, key, q))}
-          onClose={() => setIsCartOpen(false)}
+          onClose={() => startViewTransition(() => setIsCartOpen(false))}
           onSubmit={submitOrder}
           submitting={submitting}
           blockedReason={blockedReason}

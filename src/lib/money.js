@@ -5,7 +5,29 @@
 
 export const toPesos = (value) => Math.round(Number(value) || 0);
 
-export const formatCOP = (value) => '$' + toPesos(value).toLocaleString('es-CO');
+// Instancia única y pre-compilada de Intl.NumberFormat para evitar recreaciones en cada render.
+const copNumberFormatter = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 });
+
+export const formatCOP = (value) => '$' + copNumberFormatter.format(toPesos(value));
+
+// Instancia nativa de Intl.RelativeTimeFormat para tiempos en lenguaje natural ("hace 5 minutos", "ahora").
+const rtf = new Intl.RelativeTimeFormat('es-CO', { numeric: 'auto' });
+
+export function formatRelativeTime(isoDate, now = Date.now()) {
+  if (!isoDate) return '';
+  const dateMs = typeof isoDate === 'number' ? isoDate : new Date(isoDate).getTime();
+  if (Number.isNaN(dateMs)) return '';
+  const diffSec = Math.round((dateMs - (typeof now === 'number' ? now : new Date(now).getTime())) / 1000);
+  const absSec = Math.abs(diffSec);
+
+  if (absSec < 45) return 'ahora';
+  const diffMin = Math.round(diffSec / 60);
+  if (Math.abs(diffMin) < 60) return rtf.format(diffMin, 'minute');
+  const diffHour = Math.round(diffMin / 60);
+  if (Math.abs(diffHour) < 24) return rtf.format(diffHour, 'hour');
+  const diffDay = Math.round(diffHour / 24);
+  return rtf.format(diffDay, 'day');
+}
 
 /**
  * Desglosa un precio con impuesto incluido (el precio de carta).

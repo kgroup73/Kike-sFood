@@ -8,3 +8,15 @@ configure({ asyncUtilTimeout: 10000 });
 // los hilos de Vitest, así que dos archivos de prueba con datos demo se pisarían.
 // Cada archivo trabaja con su propio navegador simulado: sin canal entre ellos.
 delete globalThis.BroadcastChannel;
+
+// Soporte nativo para <dialog> en jsdom
+if (typeof HTMLDialogElement !== 'undefined') {
+  HTMLDialogElement.prototype.showModal ??= function () {
+    this.open = true;
+    this.setAttribute('open', '');
+  };
+  HTMLDialogElement.prototype.close ??= function () {
+    this.open = false;
+    this.removeAttribute('open');
+  };
+}
