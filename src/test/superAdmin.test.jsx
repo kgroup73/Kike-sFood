@@ -139,7 +139,7 @@ describe('Super Admin & Sistema de Códigos de Upgrade', () => {
     });
 
     // Debe mostrar la etiqueta "Próximamente..." en el plan Premium
-    expect(screen.getByText(/Próximamente/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Próximamente/i).length).toBeGreaterThan(0);
 
     // Debe mostrar la sección de canje de código
     expect(screen.getByText(/Canjear código de actualización/i)).toBeInTheDocument();

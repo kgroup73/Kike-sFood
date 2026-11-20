@@ -46,8 +46,8 @@ const PLANES = [
     key: 'intermedio',
     n: 'Plan 2',
     title: 'La mesa pide y la cocina recibe.',
-    text: 'El comensal envía el pedido y llama al mesero desde su celular. La comanda cae en la pantalla de la cocina o sale impresa sola, sin que nadie toque un botón.',
-    items: ['Pedidos desde la mesa', 'Llamado al mesero en el panel del personal', 'Cocina en pantalla, o comandas impresas solas', 'Ingredientes agotados al instante'],
+    text: 'El comensal envía el pedido y llama al mesero desde su celular. Todo el equipo de cocina gestiona y despacha los pedidos por medio de una pantalla en tiempo real, sin depender de impresoras ni papel.',
+    items: ['Pedidos directos desde la mesa', 'Llamado al mesero en el panel del personal', 'Cocina 100% en pantalla (KDS) en tiempo real', 'Ingredientes agotados al instante'],
     screen: CocinaDesktop,
     url: 'kikes.app/staff/la-trattoria/cocina',
     alt: 'La cocina en el panel del personal: el riel con cuatro comandas, cada una con su mesa, su tiempo de espera y el botón para avanzarla, y el aviso de una mesa que llama al mesero',
@@ -56,9 +56,10 @@ const PLANES = [
   {
     key: 'premium',
     n: 'Plan 3',
+    badge: 'Próximamente',
     title: 'Y la caja cuadra sola.',
-    text: 'Todas las comandas de la mesa en una sola cuenta. La propina se elige al cobrar y el turno cierra con su reporte Z.',
-    items: ['Caja POS con una cuenta por mesa', 'Propina voluntaria al cobrar', 'Cierre de caja Z por turno', 'Facturación electrónica DIAN, hoy en modo de prueba'],
+    text: 'Caja POS, comandas unificadas por mesa, propina voluntaria al cobrar y cierre de turno Z. (Próximamente: integración con impresoras térmicas y facturación electrónica DIAN).',
+    items: ['Caja POS con una cuenta por mesa (Próximamente)', 'Propina voluntaria al cobrar', 'Cierre de caja Z por turno', 'Impresoras térmicas y DIAN (Próximamente)'],
     screen: CajaDesktop,
     url: 'kikes.app/staff/la-trattoria/caja',
     alt: 'La caja en el panel del personal: las cifras del turno y las mesas que esperan la cuenta, con sus comandas y el botón de cobrar'
@@ -87,7 +88,7 @@ const PREGUNTAS = [
   { q: '¿El comensal tiene que instalar algo?', a: 'No. Acerca el celular al NFC de la mesa o escanea el QR y la carta abre en el navegador. Desde ahí pide y la cocina lo recibe al instante.' },
   { q: '¿Qué pasa si se acaba un ingrediente?', a: 'La cocina lo marca como agotado y los platos que lo usan dejan de poder pedirse en la carta en ese momento. El faltante queda en el reporte de inventario.' },
   { q: '¿Cómo se cobra una mesa con varias comandas?', a: 'La caja ve todas las comandas de la mesa juntas y las cobra en un solo comprobante. La propina se elige en ese momento, no al pedir.' },
-  { q: '¿Necesito una pantalla en la cocina?', a: 'No. Puedes trabajar con comandas impresas: el computador conectado a la impresora las imprime solas, sin vista previa, apenas el comensal envía el pedido. Si prefieres pantalla, se activa con un clic, y puedes usar las dos.' },
+  { q: '¿Necesito una pantalla en la cocina?', a: 'Sí, cualquier pantalla conectada a internet: una tablet, un celular o un computador. Todo el equipo de cocina ve los pedidos en tiempo real con tiempos claros y avanza cada plato con un toque, eliminando el papel y las impresoras.' },
   { q: '¿La factura electrónica ya está conectada con la DIAN?', a: 'Todavía no. Hoy se emite en modo de prueba, con numeración y resolución configurables, para que el flujo quede listo cuando se conecte el proveedor tecnológico.' },
   isDemoMode
     ? { q: '¿Puedo probarlo sin crear una cuenta?', a: 'Sí. En modo demostración los datos viven en tu navegador. Abre la carta en una pestaña y la cocina en otra para ver cómo llega el pedido.' }
@@ -95,7 +96,7 @@ const PREGUNTAS = [
 ];
 
 function PlanRow({ plan, index, flip }) {
-  const { key, n, title, text, items, screen: Screen, url, alt, dark } = plan;
+  const { key, n, badge, title, text, items, screen: Screen, url, alt, dark } = plan;
   return (
     <article
       aria-labelledby={`plan-${key}`}
@@ -103,7 +104,14 @@ function PlanRow({ plan, index, flip }) {
       className={`stack-card max-w-7xl mx-auto rounded-[32px] px-5 sm:px-10 lg:px-14 py-12 sm:py-16 grid ${flip ? 'lg:grid-cols-[3fr_2fr]' : 'lg:grid-cols-[2fr_3fr]'} gap-10 lg:gap-14 items-center shadow-[0_-24px_60px_-40px_rgb(0_0_0/0.35)] ${dark ? 'bg-tinta text-mantel' : 'bg-plato border border-linea'}`}
     >
       <Reveal variant={flip ? 'right' : 'left'} className={flip ? 'lg:order-2' : ''}>
-        <p className={`text-sm font-bold ${dark ? 'text-maracuya' : 'text-hoja'}`}>{`${n} · ${PLANS[key].label}`}</p>
+        <div className="flex items-center gap-2.5">
+          <p className={`text-sm font-bold ${dark ? 'text-maracuya' : 'text-hoja'}`}>{`${n} · ${PLANS[key].label}`}</p>
+          {badge && (
+            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-maracuya text-sobre-maracuya uppercase tracking-wider">
+              {badge}
+            </span>
+          )}
+        </div>
         <h3 id={`plan-${key}`} className="mt-3 font-display font-extrabold text-3xl sm:text-5xl tracking-[-0.03em] leading-[0.95]">
           {title}
         </h3>
@@ -420,6 +428,17 @@ export default function HomePage() {
                   className="hover:text-tinta break-all"
                 >
                   {LEGAL_CONFIG.supportEmail}
+                </a>
+              </li>
+              <li>
+                <a
+                  href={LEGAL_CONFIG.whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-tinta inline-flex items-center gap-1.5 font-semibold text-hoja"
+                >
+                  <span>WhatsApp: {LEGAL_CONFIG.phone}</span>
+                  <span className="sr-only"> (se abre en una pestaña nueva)</span>
                 </a>
               </li>
               <li>

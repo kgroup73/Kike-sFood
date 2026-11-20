@@ -10,7 +10,7 @@ const FEATURES = [
   { label: 'Carta digital QR/NFC y mesas', level: 0 },
   { label: 'Pedidos desde la mesa', level: 1 },
   { label: 'Llamado al mesero', level: 1 },
-  { label: 'Cocina en pantalla o comandas impresas', level: 1 },
+  { label: 'Cocina 100% en pantalla (KDS) en tiempo real', level: 1 },
   { label: 'Ingredientes agotados e inventario', level: 1 },
   { label: 'Caja POS y cierre Z', level: 2 },
   { label: 'Facturación electrónica DIAN', level: 2 }

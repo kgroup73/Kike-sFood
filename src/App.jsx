@@ -9,6 +9,7 @@ import TermsPage from './pages/legal/TermsPage';
 import PrivacyPage from './pages/legal/PrivacyPage';
 import CookiesPage from './pages/legal/CookiesPage';
 import CookieConsentBanner from './components/ui/CookieConsentBanner';
+import WhatsAppButton from './components/ui/WhatsAppButton';
 import { LoadingScreen } from './components/ui/Screens';
 
 // El panel del personal (cocina, caja, admin) se descarga solo cuando se usa:
@@ -56,6 +57,7 @@ export default function App() {
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
     <CookieConsentBanner />
+    <WhatsAppButton />
   </>
   );
 }

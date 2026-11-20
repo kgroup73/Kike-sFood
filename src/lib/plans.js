@@ -3,7 +3,7 @@
 // cocina y comandas (en pantalla o impresas); 3) caja y facturación.
 export const PLANS = Object.freeze({
   basic: { level: 0, label: 'Básico', summary: 'Carta digital QR/NFC de consulta.' },
-  intermedio: { level: 1, label: 'Intermedio', summary: 'Pedidos desde la mesa, llamado al mesero, cocina y comandas impresas.' },
+  intermedio: { level: 1, label: 'Intermedio', summary: 'Pedidos desde la mesa, llamado al mesero y cocina en pantalla en tiempo real.' },
   premium: { level: 2, label: 'Premium', summary: 'Todo lo anterior + caja POS, cierre Z y facturación electrónica.' }
 });
 

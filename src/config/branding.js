@@ -15,8 +15,10 @@ export const LEGAL_CONFIG = {
   chamberOfCommerce: 'Cámara de Comercio de San Andrés, Providencia y Santa Catalina',
   country: 'Colombia',
   domicile: 'Medellín, Colombia',
-  supportEmail: 'soporte@kgroup.site',
-  legalEmail: 'legal@kgroup.site',
+  phone: '+57 314 8316310',
+  whatsappUrl: "https://wa.me/573148316310?text=Hola,%20me%20interesa%20Kike's%20Food%20para%20mi%20restaurante",
+  supportEmail: 'kgroupmed@gmail.com',
+  legalEmail: 'kgroupmed@gmail.com',
   contactUrl: 'https://www.kgroup.site/',
   lastUpdated: 'Noviembre de 2026',
 };

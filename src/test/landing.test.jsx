@@ -30,7 +30,10 @@ describe('landing (modo demo)', () => {
     expect(screen.getByText('Plan 2 · Intermedio')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 3, name: 'La mesa pide y la cocina recibe.' })).toBeInTheDocument();
     expect(screen.getByText('Llamado al mesero en el panel del personal')).toBeInTheDocument();
-    expect(screen.getByText('Cocina en pantalla, o comandas impresas solas')).toBeInTheDocument();
+    expect(screen.getByText('Cocina 100% en pantalla (KDS) en tiempo real')).toBeInTheDocument();
+    expect(screen.getByText('Próximamente')).toBeInTheDocument();
+    expect(screen.getByText(/WhatsApp: \+57 314 8316310/)).toBeInTheDocument();
+    expect(screen.getByText('kgroupmed@gmail.com')).toBeInTheDocument();
     // Las maquetas no se anuncian como contenido: una imagen con su descripción por cada una
     expect(screen.getByRole('img', { name: /Tres pantallas/ })).toBeInTheDocument();
     expect(screen.getAllByRole('img', { name: /en el panel de/ })).toHaveLength(3);
