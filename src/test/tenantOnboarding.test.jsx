@@ -83,5 +83,34 @@ describe('Flujo de Registro y Onboarding Multi-Tenant (demoApi)', () => {
     const tables = await demoApi.listTables(res.tenantId);
     expect(tables.length).toBe(4);
     expect(tables.map((t) => t.label)).toEqual(['1', '2', '3', '4']);
+
+    // Verifica que el nuevo restaurante queda pendiente de activación
+    const tenant = await demoApi.getTenantBySlug(testSlug);
+    expect(tenant.isActive).toBe(false);
+    expect(tenant.status).toBe('pending_activation');
+  });
+
+  it('activa el restaurante cuando se canjea el código de activación emitido por KGroup', async () => {
+    // 1. KGroup emite código de activación para el restaurante
+    const codeObj = await demoApi.superadminCreateUpgradeCode({
+      plan: 'intermedio',
+      durationDays: 30,
+      targetSlug: testSlug
+    });
+    expect(codeObj.code).toBeDefined();
+
+    // 2. El dueño canjea el código
+    const redeemRes = await demoApi.redeemPlanCode({
+      slug: testSlug,
+      code: codeObj.code
+    });
+    expect(redeemRes.ok).toBe(true);
+    expect(redeemRes.plan).toBe('intermedio');
+
+    // 3. El restaurante queda activo y con su plan
+    const activatedTenant = await demoApi.getTenantBySlug(testSlug);
+    expect(activatedTenant.isActive).toBe(true);
+    expect(activatedTenant.status).toBe('active');
+    expect(activatedTenant.plan).toBe('intermedio');
   });
 });

@@ -1220,7 +1220,10 @@ export const demoApi = {
         email,
         phone: data.phone || '',
         city: data.city || '',
-        plan: 'basic',
+        plan: data.plan || 'basic',
+        requestedPlan: data.plan || 'basic',
+        isActive: false,
+        status: 'pending_activation',
         taxType: 'INC',
         taxRate: 8,
         tipRate: 10,
@@ -1421,6 +1424,8 @@ export const demoApi = {
     commit((d) => {
       d.tenant.plan = codeObj.plan;
       d.tenant.planExpiresAt = exp;
+      d.tenant.isActive = true;
+      d.tenant.status = 'active';
       const target = (d.upgradeCodes || []).find((c) => c.code === cleanCode);
       if (target) {
         target.redeemed_at = new Date().toISOString();

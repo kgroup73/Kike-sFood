@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, AlertCircle } from 'lucide-react';
+import { CheckCircle2, AlertCircle, UtensilsCrossed, ArrowRight } from 'lucide-react';
 import { useTenant } from '../hooks/useTenant';
 import { useMenu } from '../hooks/useMenu';
 import { useToast } from '../hooks/useToast';
@@ -42,7 +42,51 @@ export default function MenuPage({ tableToken }) {
     return <ErrorScreen title="Restaurante no encontrado" message="Revisa el enlace o vuelve a escanear el código de tu mesa." />;
   }
   if (error) return <ErrorScreen message={error} />;
+
+  // Restaurante pendiente de activación
+  if (tenant.isActive === false) {
+    return <InactiveMenuScreen tenant={tenant} />;
+  }
+
   return <Menu tenant={tenant} tableToken={tableToken} key={tableToken || 'sin-mesa'} />;
+}
+
+function InactiveMenuScreen({ tenant }) {
+  return (
+    <div className="min-h-screen bg-mantel flex flex-col items-center justify-center p-6 text-center">
+      <div className="card p-8 sm:p-10 max-w-md w-full border-linea space-y-6">
+        <div className="w-16 h-16 rounded-full bg-maracuya/20 border-2 border-maracuya/30 text-sobre-maracuya flex items-center justify-center mx-auto shadow-sm">
+          <UtensilsCrossed className="w-8 h-8 text-amber-700" />
+        </div>
+        <div className="space-y-2">
+          <span className="inline-block text-xs font-bold px-3 py-1 rounded-full bg-maracuya/20 text-sobre-maracuya uppercase tracking-wider">
+            En Preparación
+          </span>
+          <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-tinta">
+            {tenant.name}
+          </h1>
+          <p className="text-sm text-suave leading-relaxed">
+            Este restaurante está preparando su carta digital y aún no ha sido activado para pedidos en mesa.
+          </p>
+        </div>
+        <div className="pt-2 border-t border-linea space-y-3">
+          <p className="text-xs text-suave">
+            ¿Eres parte del equipo o el dueño de este restaurante?
+          </p>
+          <a
+            href={`/staff/${tenant.slug}/login`}
+            className="btn btn-primary w-full h-12 text-sm justify-center gap-2 font-bold"
+          >
+            <span>Acceder con mi PIN</span>
+            <ArrowRight className="w-4 h-4" />
+          </a>
+        </div>
+      </div>
+      <p className="mt-8 text-xs text-suave">
+        {PROJECT_NAME} · Menú digital y comandas para restaurantes
+      </p>
+    </div>
+  );
 }
 
 function Menu({ tenant, tableToken }) {

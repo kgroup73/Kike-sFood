@@ -12,6 +12,8 @@ export default function StepRestaurantData({
   setCity,
   phone,
   setPhone,
+  selectedPlan = 'intermedio',
+  setSelectedPlan,
   onNext,
   onBack
 }) {
@@ -104,16 +106,79 @@ export default function StepRestaurantData({
           </label>
 
           <label className="block">
-            <span className="text-sm font-bold text-suave block mb-1.5">Teléfono de contacto</span>
+            <span className="text-sm font-bold text-suave block mb-1.5">Teléfono / WhatsApp *</span>
             <input
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="Ej. +57 300 123 4567"
               className="field w-full"
+              required
             />
           </label>
         </div>
+
+        {/* Selección de Plan para la activación */}
+        {setSelectedPlan && (
+          <div className="space-y-2.5 pt-3 border-t border-linea">
+            <label className="text-sm font-bold text-tinta block">
+              Elige el plan con el que deseas comenzar *
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Plan 1 Básico */}
+              <button
+                type="button"
+                onClick={() => setSelectedPlan('basic')}
+                className={`p-4 rounded-2xl border text-left transition-all ${
+                  selectedPlan === 'basic'
+                    ? 'border-hoja bg-hoja/5 ring-2 ring-hoja/20'
+                    : 'border-linea bg-plato hover:border-suave'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-display font-bold text-sm text-tinta">Plan 1 · Básico</span>
+                  {selectedPlan === 'basic' && (
+                    <span className="w-5 h-5 rounded-full bg-hoja text-white flex items-center justify-center">
+                      <Check className="w-3.5 h-3.5" />
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-suave leading-relaxed">
+                  Solo la carta digital con QR y NFC en mesa. El mesero toma las órdenes como siempre.
+                </p>
+              </button>
+
+              {/* Plan 2 Intermedio */}
+              <button
+                type="button"
+                onClick={() => setSelectedPlan('intermedio')}
+                className={`p-4 rounded-2xl border text-left transition-all relative ${
+                  selectedPlan === 'intermedio'
+                    ? 'border-hoja bg-hoja/5 ring-2 ring-hoja/20'
+                    : 'border-linea bg-plato hover:border-suave'
+                }`}
+              >
+                <span className="absolute -top-2.5 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-hoja text-white uppercase tracking-wider">
+                  Recomendado
+                </span>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-display font-bold text-sm text-tinta">Plan 2 · Intermedio</span>
+                  {selectedPlan === 'intermedio' && (
+                    <span className="w-5 h-5 rounded-full bg-hoja text-white flex items-center justify-center">
+                      <Check className="w-3.5 h-3.5" />
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-suave leading-relaxed">
+                  Pedidos desde la mesa, llamado al mesero y cocina 100% en pantalla (KDS) en tiempo real.
+                </p>
+              </button>
+            </div>
+            <p className="text-[11px] text-suave italic">
+              El Plan 3 (Caja POS y facturación electrónica) estará disponible próximamente.
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center justify-between pt-2">
