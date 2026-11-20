@@ -10,7 +10,7 @@ import TiltIn from '../components/landing/TiltIn';
 import { CartaAdminScreen, CocinaDesktop, CajaDesktop } from '../components/landing/Screens';
 import NfcTapDemo from '../components/landing/NfcTapDemo';
 import Faq from '../components/landing/Faq';
-import { PROJECT_NAME, PROJECT_TAGLINE, MAKER_NAME, MAKER_URL } from '../config/branding';
+import { PROJECT_NAME, PROJECT_TAGLINE, MAKER_NAME, MAKER_URL, LEGAL_CONFIG } from '../config/branding';
 import { isDemoMode } from '../services/api';
 import { DEMO_TENANT, DEMO_STAFF } from '../services/demo/seedData';
 import { demoTableToken } from '../services/demo/demoApi';
@@ -340,14 +340,20 @@ export default function HomePage() {
       </main>
 
       <footer className="border-t border-linea">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 grid sm:grid-cols-[2fr_1fr_1fr] gap-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
           <div>
             <BrandMark />
-            <p className="mt-3 text-suave max-w-xs leading-relaxed">{PROJECT_TAGLINE}.</p>
+            <p className="mt-3 text-sm text-suave max-w-xs leading-relaxed">{PROJECT_TAGLINE}.</p>
+            <div className="mt-4 text-xs text-suave space-y-0.5">
+              <p className="font-semibold text-tinta">{LEGAL_CONFIG.companyName}</p>
+              <p>{LEGAL_CONFIG.domicile}</p>
+              <p className="text-suave/70">{LEGAL_CONFIG.nit}</p>
+            </div>
           </div>
+
           <nav aria-label="Producto">
             <p className="text-sm font-bold text-hoja">Producto</p>
-            <ul className="mt-3 space-y-2 text-suave">
+            <ul className="mt-3 space-y-2 text-sm text-suave">
               {NAV.map((n) => (
                 <li key={n.href}>
                   <a href={n.href} className="hover:text-tinta">
@@ -355,11 +361,6 @@ export default function HomePage() {
                   </a>
                 </li>
               ))}
-            </ul>
-          </nav>
-          <nav aria-label="Para empezar">
-            <p className="text-sm font-bold text-hoja">Para empezar</p>
-            <ul className="mt-3 space-y-2 text-suave">
               {isDemoMode ? (
                 <>
                   <li>
@@ -382,8 +383,65 @@ export default function HomePage() {
               )}
             </ul>
           </nav>
+
+          <nav aria-label="Legal y Cumplimiento">
+            <p className="text-sm font-bold text-hoja">Legal y Privacidad</p>
+            <ul className="mt-3 space-y-2 text-sm text-suave">
+              <li>
+                <Link to="/terminos" className="hover:text-tinta">
+                  Términos y condiciones
+                </Link>
+              </li>
+              <li>
+                <Link to="/privacidad" className="hover:text-tinta">
+                  Política de privacidad
+                </Link>
+              </li>
+              <li>
+                <Link to="/cookies" className="hover:text-tinta">
+                  Cookies y almacenamiento
+                </Link>
+              </li>
+              <li className="pt-1 text-xs text-suave/80 leading-normal">
+                Propinas voluntarias: Ley 1935/2018
+              </li>
+              <li className="text-xs text-suave/80 leading-normal">
+                Protección de datos: Ley 1581/2012
+              </li>
+            </ul>
+          </nav>
+
+          <div>
+            <p className="text-sm font-bold text-hoja">Soporte y Contacto</p>
+            <ul className="mt-3 space-y-2 text-sm text-suave">
+              <li>
+                <a
+                  href={`mailto:${LEGAL_CONFIG.supportEmail}`}
+                  className="hover:text-tinta break-all"
+                >
+                  {LEGAL_CONFIG.supportEmail}
+                </a>
+              </li>
+              <li>
+                <a
+                  href={MAKER_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-tinta inline-flex items-center gap-1"
+                >
+                  <span>Portal corporativo KGroup</span>
+                  <span className="sr-only"> (se abre en una pestaña nueva)</span>
+                </a>
+              </li>
+            </ul>
+            <div className="mt-5 inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-hoja/10 text-hoja text-xs font-semibold">
+              <span className="w-2 h-2 rounded-full bg-hoja" />
+              <span>Sistemas operativos</span>
+            </div>
+          </div>
         </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-10 text-sm text-suave flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-10 text-sm text-suave flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-linea/60 pt-6">
           <p>
             {isDemoMode ? 'Modo demostración: los datos viven en este navegador y vuelven al inicio si lo limpias.' : `${PROJECT_NAME}. ${PROJECT_TAGLINE}.`}
           </p>

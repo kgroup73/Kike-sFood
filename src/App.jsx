@@ -5,6 +5,10 @@ import HomePage from './pages/HomePage';
 import MenuPage from './pages/MenuPage';
 import RegisterPage from './pages/RegisterPage';
 import NotFoundPage from './pages/NotFoundPage';
+import TermsPage from './pages/legal/TermsPage';
+import PrivacyPage from './pages/legal/PrivacyPage';
+import CookiesPage from './pages/legal/CookiesPage';
+import CookieConsentBanner from './components/ui/CookieConsentBanner';
 import { LoadingScreen } from './components/ui/Screens';
 
 // El panel del personal (cocina, caja, admin) se descarga solo cuando se usa:
@@ -23,10 +27,14 @@ function MenuRoute() {
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route
-        path="/admin/*"
+    <>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/terminos" element={<TermsPage />} />
+        <Route path="/privacidad" element={<PrivacyPage />} />
+        <Route path="/cookies" element={<CookiesPage />} />
+        <Route
+          path="/admin/*"
         element={
           <Suspense fallback={<LoadingScreen label="Cargando panel de administración..." />}>
             <SuperAdminPage />
@@ -47,5 +55,7 @@ export default function App() {
       />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
+    <CookieConsentBanner />
+  </>
   );
 }
