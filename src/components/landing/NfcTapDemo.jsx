@@ -114,7 +114,12 @@ export default function NfcTapDemo({ url }) {
               : '-translate-y-[85px] scale-90 opacity-100'
           }`}
         >
-          <div className="relative w-[190px] h-[225px] rounded-3xl bg-plato border-2 border-tinta p-3 flex flex-col items-center justify-between text-center shadow-[0_16px_40px_-15px_rgb(30_43_36/0.25)]">
+          <div className="relative w-[190px] h-[230px] rounded-3xl bg-plato border-2 border-tinta p-3 flex flex-col items-center justify-between text-center shadow-[0_16px_40px_-15px_rgb(30_43_36/0.25)]">
+            {/* Indicador contactless en la esquina superior */}
+            <span className="absolute top-2.5 right-3 text-suave/60" title="Contactless">
+              <Nfc className="w-3.5 h-3.5" />
+            </span>
+
             <span className="inline-flex items-center gap-1.5 font-display font-extrabold text-xs tracking-tight text-tinta">
               <Timbre className="w-3.5 h-3.5" /> Kike's
             </span>
@@ -122,22 +127,23 @@ export default function NfcTapDemo({ url }) {
               Mesa 4
             </span>
 
-            {/* Chip NFC objetivo en el sticker */}
-            <div className="relative w-full py-1 px-2 rounded-xl bg-hoja/10 border border-hoja/30 flex items-center justify-center gap-1.5 text-hoja font-bold text-[10px] tracking-wide">
+            {/* Logo NFC táctil estratégico (limpio, sin caja ni aviso verde) */}
+            <div className="relative my-0.5 flex items-center justify-center">
               {/* Ondas concéntricas animadas ÚNICAMENTE al hacer contacto (step === 2) */}
               {step === 2 && (
                 <>
-                  <span className="absolute inset-0 rounded-xl bg-hoja/30 animate-ping pointer-events-none" />
-                  <span className="absolute -inset-4 rounded-2xl border-2 border-hoja/60 animate-nfc-ring pointer-events-none" />
-                  <span className="absolute -inset-8 rounded-3xl border border-hoja/40 animate-nfc-ring [animation-delay:120ms] pointer-events-none" />
+                  <span className="absolute w-8 h-8 rounded-full bg-hoja/30 animate-ping pointer-events-none" />
+                  <span className="absolute w-12 h-12 rounded-full border-2 border-hoja/60 animate-nfc-ring pointer-events-none" />
+                  <span className="absolute w-16 h-16 rounded-full border border-hoja/40 animate-nfc-ring [animation-delay:120ms] pointer-events-none" />
                 </>
               )}
-              <Nfc className="w-3.5 h-3.5 animate-pulse shrink-0" aria-hidden="true" />
-              <span>Chip NFC de la Mesa</span>
+              <div className="w-7 h-7 rounded-full bg-mantel border border-linea/80 flex items-center justify-center text-tinta shadow-sm">
+                <Nfc className="w-4 h-4 text-tinta shrink-0" aria-hidden="true" />
+              </div>
             </div>
 
-            <QrCode value={url} size={72} label="QR de Mesa 4" className="rounded-lg" />
-            <span className="text-[8px] text-suave">Acerca tu móvil o escanea el QR</span>
+            <QrCode value={url} size={84} label="QR de Mesa 4" className="rounded-lg" />
+            <span className="text-[9px] text-suave font-medium">Acerca tu móvil o escanea el QR</span>
           </div>
         </div>
 

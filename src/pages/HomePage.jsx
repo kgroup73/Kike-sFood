@@ -8,7 +8,6 @@ import DesktopFrame from '../components/landing/DesktopFrame';
 import Reveal from '../components/landing/Reveal';
 import TiltIn from '../components/landing/TiltIn';
 import { CartaAdminScreen, CocinaDesktop, CajaDesktop } from '../components/landing/Screens';
-import TableSticker from '../components/landing/TableSticker';
 import NfcTapDemo from '../components/landing/NfcTapDemo';
 import Faq from '../components/landing/Faq';
 import { PROJECT_NAME, PROJECT_TAGLINE, MAKER_NAME, MAKER_URL } from '../config/branding';
