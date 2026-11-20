@@ -374,22 +374,6 @@ html.carta body {
     transform: none;
   }
 
-  /* Animación de desplazamiento nativa (Scroll-Driven Animations) en el hilo del compositor */
-  @supports ((animation-timeline: view()) and (animation-range: entry)) {
-    @keyframes drive-scroll-p {
-      from { --p: 0; }
-      to { --p: 1; }
-    }
-    .hero-fan-left,
-    .hero-fan-right,
-    .hero-fan-center,
-    .tilt-in {
-      animation: drive-scroll-p linear both;
-      animation-timeline: view();
-      animation-range: entry 0% cover 65%;
-    }
-  }
-
   /* View Transitions API para transiciones suaves de interfaz */
   @supports (view-transition-name: root) {
     ::view-transition-old(root),
