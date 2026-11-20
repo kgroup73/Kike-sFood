@@ -702,7 +702,8 @@ export const pgliteApi = {
       p_phone: data.phone || null,
       p_city: data.city || null,
       p_owner_name: data.ownerName || 'Dueño',
-      p_pin: data.pin
+      p_pin: data.pin,
+      p_plan: data.plan || 'basic'
     }, {
       userId: authUser?.id || 'a0000000-0000-0000-0000-000000000001',
       email: data.email || authUser?.email || 'dueño.local@kikesfood.com'
