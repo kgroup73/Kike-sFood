@@ -1,17 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Nfc, RotateCcw, CheckCircle2, ArrowRight, Wifi, Battery, Lock, Camera, Flashlight, Globe } from 'lucide-react';
+import { Nfc, RotateCcw, CheckCircle2, ArrowRight, Wifi, Battery, Lock, Camera, Flashlight, Globe, Plus } from 'lucide-react';
 import Timbre from '../ui/Timbre';
 import QrCode from '../ui/QrCode';
-import { CartaScreen } from './Screens';
 
 /**
  * Simulador interactivo de toque NFC en la mesa.
  * Dinámico y ágil:
- * - Paso 0: Celular en reposo abajo con pantalla de bloqueo.
+ * - Paso 0: Celular en reposo abajo con pantalla de bloqueo real.
  * - Paso 1: Celular sube ágilmente hacia la tarjeta (650ms).
  * - Paso 2: Toque NFC instantáneo con ondas y notificación nativa (850ms).
- * - Paso 3: Apertura rápida de la carta digital en el navegador móvil.
+ * - Paso 3: Apertura de la carta digital real con platos visibles y cuenta recién iniciada (vacía).
  */
 export default function NfcTapDemo({ url }) {
   // 0: reposo abajo, 1: subiendo a la mesa, 2: contacto NFC y notificación, 3: carta abierta
@@ -35,10 +34,10 @@ export default function NfcTapDemo({ url }) {
           timerRef.current = setTimeout(() => {
             setStep(3); // Se abre la carta digital en el navegador
 
-            // Mantiene la carta visible durante 2.8s antes de reiniciar el ciclo
+            // Mantiene la carta visible durante 3.2s antes de reiniciar el ciclo
             timerRef.current = setTimeout(() => {
               setStep(0);
-            }, 2800);
+            }, 3200);
           }, 850);
         }, 650);
       }, 600);
@@ -61,7 +60,7 @@ export default function NfcTapDemo({ url }) {
         setStep(2); // contacto y notificación
         setTimeout(() => {
           setStep(3); // abre carta
-          setTimeout(() => setIsAuto(true), 4000);
+          setTimeout(() => setIsAuto(true), 4500);
         }, 850);
       }, 650);
     }, 150);
@@ -149,7 +148,7 @@ export default function NfcTapDemo({ url }) {
               : 'translate-y-[25px] translate-x-0 rotate-0 scale-95 shadow-[0_0_35px_rgba(40,167,69,0.55)]'
           }`}
         >
-          {/* Chasis del smartphone realista */}
+          {/* Chasis del smartphone */}
           <div className="w-[200px] h-[310px] rounded-[32px] bg-tinta p-2 border border-mantel/20 text-mantel flex flex-col relative overflow-hidden">
             {/* Dynamic Island / Cámara */}
             <div className="absolute top-2 left-1/2 -translate-x-1/2 w-14 h-3.5 rounded-full bg-black/90 z-30 flex items-center justify-center">
@@ -222,17 +221,73 @@ export default function NfcTapDemo({ url }) {
                   </div>
                 </div>
               ) : (
-                /* Pantalla de Navegador con Carta abierta */
-                <div className="h-full w-full flex flex-col bg-mantel overflow-hidden animate-fadeIn">
+                /* Pantalla de Navegador con Carta abierta al escanear (Sin pedidos previos) */
+                <div className="h-full w-full flex flex-col bg-mantel text-tinta select-none overflow-hidden animate-fadeIn text-left">
                   {/* Barra de dirección URL de navegador móvil */}
                   <div className="h-5 bg-plato border-b border-linea/60 flex items-center justify-center px-2 shrink-0 text-[8px] text-suave gap-1 font-mono">
                     <span className="text-hoja text-[7px]">🔒</span>
                     <span className="truncate">kikes.app/r/la-trattoria/m/4</span>
                   </div>
 
-                  {/* CartaScreen en vivo escalada */}
-                  <div className="flex-1 min-h-0 w-[125%] h-[125%] origin-top-left scale-[0.80] overflow-hidden">
-                    <CartaScreen />
+                  {/* Cabecera del restaurante recién abierto */}
+                  <div className="px-3 pt-2 pb-1.5 border-b border-linea/50 shrink-0">
+                    <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-hoja/10 text-hoja text-[8px] font-bold">
+                      <span className="w-1 h-1 rounded-full bg-hoja animate-pulse" />
+                      <span>Mesa 4 · pide desde aquí</span>
+                    </div>
+                    <h3 className="font-display font-extrabold text-[12px] leading-tight text-tinta truncate mt-0.5">
+                      La Trattoria Gourmet
+                    </h3>
+                  </div>
+
+                  {/* Categorías de la carta */}
+                  <div className="px-3 py-1 flex items-center gap-1 border-b border-linea/40 shrink-0 overflow-x-hidden text-[9px]">
+                    <span className="h-4 px-2 rounded-full bg-tinta text-mantel font-bold inline-flex items-center">
+                      Entradas
+                    </span>
+                    <span className="h-4 px-2 rounded-full text-suave font-medium inline-flex items-center">
+                      Fuertes
+                    </span>
+                    <span className="h-4 px-2 rounded-full text-suave font-medium inline-flex items-center">
+                      Bebidas
+                    </span>
+                  </div>
+
+                  {/* Lista de platos reales con fotos y botón + */}
+                  <div className="flex-1 overflow-hidden px-3 py-1.5 space-y-2">
+                    {/* Plato 1 */}
+                    <div className="flex items-center gap-2 pb-1.5 border-b border-linea/40">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-display font-bold text-[10px] leading-tight text-tinta truncate">
+                          Tacos de Camarón al Pastor
+                        </h4>
+                        <p className="text-[8px] text-suave line-clamp-1 mt-0.5">Tortillas artesanales y piña</p>
+                        <p className="font-bold text-[10px] text-tinta precio mt-0.5">$28.000</p>
+                      </div>
+                      <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-linea/30 shadow-sm">
+                        <img src="/dishes/tuna.jpg" alt="Tacos" className="w-full h-full object-cover" />
+                        <span className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full bg-hoja text-sobre-hoja flex items-center justify-center shadow">
+                          <Plus className="w-2.5 h-2.5 stroke-[3]" />
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Plato 2 */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-display font-bold text-[10px] leading-tight text-tinta truncate">
+                          Carpaccio di Wagyu A5
+                        </h4>
+                        <p className="text-[8px] text-suave line-clamp-1 mt-0.5">Láminas de Wagyu y Parmigiano</p>
+                        <p className="font-bold text-[10px] text-tinta precio mt-0.5">$46.000</p>
+                      </div>
+                      <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-linea/30 shadow-sm">
+                        <img src="/dishes/carpaccio.jpg" alt="Carpaccio" className="w-full h-full object-cover" />
+                        <span className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full bg-hoja text-sobre-hoja flex items-center justify-center shadow">
+                          <Plus className="w-2.5 h-2.5 stroke-[3]" />
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
