@@ -635,7 +635,8 @@ export const supabaseApi = {
         p_phone: data.phone || null,
         p_city: data.city || null,
         p_owner_name: data.ownerName || 'Dueño',
-        p_pin: data.pin
+        p_pin: data.pin,
+        p_plan: data.plan || 'basic'
       })
     );
 

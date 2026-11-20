@@ -665,5 +665,70 @@ await test('solo owner/admin crean personal; solo el dueño crea administradores
   await rejects(asStaff('owner', () => rows(`select admin_create_staff('Y', 'cocina', '12')`)), /PIN/);
 });
 
+console.log('\nActivación de restaurantes y blindaje de acceso');
+await test('register_tenant crea el restaurante inactivo y con plan solicitado', async () => {
+  const reg = await one(
+    `select register_tenant('nuevo@kikesfood.com', 'GOOGLE_OAUTH', 'Burger Inactivo', 'burger-inactivo', '3148316310', 'Medellín', 'Carlos Dueño', '9876', 'intermedio') as r`
+  );
+  assert.equal(reg.r.ok, true);
+  assert.equal(reg.r.isActive, false);
+  assert.equal(reg.r.requestedPlan, 'intermedio');
+  assert.equal(reg.r.slug, 'burger-inactivo');
+
+  const tenant = await one(`select id, is_active, plan, requested_plan from tenants where slug = 'burger-inactivo'`);
+  assert.equal(tenant.is_active, false);
+  assert.equal(tenant.requested_plan, 'intermedio');
+});
+
+await test('visitante anónimo puede leer metadatos pero RLS bloquea categorías y productos de restaurante inactivo', async () => {
+  const t = await anon(() => one(`select id, slug, name, is_active from tenants where slug = 'burger-inactivo'`));
+  assert.equal(t.is_active, false);
+  assert.equal(t.slug, 'burger-inactivo');
+
+  const cats = await anon(() => rows(`select id, name from categories where tenant_id = $1`, [t.id]));
+  assert.equal(cats.length, 0);
+
+  const prods = await anon(() => rows(`select id, name from products where tenant_id = $1`, [t.id]));
+  assert.equal(prods.length, 0);
+});
+
+await test('comensal no puede crear pedidos en restaurante inactivo', async () => {
+  await rejects(
+    anon(() => rows(`select create_order('burger-inactivo', 'invalid-token', '[]'::jsonb, true)`)),
+    /Restaurante no encontrado/
+  );
+});
+
+await test('en restaurante inactivo solo el dueño aparece en list_staff_for_login y puede verificar PIN', async () => {
+  const staffList = await anon(() => rows(`select id, display_name, role from list_staff_for_login('burger-inactivo')`));
+  assert.equal(staffList.length, 1);
+  assert.equal(staffList[0].role, 'owner');
+  assert.equal(staffList[0].display_name, 'Carlos Dueño');
+
+  const ownerLogin = await as('service_role', null, () =>
+    one(`select verify_staff_pin('burger-inactivo', $1, '9876') as r`, [staffList[0].id])
+  );
+  assert.equal(ownerLogin.r.ok, true);
+  assert.equal(ownerLogin.r.role, 'owner');
+});
+
+await test('redeem_plan_code activa el restaurante y aplica el plan', async () => {
+  const codeRes = await one(`select superadmin_create_upgrade_code('intermedio', 30, 'burger-inactivo', 'KGroup') as r`);
+  assert.equal(codeRes.r.ok, true);
+  const code = codeRes.r.code;
+
+  const redeemRes = await one(`select redeem_plan_code('burger-inactivo', $1) as r`, [code]);
+  assert.equal(redeemRes.r.ok, true);
+  assert.equal(redeemRes.r.isActive, true);
+  assert.equal(redeemRes.r.plan, 'intermedio');
+
+  const activatedTenant = await one(`select id, is_active, plan from tenants where slug = 'burger-inactivo'`);
+  assert.equal(activatedTenant.is_active, true);
+  assert.equal(activatedTenant.plan, 'intermedio');
+
+  const cats = await anon(() => rows(`select id, name from categories where tenant_id = $1`, [activatedTenant.id]));
+  assert.equal(cats.length, 3);
+});
+
 console.log(`\n${passed} pruebas pasaron${process.exitCode ? ' — HAY FALLOS' : ''}\n`);
 await db.close();
