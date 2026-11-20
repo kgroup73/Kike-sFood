@@ -86,4 +86,41 @@ describe('Protección y Activación de Restaurantes', () => {
       expect(screen.getByRole('alert')).toBeInTheDocument();
     });
   });
+
+  it('muestra la pantalla de suscripción finalizada y permite reactivar con nuevo código', async () => {
+    const expiredTenant = {
+      ...inactiveTenant,
+      isActive: false,
+      isExpired: true,
+      status: 'subscription_expired',
+      planExpiresAt: new Date(Date.now() - 86400000).toISOString()
+    };
+
+    const reloadMock = vi.fn();
+    render(
+      <MemoryRouter>
+        <PendingActivationScreen
+          tenant={expiredTenant}
+          reload={reloadMock}
+        />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('heading', { level: 1, name: /Tu suscripción ha finalizado/i })).toBeInTheDocument();
+    expect(screen.getByText(/Suscripción Finalizada/i)).toBeInTheDocument();
+
+    const input = screen.getByPlaceholderText(/Ej. KIKE-INT-8X92/i);
+    const codeObj = await demoApi.superadminCreateUpgradeCode({
+      plan: 'intermedio',
+      durationDays: 30,
+      targetSlug: 'burger-prueba'
+    });
+
+    fireEvent.change(input, { target: { value: codeObj.code } });
+    fireEvent.click(screen.getByRole('button', { name: /Reactivar restaurante/i }));
+
+    await waitFor(() => {
+      expect(reloadMock).toHaveBeenCalledTimes(1);
+    });
+  });
 });

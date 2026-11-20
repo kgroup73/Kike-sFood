@@ -52,6 +52,8 @@ export default function MenuPage({ tableToken }) {
 }
 
 function InactiveMenuScreen({ tenant }) {
+  const isExpired = Boolean(tenant?.isExpired || tenant?.status === 'subscription_expired');
+
   return (
     <div className="min-h-screen bg-mantel flex flex-col items-center justify-center p-6 text-center">
       <div className="card p-8 sm:p-10 max-w-md w-full border-linea space-y-6">
@@ -59,14 +61,18 @@ function InactiveMenuScreen({ tenant }) {
           <UtensilsCrossed className="w-8 h-8 text-amber-700" />
         </div>
         <div className="space-y-2">
-          <span className="inline-block text-xs font-bold px-3 py-1 rounded-full bg-maracuya/20 text-sobre-maracuya uppercase tracking-wider">
-            En Preparación
+          <span className={`inline-block text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider ${
+            isExpired ? 'bg-amber-500/20 text-amber-700' : 'bg-maracuya/20 text-sobre-maracuya'
+          }`}>
+            {isExpired ? 'Pausa Temporal' : 'En Preparación'}
           </span>
           <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-tinta">
             {tenant.name}
           </h1>
           <p className="text-sm text-suave leading-relaxed">
-            Este restaurante está preparando su carta digital y aún no ha sido activado para pedidos en mesa.
+            {isExpired
+              ? 'Este restaurante se encuentra temporalmente fuera de servicio. Por favor consulta nuevamente más tarde.'
+              : 'Este restaurante está preparando su carta digital y aún no ha sido activado para pedidos en mesa.'}
           </p>
         </div>
         <div className="pt-2 border-t border-linea space-y-3">

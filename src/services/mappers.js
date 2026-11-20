@@ -1,7 +1,23 @@
 // Filas de la base de datos (snake_case) → objetos de la app (camelCase).
 
-export const tenantFromRow = (r) =>
-  r && {
+export const tenantFromRow = (r) => {
+  if (!r) return null;
+  const isExpired = Boolean(r.plan_expires_at && new Date(r.plan_expires_at).getTime() <= Date.now());
+  const isActive = r.is_active !== false && !isExpired;
+  let status = r.status;
+  if (!status) {
+    if (r.is_active === false && !r.plan_expires_at) {
+      status = 'pending_activation';
+    } else if (r.is_active === false) {
+      status = 'suspended';
+    } else if (isExpired) {
+      status = 'subscription_expired';
+    } else {
+      status = 'active';
+    }
+  }
+
+  return {
     id: r.id,
     slug: r.slug,
     name: r.name,
@@ -11,8 +27,9 @@ export const tenantFromRow = (r) =>
     phone: r.phone || '',
     email: r.email || '',
     plan: r.plan,
-    status: r.status || (r.is_active === false ? 'pending_activation' : 'active'),
-    isActive: r.is_active !== false,
+    status,
+    isActive,
+    isExpired,
     requestedPlan: r.requested_plan || r.plan || 'basic',
     planExpiresAt: r.plan_expires_at || null,
     taxType: r.tax_type,
@@ -22,6 +39,7 @@ export const tenantFromRow = (r) =>
     // Sin la columna (antes de la migración 20261110) se asume la pantalla de cocina encendida.
     kitchenDisplay: r.kitchen_display !== false
   };
+};
 
 export const tenantToRow = (t) => ({
   name: t.name,

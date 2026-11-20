@@ -730,5 +730,69 @@ await test('redeem_plan_code activa el restaurante y aplica el plan', async () =
   assert.equal(cats.length, 3);
 });
 
+console.log('\nCongelamiento dinámico por vencimiento de suscripción');
+await test('restaurante con fecha de plan en el pasado queda congelado automáticamente', async () => {
+  // Simular que el plan de burger-inactivo venció hace 1 día
+  await db.query(`update tenants set plan_expires_at = now() - interval '1 day' where slug = 'burger-inactivo'`);
+
+  // 1. RLS bloquea categorías y productos
+  const tenant = await one(`select id from tenants where slug = 'burger-inactivo'`);
+  const cats = await anon(() => rows(`select id, name from categories where tenant_id = $1`, [tenant.id]));
+  assert.equal(cats.length, 0);
+
+  // 2. Comensal no puede crear pedidos
+  await rejects(
+    anon(() => rows(`select create_order('burger-inactivo', 'invalid-token', '[]'::jsonb, true)`)),
+    /Restaurante no encontrado/
+  );
+
+  // 3. Solo el dueño aparece en la lista de login
+  const staffList = await anon(() => rows(`select id, display_name, role from list_staff_for_login('burger-inactivo')`));
+  assert.equal(staffList.length, 1);
+  assert.equal(staffList[0].role, 'owner');
+
+  // 4. Personal no-owner (si existiera) es rechazado en verify_staff_pin
+  const waiterId = (await one(`select create_staff_member('burger-inactivo', 'Mesero Vencido', 'mesero', '1111') as id`)).id;
+  const waiterLogin = await as('service_role', null, () =>
+    one(`select verify_staff_pin('burger-inactivo', $1, '1111') as r`, [waiterId])
+  );
+  assert.equal(waiterLogin.r.ok, false);
+  assert.equal(waiterLogin.r.reason, 'subscription_expired');
+
+  // 5. El Dueño sí puede autenticar su PIN para poder renovar
+  const ownerId = staffList[0].id;
+  const ownerLogin = await as('service_role', null, () =>
+    one(`select verify_staff_pin('burger-inactivo', $1, '9876') as r`, [ownerId])
+  );
+  assert.equal(ownerLogin.r.ok, true);
+  assert.equal(ownerLogin.r.role, 'owner');
+
+  // 6. Super Admin lista el estado como 'expired'
+  const adminTenants = await rows(`select slug, status from superadmin_list_tenants() where slug = 'burger-inactivo'`);
+  assert.equal(adminTenants[0].status, 'expired');
+});
+
+await test('canjear código de renovación descongela el restaurante y reanuda el servicio', async () => {
+  // Generar código de renovación de 30 días
+  const codeRes = await one(`select superadmin_create_upgrade_code('intermedio', 30, 'burger-inactivo', 'KGroup') as r`);
+  const code = codeRes.r.code;
+
+  // Canjear código
+  const redeemRes = await one(`select redeem_plan_code('burger-inactivo', $1) as r`, [code]);
+  assert.equal(redeemRes.r.ok, true);
+  assert.equal(redeemRes.r.isActive, true);
+
+  // Ahora el catálogo vuelve a estar disponible para el público
+  const tenant = await one(`select id, plan_expires_at from tenants where slug = 'burger-inactivo'`);
+  assert.ok(new Date(tenant.plan_expires_at) > new Date());
+
+  const cats = await anon(() => rows(`select id, name from categories where tenant_id = $1`, [tenant.id]));
+  assert.equal(cats.length, 3);
+
+  // Super Admin lista el estado como 'active'
+  const adminTenants = await rows(`select slug, status from superadmin_list_tenants() where slug = 'burger-inactivo'`);
+  assert.equal(adminTenants[0].status, 'active');
+});
+
 console.log(`\n${passed} pruebas pasaron${process.exitCode ? ' — HAY FALLOS' : ''}\n`);
 await db.close();

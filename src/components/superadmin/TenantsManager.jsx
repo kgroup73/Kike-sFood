@@ -182,6 +182,7 @@ export default function TenantsManager({
           >
             <option value="all">Todos los estados</option>
             <option value="active">Activos</option>
+            <option value="expired">Vencidos / Por Renovar</option>
             <option value="suspended">Suspendidos</option>
           </select>
 
@@ -211,6 +212,7 @@ export default function TenantsManager({
         ) : (
           tenants.map((tenant) => {
             const isSuspended = !tenant.is_active;
+            const isExpired = tenant.is_active && tenant.plan_expires_at && new Date(tenant.plan_expires_at).getTime() <= Date.now();
             const isTrattoria = tenant.slug === 'la-trattoria';
             const isIntermedio = tenant.plan === 'intermedio';
             const isPremium = tenant.plan === 'premium';
@@ -225,7 +227,11 @@ export default function TenantsManager({
               <div
                 key={tenant.id}
                 className={`card p-5 border transition-all duration-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 ${
-                  isSuspended ? 'border-red-200 bg-red-50/20 opacity-80' : 'border-linea bg-plato'
+                  isSuspended
+                    ? 'border-red-200 bg-red-50/20 opacity-80'
+                    : isExpired
+                    ? 'border-amber-300 bg-amber-50/30'
+                    : 'border-linea bg-plato'
                 }`}
               >
                 {/* Info Principal */}
@@ -250,6 +256,10 @@ export default function TenantsManager({
                     {isSuspended ? (
                       <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200">
                         <XCircle className="w-3 h-3" /> Suspendido
+                      </span>
+                    ) : isExpired ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                        <Clock className="w-3 h-3 text-amber-700" /> Vencido
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-800 border border-green-200">
