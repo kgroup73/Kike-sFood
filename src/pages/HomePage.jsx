@@ -215,9 +215,11 @@ export default function HomePage() {
           <Reveal className="text-center max-w-2xl mx-auto">
             <Timbre className="w-10 h-10 mx-auto" />
             <h2 id="producto-title" className="mt-5 font-display font-extrabold text-4xl sm:text-6xl tracking-[-0.03em] leading-[0.95]">
-              Para la mesa, la cocina y la caja.
+              Toca la mesa y la carta abre al instante.
             </h2>
-            <p className="mt-5 text-lg text-suave leading-relaxed">Un solo sistema con una pantalla para cada quien. Lo que pasa en una se ve en las otras.</p>
+            <p className="mt-5 text-lg text-suave leading-relaxed">
+              Sin descargar aplicaciones ni esperar al mesero. Tu cliente pide desde su celular, la cocina recibe al segundo y la caja factura en un clic.
+            </p>
           </Reveal>
           <div className="mt-14 grid lg:grid-cols-[2fr_3fr] gap-6 items-stretch">
             <Reveal variant="scale" className="rounded-[32px] bg-gradient-to-b from-plato to-maracuya/30 border border-linea p-6 sm:p-8 flex flex-col items-center justify-center">
