@@ -103,7 +103,7 @@ export default function NfcTapDemo({ url }) {
       </div>
 
       {/* Escenario de simulación con máscara de overflow */}
-      <div className="relative w-full max-w-[340px] h-[415px] flex items-center justify-center select-none overflow-hidden rounded-2xl bg-mantel/40 p-2 border border-linea/70 shadow-inner">
+      <div className="relative w-full max-w-[340px] h-[435px] flex items-center justify-center select-none overflow-hidden rounded-2xl bg-mantel/40 p-2 border border-linea/70 shadow-inner">
         {/* Mesa con Sticker físico real (en la parte superior de la mesa) */}
         <div
           className={`absolute transition-all duration-[650ms] ease-out z-10 ${
@@ -144,16 +144,24 @@ export default function NfcTapDemo({ url }) {
 
         {/* Teléfono móvil: sube con elegancia y contacta el chip sin solaparse como línea accidental */}
         <div
-          className={`absolute transition-all duration-[650ms] ease-[cubic-bezier(0.16,1,0.3,1)] z-20 ${
+          className={`absolute transition-all duration-[650ms] ease-[cubic-bezier(0.16,1,0.3,1)] z-20 rounded-[32px] ${
             step === 0
               ? 'translate-y-[280px] translate-x-2 rotate-[4deg] scale-90 opacity-75'
               : step === 3
-              ? 'translate-y-[15px] translate-x-0 rotate-0 scale-100 shadow-[0_22px_55px_-12px_rgba(0,0,0,0.5)]'
-              : 'translate-y-[45px] translate-x-0 rotate-0 scale-95 shadow-[0_0_35px_rgba(40,167,69,0.55)]'
+              ? 'translate-y-[15px] translate-x-0 rotate-0 scale-100'
+              : 'translate-y-[35px] translate-x-0 rotate-0 scale-95'
           }`}
         >
-          {/* Chasis del smartphone con acabado grafito puro sin bordes claros */}
-          <div className="w-[195px] h-[305px] rounded-[32px] bg-[#121614] p-2 ring-1 ring-white/10 shadow-2xl flex flex-col relative overflow-hidden">
+          {/* Chasis del smartphone con acabado grafito puro y esquinas redondeadas coincidentes con la sombra */}
+          <div
+            className={`w-[195px] h-[305px] rounded-[32px] bg-[#121614] p-2 ring-1 ring-white/10 flex flex-col relative overflow-hidden transition-shadow duration-[650ms] ${
+              step === 2
+                ? 'shadow-[0_0_35px_rgba(40,167,69,0.55)]'
+                : step === 3
+                ? 'shadow-[0_22px_55px_-12px_rgba(0,0,0,0.5)]'
+                : 'shadow-2xl'
+            }`}
+          >
             {/* Dynamic Island / Cámara */}
             <div className="absolute top-2 left-1/2 -translate-x-1/2 w-14 h-3.5 rounded-full bg-black z-30 flex items-center justify-center">
               <span className="w-1.5 h-1.5 rounded-full bg-neutral-800" />
