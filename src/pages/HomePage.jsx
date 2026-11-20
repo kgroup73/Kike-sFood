@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { QrCode, ChefHat, Receipt, Settings, LogIn, Radio, Smartphone, KeyRound, Percent, Coins, ClipboardCheck, Check } from 'lucide-react';
+import { QrCode, Nfc, ChefHat, Receipt, Settings, LogIn, Radio, Smartphone, KeyRound, Percent, Coins, ClipboardCheck, Check } from 'lucide-react';
 import BrandMark from '../components/ui/BrandMark';
 import Timbre from '../components/ui/Timbre';
 import HeroDevices from '../components/landing/HeroDevices';
@@ -37,7 +37,7 @@ const PLANES = [
     n: 'Plan 1',
     title: 'Solo la carta.',
     text: 'La carta con fotos, precios y descripciones en el celular del comensal. Nadie pide desde la mesa todavía: el mesero toma la orden como siempre.',
-    items: ['Carta digital con QR y NFC por mesa', 'Stickers de mesa listos para imprimir', 'Ocultar o agotar un plato al instante', 'Platos del chef, veganos, sin gluten y picantes señalados'],
+    items: ['Carta digital con NFC instantáneo y QR por mesa', 'Stickers de mesa listos para imprimir', 'Ocultar o agotar un plato al instante', 'Platos del chef, veganos, sin gluten y picantes señalados'],
     screen: CartaAdminScreen,
     url: 'kikes.app/staff/la-trattoria/admin/carta',
     alt: 'El editor de la carta en el panel de administración: la lista de platos con foto y precio, y los botones para ocultar, editar o eliminar cada uno'
@@ -66,13 +66,14 @@ const PLANES = [
 ];
 
 const PANTALLAS = [
-  { icon: QrCode, who: 'Mesa', title: 'Pide sin instalar nada', text: 'Escanea el QR o acerca el celular al NFC. La carta abre en el navegador, con fotos, opciones y maridajes.' },
+  { icon: Nfc, who: 'Mesa', title: 'Toca con NFC o escanea el QR', text: 'Inmediatez total: acerca el celular a la mesa como en un pago sin contacto. La carta abre en el navegador en un segundo, con fotos, opciones y maridajes.' },
   { icon: ChefHat, who: 'Cocina', title: 'Pendiente, en preparación, listo', text: 'Cada comanda avanza con un toque. Si se acaba un ingrediente, los platos que lo usan dejan de pedirse al instante.' },
   { icon: Receipt, who: 'Caja', title: 'Una cuenta por mesa', text: 'Todas las comandas de la mesa en un solo comprobante, con la propina que elija el cliente y el tiquete listo para imprimir.' },
   { icon: Settings, who: 'Administración', title: 'Cada quien ve lo suyo', text: 'Carta, mesas, personal con PIN, inventario y numeración de facturas. Dueño, cocina, caja y mesero entran a lo que les toca.' }
 ];
 
 const HECHOS = [
+  { icon: Nfc, title: 'NFC Inmediato + QR Universal', text: 'Toca la mesa y pide en un segundo sin abrir la cámara. El QR garantiza 100% de compatibilidad.' },
   { icon: Radio, title: 'Tiempo real', text: 'La carta, la cocina y la caja se actualizan solas, sin recargar.' },
   { icon: Smartphone, title: 'Sin instalar nada', text: 'Funciona en el navegador: el celular del comensal, la tablet de la cocina y el computador de la caja.' },
   { icon: KeyRound, title: 'PIN por persona', text: 'Dueño, administrador, cocina, caja y mesero. Cada quien entra a lo suyo.' },
@@ -82,7 +83,8 @@ const HECHOS = [
 ];
 
 const PREGUNTAS = [
-  { q: '¿El comensal tiene que instalar algo?', a: 'No. Escanea el QR o acerca el celular al NFC de la mesa y la carta abre en el navegador. Desde ahí pide y la cocina lo recibe al instante.' },
+  { q: '¿Por qué NFC en vez de solo código QR?', a: 'Porque elimina la fricción: el comensal no tiene que abrir la cámara, enfocar ni lidiar con mala luz o reflejos. Solo acerca su celular a la mesa —exactamente igual a un pago sin contacto— y la carta se abre al instante. Y para celulares sin NFC, el QR siempre está impreso como respaldo universal.' },
+  { q: '¿El comensal tiene que instalar algo?', a: 'No. Acerca el celular al NFC de la mesa o escanea el QR y la carta abre en el navegador. Desde ahí pide y la cocina lo recibe al instante.' },
   { q: '¿Qué pasa si se acaba un ingrediente?', a: 'La cocina lo marca como agotado y los platos que lo usan dejan de poder pedirse en la carta en ese momento. El faltante queda en el reporte de inventario.' },
   { q: '¿Cómo se cobra una mesa con varias comandas?', a: 'La caja ve todas las comandas de la mesa juntas y las cobra en un solo comprobante. La propina se elige en ese momento, no al pedir.' },
   { q: '¿Necesito una pantalla en la cocina?', a: 'No. Puedes trabajar con comandas impresas: el computador conectado a la impresora las imprime solas, sin vista previa, apenas el comensal envía el pedido. Si prefieres pantalla, se activa con un clic, y puedes usar las dos.' },
@@ -166,7 +168,7 @@ export default function HomePage() {
         {/* Portada */}
         <section aria-labelledby="hero-title" className="px-4 sm:px-6 pt-4">
           <div className="relative max-w-7xl mx-auto rounded-[32px] bg-gradient-to-b from-plato from-35% to-maracuya/40 overflow-hidden px-4 sm:px-8 pt-12 sm:pt-16 text-center">
-            <div className="flex items-center justify-center mb-6">
+            <div className="flex items-center justify-center mb-4">
               <span className="inline-flex items-center gap-3 select-none">
                 <Timbre className="w-12 h-12 sm:w-16 sm:h-16" />
                 <span className="font-display font-black tracking-tight text-4xl sm:text-5xl text-tinta">
@@ -174,11 +176,15 @@ export default function HomePage() {
                 </span>
               </span>
             </div>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-hoja/10 text-hoja text-xs sm:text-sm font-bold border border-hoja/20 mb-5 shadow-sm">
+              <Nfc className="w-4 h-4 animate-pulse shrink-0" aria-hidden="true" />
+              <span>Tecnología NFC Contactless + QR Universal</span>
+            </div>
             <h1 id="hero-title" className="font-display font-extrabold text-5xl sm:text-7xl lg:text-[88px] tracking-[-0.04em] leading-[0.92] max-w-4xl mx-auto">
               De la mesa a la cocina, sin papel.
             </h1>
             <p className="mt-6 text-lg sm:text-xl text-suave max-w-xl mx-auto leading-relaxed">
-              El comensal pide desde su mesa con el QR, la cocina lo ve al instante y la caja cobra la cuenta completa.
+              El comensal solo acerca su celular con NFC o escanea el QR: la carta abre al instante, la cocina recibe el pedido en segundos y la caja cobra en un clic.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link to="/crear-restaurante" className="btn btn-primary text-base px-6 h-12 shadow-lg">
@@ -233,7 +239,9 @@ export default function HomePage() {
           <div className="mt-14 grid lg:grid-cols-[2fr_3fr] gap-6 items-stretch">
             <Reveal variant="scale" className="rounded-[32px] bg-gradient-to-b from-plato to-maracuya/30 border border-linea px-8 py-12 flex flex-col items-center justify-center gap-10">
               <TableSticker url={qrUrl} />
-              <p className="text-center text-suave max-w-xs leading-relaxed">Imprime el sticker de cada mesa desde Administración. El QR y el NFC llevan a la carta de esa mesa.</p>
+              <p className="text-center text-suave max-w-xs leading-relaxed">
+                Stickers inteligentes con chip NFC y código QR. El comensal acerca el celular y pide sin fricción, o escanea el QR si prefiere la cámara.
+              </p>
             </Reveal>
             <ul className="grid sm:grid-cols-2 gap-4">
               {PANTALLAS.map(({ icon: Icon, who, title, text }, i) => (
@@ -297,9 +305,12 @@ export default function HomePage() {
             {isDemoMode ? (
               <div className="grid sm:grid-cols-2 gap-3">
                 <Link to={DEMO_MENU} className="group rounded-2xl bg-mantel text-tinta p-5 flex flex-col gap-3 hover:bg-plato transition-colors">
-                  <QrCode className="w-6 h-6 text-hoja" aria-hidden="true" />
+                  <div className="flex items-center gap-2 text-hoja">
+                    <Nfc className="w-6 h-6" aria-hidden="true" />
+                    <QrCode className="w-5 h-5 text-suave" aria-hidden="true" />
+                  </div>
                   <span className="font-display font-bold text-xl leading-tight group-hover:underline underline-offset-4">Abrir la carta de la Mesa 4</span>
-                  <span className="text-sm text-suave">Lo que ve el cliente al escanear el QR o tocar el NFC.</span>
+                  <span className="text-sm text-suave">Lo que ve el cliente al tocar con NFC o escanear el QR.</span>
                 </Link>
                 <Link to={DEMO_LOGIN} className="group rounded-2xl bg-mantel/10 border border-mantel/15 p-5 flex flex-col gap-3 hover:bg-mantel/15 transition-colors">
                   <LogIn className="w-6 h-6 text-maracuya" aria-hidden="true" />
