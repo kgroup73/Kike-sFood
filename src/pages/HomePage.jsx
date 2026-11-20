@@ -169,17 +169,13 @@ export default function HomePage() {
         {/* Portada */}
         <section aria-labelledby="hero-title" className="px-4 sm:px-6 pt-4">
           <div className="relative max-w-7xl mx-auto rounded-[32px] bg-gradient-to-b from-plato from-35% to-maracuya/40 overflow-hidden px-4 sm:px-8 pt-12 sm:pt-16 text-center">
-            <div className="flex items-center justify-center mb-4">
+            <div className="flex items-center justify-center mb-6">
               <span className="inline-flex items-center gap-3 select-none">
                 <Timbre className="w-12 h-12 sm:w-16 sm:h-16" />
                 <span className="font-display font-black tracking-tight text-4xl sm:text-5xl text-tinta">
                   Kike's
                 </span>
               </span>
-            </div>
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-hoja/10 text-hoja text-xs sm:text-sm font-bold border border-hoja/20 mb-5 shadow-sm">
-              <Nfc className="w-4 h-4 animate-pulse shrink-0" aria-hidden="true" />
-              <span>Tecnología NFC Contactless + QR Universal</span>
             </div>
             <h1 id="hero-title" className="font-display font-extrabold text-5xl sm:text-7xl lg:text-[88px] tracking-[-0.04em] leading-[0.92] max-w-4xl mx-auto">
               De la mesa a la cocina, sin papel.
