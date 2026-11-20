@@ -196,7 +196,31 @@ end $$;
 
 grant execute on function public.create_order(text, text, jsonb, boolean) to anon, authenticated;
 
--- 4. Actualizar call_waiter para rechazar llamados si el restaurante está vencido
+-- 4. Asegurar existencia de tabla waiter_calls y actualizar call_waiter
+create table if not exists public.waiter_calls (
+  id               bigint generated always as identity primary key,
+  tenant_id        uuid not null references public.tenants(id) on delete cascade,
+  table_id         uuid references public.restaurant_tables(id) on delete set null,
+  table_label      text not null,
+  created_at       timestamptz not null default now(),
+  attended_at      timestamptz,
+  attended_by_name text
+);
+
+create index if not exists waiter_calls_open_idx on public.waiter_calls(tenant_id, created_at desc)
+  where attended_at is null;
+
+alter table public.waiter_calls enable row level security;
+
+do $$ begin
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'waiter_calls' and policyname = 'waiter_calls_staff_read') then
+    create policy waiter_calls_staff_read on public.waiter_calls for select
+      using (public.has_staff_role(tenant_id));
+  end if;
+end $$;
+
+grant select on public.waiter_calls to authenticated;
+
 create or replace function public.call_waiter(p_slug text, p_table_token text)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare

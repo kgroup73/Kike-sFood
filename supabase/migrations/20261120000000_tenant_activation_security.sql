@@ -187,7 +187,31 @@ end $$;
 
 grant execute on function public.verify_staff_pin(text, uuid, text) to service_role;
 
--- 6. Actualizar redeem_plan_code para que active el restaurante (is_active = true)
+-- 6. Asegurar existencia de tabla plan_upgrade_codes y actualizar redeem_plan_code
+create table if not exists public.plan_upgrade_codes (
+  id                    uuid primary key default gen_random_uuid(),
+  code                  text not null unique check (length(btrim(code)) >= 6),
+  target_tenant_id      uuid references public.tenants(id) on delete cascade,
+  target_slug           text,
+  plan                  text not null check (plan in ('basic', 'intermedio', 'premium')),
+  duration_days         int default null,
+  expires_at            timestamptz not null default (now() + interval '30 days'),
+  redeemed_at           timestamptz default null,
+  redeemed_by_tenant_id uuid references public.tenants(id) on delete set null,
+  created_by            text,
+  created_at            timestamptz not null default now()
+);
+
+alter table public.plan_upgrade_codes enable row level security;
+
+do $$ begin
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'plan_upgrade_codes' and policyname = 'upgrade_codes_read') then
+    create policy upgrade_codes_read on public.plan_upgrade_codes for select to anon, authenticated using (true);
+  end if;
+end $$;
+
+grant select on public.plan_upgrade_codes to anon, authenticated;
+
 create or replace function public.redeem_plan_code(
   p_slug text,
   p_code text
