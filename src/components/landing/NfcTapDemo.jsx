@@ -7,33 +7,41 @@ import { CartaScreen } from './Screens';
 
 /**
  * Simulador interactivo de toque NFC en la mesa.
- * Emula fielmente la pantalla de un smartphone real: pantalla de bloqueo con reloj y estado,
- * toque con el chip NFC de la mesa, notificación nativa de sistema y apertura inmediata
- * de la carta digital en el navegador móvil.
+ * Sincronización precisa:
+ * - Paso 0: Celular en reposo abajo con pantalla de bloqueo realista.
+ * - Paso 1: Celular sube hacia la tarjeta (sin notificación previa).
+ * - Paso 2: JUSTO al llegar a la tarjeta, se produce el contacto: surgen las ondas NFC y salta la notificación nativa.
+ * - Paso 3: Se abre el navegador móvil con la carta digital lista para pedir.
  */
 export default function NfcTapDemo({ url }) {
-  // Pasos: 0: reposo abajo, 1: contacto NFC y notificación, 2: carta abierta en navegador
+  // 0: abajo reposo, 1: subiendo a la mesa, 2: contacto físico y notificación, 3: carta abierta
   const [step, setStep] = useState(0);
   const [isAuto, setIsAuto] = useState(true);
   const timerRef = useRef(null);
 
-  // Ciclo automático calibrado: dinámico, fluido y con tiempo justo para apreciar cada momento
   useEffect(() => {
     if (!isAuto) return undefined;
 
     const runCycle = () => {
-      // 0 -> 1: el teléfono sube de forma fluida hacia el chip NFC a los 1.4s
+      // 0 -> 1: a los 1.2s el teléfono comienza a subir hacia la tarjeta
       timerRef.current = setTimeout(() => {
-        setStep(1);
-        // 1 -> 2: toque NFC registrado, surge notificación y abre la carta a los 1.2s
+        setStep(1); // subiendo hacia la tarjeta (sin ondas ni notificación)
+
+        // El ascenso toma 950ms. Justo al llegar a la tarjeta:
         timerRef.current = setTimeout(() => {
-          setStep(2);
-          // 2 -> 0: carta visible para lectura por 4.2s antes de reiniciar el ciclo
+          setStep(2); // ¡LLEGÓ! Dispara ondas concéntricas y salta la notificación
+
+          // Permanece en contacto NFC durante 1.3s
           timerRef.current = setTimeout(() => {
-            setStep(0);
-          }, 4200);
-        }, 1200);
-      }, 1400);
+            setStep(3); // Se abre la carta digital en el navegador
+
+            // Mantiene la carta visible para lectura durante 4.2s antes de reiniciar
+            timerRef.current = setTimeout(() => {
+              setStep(0);
+            }, 4200);
+          }, 1300);
+        }, 950);
+      }, 1200);
     };
 
     runCycle();
@@ -48,12 +56,15 @@ export default function NfcTapDemo({ url }) {
     setIsAuto(false);
     setStep(0);
     setTimeout(() => {
-      setStep(1);
+      setStep(1); // sube
       setTimeout(() => {
-        setStep(2);
-        setTimeout(() => setIsAuto(true), 5500);
-      }, 1200);
-    }, 250);
+        setStep(2); // llega a la tarjeta: activa notificación y ondas
+        setTimeout(() => {
+          setStep(3); // abre carta
+          setTimeout(() => setIsAuto(true), 5500);
+        }, 1300);
+      }, 950);
+    }, 200);
   };
 
   return (
@@ -62,7 +73,7 @@ export default function NfcTapDemo({ url }) {
       <div className="flex items-center gap-1.5 sm:gap-2 mb-4 text-[11px] sm:text-xs font-bold">
         <span
           className={`px-2.5 sm:px-3 py-1 rounded-full transition-all duration-300 ${
-            step === 0
+            step <= 1
               ? 'bg-tinta text-mantel shadow-sm scale-105'
               : 'bg-mantel/70 text-suave border border-linea'
           }`}
@@ -72,7 +83,7 @@ export default function NfcTapDemo({ url }) {
         <span className="text-suave">→</span>
         <span
           className={`px-2.5 sm:px-3 py-1 rounded-full transition-all duration-300 flex items-center gap-1 ${
-            step === 1
+            step === 2
               ? 'bg-hoja text-sobre-hoja shadow-md scale-105 animate-pulse'
               : 'bg-mantel/70 text-suave border border-linea'
           }`}
@@ -82,7 +93,7 @@ export default function NfcTapDemo({ url }) {
         <span className="text-suave">→</span>
         <span
           className={`px-2.5 sm:px-3 py-1 rounded-full transition-all duration-300 flex items-center gap-1 ${
-            step === 2
+            step === 3
               ? 'bg-tinta text-mantel shadow-sm scale-105'
               : 'bg-mantel/70 text-suave border border-linea'
           }`}
@@ -96,7 +107,7 @@ export default function NfcTapDemo({ url }) {
         {/* Mesa con Sticker físico real (en el fondo) */}
         <div
           className={`absolute transition-all duration-1000 ease-out z-10 ${
-            step === 2
+            step === 3
               ? '-translate-y-20 scale-85 opacity-40 blur-[0.3px]'
               : '-translate-y-6 scale-95 opacity-100'
           }`}
@@ -111,8 +122,8 @@ export default function NfcTapDemo({ url }) {
 
             {/* Chip NFC objetivo en el sticker */}
             <div className="relative w-full py-1 px-2 rounded-xl bg-hoja/10 border border-hoja/30 flex items-center justify-center gap-1.5 text-hoja font-bold text-[11px] tracking-wide">
-              {/* Ondas concéntricas animadas durante el contacto (step === 1) */}
-              {step === 1 && (
+              {/* Ondas concéntricas animadas ÚNICAMENTE al hacer contacto (step === 2) */}
+              {step === 2 && (
                 <>
                   <span className="absolute inset-0 rounded-xl bg-hoja/30 animate-ping pointer-events-none" />
                   <span className="absolute -inset-4 rounded-2xl border-2 border-hoja/60 animate-nfc-ring pointer-events-none" />
@@ -128,14 +139,14 @@ export default function NfcTapDemo({ url }) {
           </div>
         </div>
 
-        {/* Teléfono móvil: sube fluidamente desde ABAJO */}
+        {/* Teléfono móvil: sube fluidamente hacia la tarjeta */}
         <div
-          className={`absolute transition-all duration-1000 ease-[cubic-bezier(0.2,1,0.3,1)] z-20 ${
+          className={`absolute transition-all duration-[950ms] ease-[cubic-bezier(0.2,1,0.3,1)] z-20 ${
             step === 0
               ? 'translate-y-[280px] translate-x-2 rotate-[4deg] scale-90 opacity-75'
-              : step === 1
-              ? 'translate-y-[25px] translate-x-0 rotate-0 scale-95 shadow-[0_0_35px_rgba(40,167,69,0.55)]'
-              : 'translate-y-[15px] translate-x-0 rotate-0 scale-100 shadow-[0_22px_55px_-12px_rgba(0,0,0,0.45)]'
+              : step === 3
+              ? 'translate-y-[15px] translate-x-0 rotate-0 scale-100 shadow-[0_22px_55px_-12px_rgba(0,0,0,0.45)]'
+              : 'translate-y-[25px] translate-x-0 rotate-0 scale-95 shadow-[0_0_35px_rgba(40,167,69,0.55)]'
           }`}
         >
           {/* Chasis del smartphone realista */}
@@ -147,7 +158,7 @@ export default function NfcTapDemo({ url }) {
 
             {/* Pantalla del smartphone */}
             <div className="w-full h-full rounded-[24px] overflow-hidden bg-mantel text-tinta flex flex-col relative">
-              {step < 2 ? (
+              {step < 3 ? (
                 /* Pantalla de bloqueo real de smartphone */
                 <div className="h-full flex flex-col justify-between p-3 bg-gradient-to-br from-neutral-900 via-neutral-950 to-neutral-900 text-white select-none relative overflow-hidden">
                   {/* Resplandores ambientales de wallpaper */}
@@ -174,12 +185,12 @@ export default function NfcTapDemo({ url }) {
                     </p>
                   </div>
 
-                  {/* Notificación flotante de sistema al hacer contacto NFC (step === 1) */}
+                  {/* Notificación flotante de sistema que salta ÚNICAMENTE al llegar a la tarjeta (step === 2) */}
                   <div
                     className={`my-auto z-30 transition-all duration-300 ease-out ${
-                      step === 1
+                      step === 2
                         ? 'opacity-100 scale-100 translate-y-0'
-                        : 'opacity-0 scale-90 translate-y-2 pointer-events-none'
+                        : 'opacity-0 scale-90 translate-y-3 pointer-events-none'
                     }`}
                   >
                     <div className="bg-neutral-800/95 backdrop-blur-md text-white p-2 rounded-xl border border-white/20 shadow-2xl flex items-center gap-2 text-left">
