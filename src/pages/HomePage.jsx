@@ -347,7 +347,7 @@ export default function HomePage() {
             <div className="mt-4 text-xs text-suave space-y-0.5">
               <p className="font-semibold text-tinta">{LEGAL_CONFIG.companyName}</p>
               <p>{LEGAL_CONFIG.domicile}</p>
-              <p className="text-suave/70">{LEGAL_CONFIG.nit}</p>
+              <p className="text-suave/70">{LEGAL_CONFIG.nit} · {LEGAL_CONFIG.registry}</p>
             </div>
           </div>
 

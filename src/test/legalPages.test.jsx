@@ -130,5 +130,7 @@ describe('Páginas Legales y Cumplimiento Normativo', () => {
     expect(privacidadLink).toHaveAttribute('href', '/privacidad');
     expect(cookiesLink).toHaveAttribute('href', '/cookies');
     expect(screen.getByText(/Propinas voluntarias: Ley 1935\/2018/i)).toBeInTheDocument();
+    expect(screen.getByText(/1123637665-1/)).toBeInTheDocument();
+    expect(screen.getByText(/51373/)).toBeInTheDocument();
   });
 });

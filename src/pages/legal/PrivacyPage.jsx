@@ -11,7 +11,7 @@ export default function PrivacyPage() {
       <section>
         <h2>1. Marco Normativo y Compromiso de Privacidad</h2>
         <p>
-          En <strong>{PROJECT_NAME}</strong>, una solución tecnológica desarrollada y operada por <strong>{LEGAL_CONFIG.companyName}</strong> ({LEGAL_CONFIG.nit}), reconocemos la importancia de la privacidad y la protección de los datos personales. Damos cumplimiento estricto a la <strong>Ley Estatutaria 1581 de 2012</strong>, su Decreto Reglamentario 1377 de 2013 (compilado en el Decreto Único 1074 de 2015) y demás normas concordantes expedidas por la Superintendencia de Industria y Comercio (SIC) de la República de Colombia.
+          En <strong>{PROJECT_NAME}</strong>, una solución tecnológica desarrollada y operada por <strong>{LEGAL_CONFIG.companyName}</strong> ({LEGAL_CONFIG.nit}, {LEGAL_CONFIG.registry}), reconocemos la importancia de la privacidad y la protección de los datos personales. Damos cumplimiento estricto a la <strong>Ley Estatutaria 1581 de 2012</strong>, su Decreto Reglamentario 1377 de 2013 (compilado en el Decreto Único 1074 de 2015) y demás normas concordantes expedidas por la Superintendencia de Industria y Comercio (SIC) de la República de Colombia.
         </p>
         <p>
           Esta Política describe qué datos recopilamos, con qué finalidades legítimas, cómo los protegemos y cuáles son los mecanismos para que usted ejerza sus derechos de Habeas Data.

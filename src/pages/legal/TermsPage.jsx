@@ -11,7 +11,7 @@ export default function TermsPage() {
       <section>
         <h2>1. Identificación y Aceptación</h2>
         <p>
-          Los presentes Términos y Condiciones regulan el acceso, navegación y uso de la plataforma tecnológica <strong>{PROJECT_NAME}</strong> (en adelante, la "Plataforma" o el "Servicio"), un software bajo la modalidad de Software como Servicio (SaaS) desarrollado y comercializado por <strong>{LEGAL_CONFIG.companyName}</strong> ({LEGAL_CONFIG.nit}), domiciliada en {LEGAL_CONFIG.domicile}.
+          Los presentes Términos y Condiciones regulan el acceso, navegación y uso de la plataforma tecnológica <strong>{PROJECT_NAME}</strong> (en adelante, la "Plataforma" o el "Servicio"), un software bajo la modalidad de Software como Servicio (SaaS) desarrollado y comercializado por <strong>{LEGAL_CONFIG.companyName}</strong> ({LEGAL_CONFIG.nit}, {LEGAL_CONFIG.registry} de la {LEGAL_CONFIG.chamberOfCommerce}), con domicilio en {LEGAL_CONFIG.domicile}.
         </p>
         <p>
           Al acceder a la Plataforma mediante código QR, tecnología NFC, URL directa o a través de nuestros paneles de administración y cocina, usted declara ser mayor de edad o contar con la capacidad legal suficiente en su jurisdicción, y acepta someterse de forma vinculante a estos Términos. Si no está de acuerdo con alguna disposición, deberá abstenerse de utilizar el Servicio.

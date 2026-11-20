@@ -10,9 +10,11 @@ export const MAKER_URL = 'https://www.kgroup.site/';
 export const LEGAL_CONFIG = {
   companyName: 'KGroup',
   tradeName: "Kike's Food",
-  nit: '[NIT en trámite / Registro KGroup]',
+  nit: 'NIT 1123637665-1',
+  registry: 'Matrícula Mercantil No. 51373',
+  chamberOfCommerce: 'Cámara de Comercio de San Andrés, Providencia y Santa Catalina',
   country: 'Colombia',
-  domicile: 'Colombia',
+  domicile: 'San Andrés Islas, Colombia',
   supportEmail: 'soporte@kgroup.site',
   legalEmail: 'legal@kgroup.site',
   contactUrl: 'https://www.kgroup.site/',
