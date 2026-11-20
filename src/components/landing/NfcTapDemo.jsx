@@ -7,14 +7,14 @@ import { CartaScreen } from './Screens';
 
 /**
  * Simulador interactivo de toque NFC en la mesa.
- * Sincronización precisa:
- * - Paso 0: Celular en reposo abajo con pantalla de bloqueo realista.
- * - Paso 1: Celular sube hacia la tarjeta (sin notificación previa).
- * - Paso 2: JUSTO al llegar a la tarjeta, se produce el contacto: surgen las ondas NFC y salta la notificación nativa.
- * - Paso 3: Se abre el navegador móvil con la carta digital lista para pedir.
+ * Dinámico y ágil:
+ * - Paso 0: Celular en reposo abajo con pantalla de bloqueo.
+ * - Paso 1: Celular sube ágilmente hacia la tarjeta (650ms).
+ * - Paso 2: Toque NFC instantáneo con ondas y notificación nativa (850ms).
+ * - Paso 3: Apertura rápida de la carta digital en el navegador móvil.
  */
 export default function NfcTapDemo({ url }) {
-  // 0: abajo reposo, 1: subiendo a la mesa, 2: contacto físico y notificación, 3: carta abierta
+  // 0: reposo abajo, 1: subiendo a la mesa, 2: contacto NFC y notificación, 3: carta abierta
   const [step, setStep] = useState(0);
   const [isAuto, setIsAuto] = useState(true);
   const timerRef = useRef(null);
@@ -23,25 +23,25 @@ export default function NfcTapDemo({ url }) {
     if (!isAuto) return undefined;
 
     const runCycle = () => {
-      // 0 -> 1: a los 1.2s el teléfono comienza a subir hacia la tarjeta
+      // 0 -> 1: a los 600ms el teléfono sube decididamente hacia la tarjeta
       timerRef.current = setTimeout(() => {
-        setStep(1); // subiendo hacia la tarjeta (sin ondas ni notificación)
+        setStep(1);
 
-        // El ascenso toma 950ms. Justo al llegar a la tarjeta:
+        // El ascenso toma 650ms. Justo al llegar a la tarjeta:
         timerRef.current = setTimeout(() => {
-          setStep(2); // ¡LLEGÓ! Dispara ondas concéntricas y salta la notificación
+          setStep(2); // ¡Contacto NFC! Ondas concéntricas y notificación emergente
 
-          // Permanece en contacto NFC durante 1.3s
+          // Permanece en lectura NFC durante 850ms
           timerRef.current = setTimeout(() => {
             setStep(3); // Se abre la carta digital en el navegador
 
-            // Mantiene la carta visible para lectura durante 4.2s antes de reiniciar
+            // Mantiene la carta visible durante 2.8s antes de reiniciar el ciclo
             timerRef.current = setTimeout(() => {
               setStep(0);
-            }, 4200);
-          }, 1300);
-        }, 950);
-      }, 1200);
+            }, 2800);
+          }, 850);
+        }, 650);
+      }, 600);
     };
 
     runCycle();
@@ -58,13 +58,13 @@ export default function NfcTapDemo({ url }) {
     setTimeout(() => {
       setStep(1); // sube
       setTimeout(() => {
-        setStep(2); // llega a la tarjeta: activa notificación y ondas
+        setStep(2); // contacto y notificación
         setTimeout(() => {
           setStep(3); // abre carta
-          setTimeout(() => setIsAuto(true), 5500);
-        }, 1300);
-      }, 950);
-    }, 200);
+          setTimeout(() => setIsAuto(true), 4000);
+        }, 850);
+      }, 650);
+    }, 150);
   };
 
   return (
@@ -72,7 +72,7 @@ export default function NfcTapDemo({ url }) {
       {/* Indicador de pasos superior */}
       <div className="flex items-center gap-1.5 sm:gap-2 mb-4 text-[11px] sm:text-xs font-bold">
         <span
-          className={`px-2.5 sm:px-3 py-1 rounded-full transition-all duration-300 ${
+          className={`px-2.5 sm:px-3 py-1 rounded-full transition-all duration-200 ${
             step <= 1
               ? 'bg-tinta text-mantel shadow-sm scale-105'
               : 'bg-mantel/70 text-suave border border-linea'
@@ -82,7 +82,7 @@ export default function NfcTapDemo({ url }) {
         </span>
         <span className="text-suave">→</span>
         <span
-          className={`px-2.5 sm:px-3 py-1 rounded-full transition-all duration-300 flex items-center gap-1 ${
+          className={`px-2.5 sm:px-3 py-1 rounded-full transition-all duration-200 flex items-center gap-1 ${
             step === 2
               ? 'bg-hoja text-sobre-hoja shadow-md scale-105 animate-pulse'
               : 'bg-mantel/70 text-suave border border-linea'
@@ -92,7 +92,7 @@ export default function NfcTapDemo({ url }) {
         </span>
         <span className="text-suave">→</span>
         <span
-          className={`px-2.5 sm:px-3 py-1 rounded-full transition-all duration-300 flex items-center gap-1 ${
+          className={`px-2.5 sm:px-3 py-1 rounded-full transition-all duration-200 flex items-center gap-1 ${
             step === 3
               ? 'bg-tinta text-mantel shadow-sm scale-105'
               : 'bg-mantel/70 text-suave border border-linea'
@@ -106,7 +106,7 @@ export default function NfcTapDemo({ url }) {
       <div className="relative w-full max-w-[340px] h-[415px] flex items-center justify-center select-none overflow-hidden rounded-2xl bg-mantel/40 p-2 border border-linea/70 shadow-inner">
         {/* Mesa con Sticker físico real (en el fondo) */}
         <div
-          className={`absolute transition-all duration-1000 ease-out z-10 ${
+          className={`absolute transition-all duration-[650ms] ease-out z-10 ${
             step === 3
               ? '-translate-y-20 scale-85 opacity-40 blur-[0.3px]'
               : '-translate-y-6 scale-95 opacity-100'
@@ -127,7 +127,7 @@ export default function NfcTapDemo({ url }) {
                 <>
                   <span className="absolute inset-0 rounded-xl bg-hoja/30 animate-ping pointer-events-none" />
                   <span className="absolute -inset-4 rounded-2xl border-2 border-hoja/60 animate-nfc-ring pointer-events-none" />
-                  <span className="absolute -inset-8 rounded-3xl border border-hoja/40 animate-nfc-ring [animation-delay:150ms] pointer-events-none" />
+                  <span className="absolute -inset-8 rounded-3xl border border-hoja/40 animate-nfc-ring [animation-delay:120ms] pointer-events-none" />
                 </>
               )}
               <Nfc className="w-3.5 h-3.5 animate-pulse shrink-0" aria-hidden="true" />
@@ -139,9 +139,9 @@ export default function NfcTapDemo({ url }) {
           </div>
         </div>
 
-        {/* Teléfono móvil: sube fluidamente hacia la tarjeta */}
+        {/* Teléfono móvil: sube ágilmente hacia la tarjeta */}
         <div
-          className={`absolute transition-all duration-[950ms] ease-[cubic-bezier(0.2,1,0.3,1)] z-20 ${
+          className={`absolute transition-all duration-[650ms] ease-[cubic-bezier(0.16,1,0.3,1)] z-20 ${
             step === 0
               ? 'translate-y-[280px] translate-x-2 rotate-[4deg] scale-90 opacity-75'
               : step === 3
@@ -185,9 +185,9 @@ export default function NfcTapDemo({ url }) {
                     </p>
                   </div>
 
-                  {/* Notificación flotante de sistema que salta ÚNICAMENTE al llegar a la tarjeta (step === 2) */}
+                  {/* Notificación emergente al hacer contacto NFC (step === 2) */}
                   <div
-                    className={`my-auto z-30 transition-all duration-300 ease-out ${
+                    className={`my-auto z-30 transition-all duration-200 ease-out ${
                       step === 2
                         ? 'opacity-100 scale-100 translate-y-0'
                         : 'opacity-0 scale-90 translate-y-3 pointer-events-none'
