@@ -9,6 +9,7 @@ import KitchenPage from './KitchenPage';
 import PosPage from './PosPage';
 import AdminPage from './AdminPage';
 import RequireSection from './RequireSection';
+import PendingActivationScreen from '../../components/admin/PendingActivationScreen';
 
 export default function StaffApp() {
   const { slug } = useParams();
@@ -22,8 +23,8 @@ export default function StaffApp() {
 }
 
 function StaffRoutes() {
-  const { tenant, loading, error } = useTenant();
-  const { staff, loading: sessionLoading } = useStaffSession();
+  const { tenant, loading, error, reload } = useTenant();
+  const { staff, loading: sessionLoading, logout } = useStaffSession();
 
   if (loading || sessionLoading) return <LoadingScreen label="Verificando sesión…" />;
   if (!tenant) {
@@ -34,6 +35,19 @@ function StaffRoutes() {
   // La sesión solo vale para el restaurante al que pertenece el empleado.
   const session = staff && staff.tenantId === tenant.id ? staff : null;
   const home = session ? `${base}/${homeSectionFor(session.role)}` : `${base}/login`;
+
+  // Si el restaurante aún no está activo: el dueño puede autenticarse con su PIN y canjear el código
+  if (tenant.isActive === false) {
+    if (session) {
+      return (
+        <PendingActivationScreen
+          tenant={tenant}
+          reload={reload}
+          onLogout={logout}
+        />
+      );
+    }
+  }
 
   return (
     <Routes>

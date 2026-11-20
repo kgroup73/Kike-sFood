@@ -25,6 +25,7 @@ export function useTenantOnboarding() {
   const [slugStatus, setSlugStatus] = useState({ checking: false, available: null, error: null });
   const [phone, setPhone] = useState('');
   const [city, setCity] = useState('');
+  const [selectedPlan, setSelectedPlan] = useState('intermedio');
 
   const [ownerName, setOwnerName] = useState('');
   const [pin, setPin] = useState('');
@@ -197,6 +198,7 @@ export function useTenantOnboarding() {
         slug: effectiveSlug,
         phone: phone.trim() || null,
         city: city.trim() || null,
+        plan: selectedPlan,
         ownerName: ownerName.trim(),
         pin
       });
@@ -212,7 +214,7 @@ export function useTenantOnboarding() {
     }
   }, [
     isEmailVerified, email, otpCode, restaurantName, effectiveSlug,
-    slugStatus, ownerName, pin, pinConfirm, phone, city
+    slugStatus, ownerName, pin, pinConfirm, phone, city, selectedPlan
   ]);
 
   return {
@@ -245,6 +247,8 @@ export function useTenantOnboarding() {
     setPhone,
     city,
     setCity,
+    selectedPlan,
+    setSelectedPlan,
 
     // Step 3: Owner
     ownerName,

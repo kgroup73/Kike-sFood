@@ -113,6 +113,8 @@ export default function RegisterPage() {
               setCity={onboarding.setCity}
               phone={onboarding.phone}
               setPhone={onboarding.setPhone}
+              selectedPlan={onboarding.selectedPlan}
+              setSelectedPlan={onboarding.setSelectedPlan}
               onNext={() => setStep(ONBOARDING_STEPS.OWNER)}
               onBack={() => setStep(ONBOARDING_STEPS.EMAIL)}
             />
@@ -133,7 +135,11 @@ export default function RegisterPage() {
           )}
 
           {step === ONBOARDING_STEPS.SUCCESS && (
-            <WelcomeSuccessModal tenant={onboarding.createdTenant} />
+            <WelcomeSuccessModal
+              tenant={onboarding.createdTenant}
+              selectedPlan={onboarding.selectedPlan}
+              phone={onboarding.phone}
+            />
           )}
         </div>
       </main>
