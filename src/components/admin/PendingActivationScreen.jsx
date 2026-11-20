@@ -13,8 +13,17 @@ export default function PendingActivationScreen({ tenant, reload, onLogout }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  const isExpired = Boolean(tenant?.isExpired || tenant?.status === 'subscription_expired');
   const planKey = tenant?.plan || tenant?.requestedPlan || 'intermedio';
   const planInfo = PLANS[planKey] || PLANS.intermedio;
+
+  const formattedExpiryDate = tenant?.planExpiresAt
+    ? new Date(tenant.planExpiresAt).toLocaleDateString('es-CO', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      })
+    : '';
 
   const handleActivate = async (e) => {
     e.preventDefault();
@@ -30,8 +39,9 @@ export default function PendingActivationScreen({ tenant, reload, onLogout }) {
         slug: tenant.slug,
         code: cleanCode
       });
-      setSuccess(res?.message || '¡Restaurante activado con éxito!');
-      showToast('¡Restaurante activado con éxito! Bienvenido.', 'success');
+      const okMsg = res?.message || (isExpired ? '¡Suscripción reactivada con éxito!' : '¡Restaurante activado con éxito!');
+      setSuccess(okMsg);
+      showToast(okMsg, 'success');
       setCode('');
       if (reload) {
         await reload();
@@ -43,7 +53,9 @@ export default function PendingActivationScreen({ tenant, reload, onLogout }) {
     }
   };
 
-  const whatsappMsg = `Hola KGroup, tengo registrada mi cuenta para el restaurante "${tenant?.name || ''}" (${tenant?.slug || ''}) y requiero mi código de activación.`;
+  const whatsappMsg = isExpired
+    ? `Hola KGroup, mi restaurante "${tenant?.name || ''}" (${tenant?.slug || ''}) terminó su período de suscripción${formattedExpiryDate ? ` el ${formattedExpiryDate}` : ''} y deseo renovar mi plan.`
+    : `Hola KGroup, tengo registrada mi cuenta para el restaurante "${tenant?.name || ''}" (${tenant?.slug || ''}) y requiero mi código de activación.`;
   const whatsappUrl = `https://wa.me/573148316310?text=${encodeURIComponent(whatsappMsg)}`;
 
   return (
@@ -76,21 +88,33 @@ export default function PendingActivationScreen({ tenant, reload, onLogout }) {
           </div>
 
           <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-maracuya/20 text-sobre-maracuya text-xs font-bold uppercase tracking-wider">
-              Activación Pendiente
+            <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+              isExpired ? 'bg-amber-500/20 text-amber-600' : 'bg-maracuya/20 text-sobre-maracuya'
+            }`}>
+              {isExpired ? 'Suscripción Finalizada' : 'Activación Pendiente'}
             </div>
             <h1 className="font-display font-black text-3xl text-tinta">
-              Tu cuenta está en espera de activación
+              {isExpired ? 'Tu suscripción ha finalizado' : 'Tu cuenta está en espera de activación'}
             </h1>
             <p className="text-suave text-sm max-w-md mx-auto leading-relaxed">
-              Para empezar a cargar tu menú y habilitar los pedidos en mesa, ingresa el código de activación entregado por <strong>KGroup</strong>.
+              {isExpired ? (
+                <>
+                  Tu plan finalizó{formattedExpiryDate ? ` el ${formattedExpiryDate}` : ''}. Para reanudar el servicio, pedidos y cocina de tu restaurante, ingresa tu nuevo código de activación o comunícate con <strong>KGroup</strong>.
+                </>
+              ) : (
+                <>
+                  Para empezar a cargar tu menú y habilitar los pedidos en mesa, ingresa el código de activación entregado por <strong>KGroup</strong>.
+                </>
+              )}
             </p>
           </div>
 
-          {/* Resumen del plan solicitado */}
+          {/* Resumen del plan */}
           <div className="p-4 rounded-2xl bg-mantel border border-linea text-left space-y-2 text-xs">
             <div className="flex items-center justify-between">
-              <span className="text-suave font-bold uppercase tracking-wider">Plan Solicitado:</span>
+              <span className="text-suave font-bold uppercase tracking-wider">
+                {isExpired ? 'Plan a Renovar:' : 'Plan Solicitado:'}
+              </span>
               <span className="font-bold text-hoja text-sm">{planInfo.label}</span>
             </div>
             <p className="text-suave">{planInfo.summary}</p>
@@ -100,7 +124,7 @@ export default function PendingActivationScreen({ tenant, reload, onLogout }) {
           <form onSubmit={handleActivate} className="space-y-4 pt-2">
             <div className="space-y-1.5 text-left">
               <label htmlFor="activation-code" className="text-xs font-bold text-suave uppercase tracking-wider block">
-                Código de activación *
+                {isExpired ? 'Código de renovación *' : 'Código de activación *'}
               </label>
               <div className="relative">
                 <KeyRound className="w-5 h-5 text-suave absolute left-3.5 top-1/2 -translate-y-1/2" aria-hidden="true" />
@@ -141,7 +165,7 @@ export default function PendingActivationScreen({ tenant, reload, onLogout }) {
                 </>
               ) : (
                 <>
-                  <span>Activar restaurante</span>
+                  <span>{isExpired ? 'Reactivar restaurante' : 'Activar restaurante'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -150,7 +174,11 @@ export default function PendingActivationScreen({ tenant, reload, onLogout }) {
 
           {/* Contacto por WhatsApp para obtener el código */}
           <div className="pt-4 border-t border-linea text-xs text-suave space-y-3">
-            <p>¿Aún no has recibido tu código de activación o necesitas pagar tu plan?</p>
+            <p>
+              {isExpired
+                ? '¿Necesitas adquirir tu código de renovación para este mes o año?'
+                : '¿Aún no has recibido tu código de activación o necesitas pagar tu plan?'}
+            </p>
             <a
               href={whatsappUrl}
               target="_blank"

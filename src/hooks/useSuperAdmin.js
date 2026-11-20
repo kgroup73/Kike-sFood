@@ -64,14 +64,17 @@ export function useSuperAdmin() {
   // Métricas agregadas de la plataforma
   const metrics = useMemo(() => {
     const totalTenants = tenants.length;
-    const activeTenants = tenants.filter((t) => t.is_active).length;
-    const suspendedTenants = totalTenants - activeTenants;
+    const isExpiredTenant = (t) => t.is_active && t.plan_expires_at && new Date(t.plan_expires_at).getTime() <= Date.now();
+    const activeTenants = tenants.filter((t) => t.is_active && (!t.plan_expires_at || new Date(t.plan_expires_at).getTime() > Date.now())).length;
+    const expiredTenants = tenants.filter(isExpiredTenant).length;
+    const suspendedTenants = tenants.filter((t) => !t.is_active).length;
     const totalOrders = tenants.reduce((acc, t) => acc + (Number(t.orders_count) || 0), 0);
     const totalSales = tenants.reduce((acc, t) => acc + (Number(t.total_sales) || 0), 0);
 
     return {
       totalTenants,
       activeTenants,
+      expiredTenants,
       suspendedTenants,
       totalOrders,
       totalSales
@@ -89,9 +92,11 @@ export function useSuperAdmin() {
         t.email?.toLowerCase().includes(q) ||
         t.city?.toLowerCase().includes(q);
 
+      const isExpired = t.plan_expires_at && new Date(t.plan_expires_at).getTime() <= Date.now();
       const matchesStatus =
         statusFilter === 'all' ||
-        (statusFilter === 'active' && t.is_active) ||
+        (statusFilter === 'active' && t.is_active && !isExpired) ||
+        (statusFilter === 'expired' && t.is_active && isExpired) ||
         (statusFilter === 'suspended' && !t.is_active);
 
       const matchesPlan = planFilter === 'all' || t.plan === planFilter;

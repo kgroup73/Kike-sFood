@@ -252,11 +252,19 @@ export const demoApi = {
 
   async getTenantBySlug(slug) {
     const db = load();
-    if (db.tenant.slug === slug) return delay(db.tenant);
-    const found = (db.tenants || []).find((t) => t.slug === slug);
-    if (found) return delay(found);
-    if (slug) return delay({ ...db.tenant, slug, name: slug, plan: 'basic' });
-    return delay(null);
+    let raw = null;
+    if (db.tenant.slug === slug) raw = db.tenant;
+    else if ((db.tenants || []).find((t) => t.slug === slug)) raw = (db.tenants || []).find((t) => t.slug === slug);
+    else if (slug) raw = { ...db.tenant, slug, name: slug, plan: 'basic' };
+
+    if (!raw) return delay(null);
+    const isExpired = Boolean(raw.planExpiresAt && new Date(raw.planExpiresAt).getTime() <= Date.now());
+    return delay({
+      ...raw,
+      isExpired,
+      isActive: raw.isActive !== false && !isExpired,
+      status: isExpired ? 'subscription_expired' : raw.status
+    });
   },
 
   async getMenu() {
