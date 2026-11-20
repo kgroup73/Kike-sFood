@@ -6,7 +6,8 @@ import QrCode from '../ui/QrCode';
 
 /**
  * Simulador interactivo de toque NFC en la mesa.
- * Dinámico y ágil:
+ * - Sin artefactos visuales: chasis oscuro con ring sin fugas blancas.
+ * - Sticker y teléfono posicionados con claridad para que el sticker no asome como líneas alrededor del móvil.
  * - Paso 0: Celular en reposo abajo con pantalla de bloqueo real.
  * - Paso 1: Celular sube ágilmente hacia la tarjeta (650ms).
  * - Paso 2: Toque NFC instantáneo con ondas y notificación nativa (850ms).
@@ -103,24 +104,26 @@ export default function NfcTapDemo({ url }) {
 
       {/* Escenario de simulación con máscara de overflow */}
       <div className="relative w-full max-w-[340px] h-[415px] flex items-center justify-center select-none overflow-hidden rounded-2xl bg-mantel/40 p-2 border border-linea/70 shadow-inner">
-        {/* Mesa con Sticker físico real (en el fondo) */}
+        {/* Mesa con Sticker físico real (en la parte superior de la mesa) */}
         <div
           className={`absolute transition-all duration-[650ms] ease-out z-10 ${
-            step === 3
-              ? '-translate-y-20 scale-85 opacity-40 blur-[0.3px]'
-              : '-translate-y-6 scale-95 opacity-100'
+            step === 0
+              ? '-translate-y-4 scale-95 opacity-100'
+              : step === 3
+              ? '-translate-y-[105px] scale-80 opacity-20 blur-[0.5px]'
+              : '-translate-y-[85px] scale-90 opacity-100'
           }`}
         >
-          <div className="relative w-[210px] h-[260px] rounded-3xl bg-plato border-2 border-tinta p-3.5 flex flex-col items-center justify-between text-center shadow-[0_16px_45px_-15px_rgb(30_43_36/0.28)]">
-            <span className="inline-flex items-center gap-1.5 font-display font-extrabold text-sm tracking-tight text-tinta">
-              <Timbre className="w-4 h-4" /> Kike's
+          <div className="relative w-[190px] h-[225px] rounded-3xl bg-plato border-2 border-tinta p-3 flex flex-col items-center justify-between text-center shadow-[0_16px_40px_-15px_rgb(30_43_36/0.25)]">
+            <span className="inline-flex items-center gap-1.5 font-display font-extrabold text-xs tracking-tight text-tinta">
+              <Timbre className="w-3.5 h-3.5" /> Kike's
             </span>
             <span className="font-display font-extrabold text-2xl tracking-tight leading-none text-tinta">
               Mesa 4
             </span>
 
             {/* Chip NFC objetivo en el sticker */}
-            <div className="relative w-full py-1 px-2 rounded-xl bg-hoja/10 border border-hoja/30 flex items-center justify-center gap-1.5 text-hoja font-bold text-[11px] tracking-wide">
+            <div className="relative w-full py-1 px-2 rounded-xl bg-hoja/10 border border-hoja/30 flex items-center justify-center gap-1.5 text-hoja font-bold text-[10px] tracking-wide">
               {/* Ondas concéntricas animadas ÚNICAMENTE al hacer contacto (step === 2) */}
               {step === 2 && (
                 <>
@@ -133,30 +136,30 @@ export default function NfcTapDemo({ url }) {
               <span>Chip NFC de la Mesa</span>
             </div>
 
-            <QrCode value={url} size={85} label="QR de Mesa 4" className="rounded-lg" />
-            <span className="text-[9px] text-suave">Acerca tu móvil o escanea el QR</span>
+            <QrCode value={url} size={72} label="QR de Mesa 4" className="rounded-lg" />
+            <span className="text-[8px] text-suave">Acerca tu móvil o escanea el QR</span>
           </div>
         </div>
 
-        {/* Teléfono móvil: sube ágilmente hacia la tarjeta */}
+        {/* Teléfono móvil: sube con elegancia y contacta el chip sin solaparse como línea accidental */}
         <div
           className={`absolute transition-all duration-[650ms] ease-[cubic-bezier(0.16,1,0.3,1)] z-20 ${
             step === 0
               ? 'translate-y-[280px] translate-x-2 rotate-[4deg] scale-90 opacity-75'
               : step === 3
-              ? 'translate-y-[15px] translate-x-0 rotate-0 scale-100 shadow-[0_22px_55px_-12px_rgba(0,0,0,0.45)]'
-              : 'translate-y-[25px] translate-x-0 rotate-0 scale-95 shadow-[0_0_35px_rgba(40,167,69,0.55)]'
+              ? 'translate-y-[15px] translate-x-0 rotate-0 scale-100 shadow-[0_22px_55px_-12px_rgba(0,0,0,0.5)]'
+              : 'translate-y-[45px] translate-x-0 rotate-0 scale-95 shadow-[0_0_35px_rgba(40,167,69,0.55)]'
           }`}
         >
-          {/* Chasis del smartphone */}
-          <div className="w-[200px] h-[310px] rounded-[32px] bg-tinta p-2 border border-mantel/20 text-mantel flex flex-col relative overflow-hidden">
+          {/* Chasis del smartphone con acabado grafito puro sin bordes claros */}
+          <div className="w-[195px] h-[305px] rounded-[32px] bg-[#121614] p-2 ring-1 ring-white/10 shadow-2xl flex flex-col relative overflow-hidden">
             {/* Dynamic Island / Cámara */}
-            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-14 h-3.5 rounded-full bg-black/90 z-30 flex items-center justify-center">
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-14 h-3.5 rounded-full bg-black z-30 flex items-center justify-center">
               <span className="w-1.5 h-1.5 rounded-full bg-neutral-800" />
             </div>
 
-            {/* Pantalla del smartphone */}
-            <div className="w-full h-full rounded-[24px] overflow-hidden bg-mantel text-tinta flex flex-col relative">
+            {/* Pantalla del smartphone con fondo negro puro que elimina cualquier línea de antialiasing */}
+            <div className="w-full h-full rounded-[24px] overflow-hidden bg-black text-tinta flex flex-col relative">
               {step < 3 ? (
                 /* Pantalla de bloqueo real de smartphone */
                 <div className="h-full flex flex-col justify-between p-3 bg-gradient-to-br from-neutral-900 via-neutral-950 to-neutral-900 text-white select-none relative overflow-hidden">
