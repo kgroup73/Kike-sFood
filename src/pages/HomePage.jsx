@@ -21,8 +21,8 @@ const DEMO_MENU = `/r/${DEMO_TENANT.slug}/m/${demoTableToken(4)}`;
 const DEMO_LOGIN = `/staff/${DEMO_TENANT.slug}/login`;
 
 const NAV = [
-  { href: '#planes', label: 'Planes' },
   { href: '#producto', label: 'Cómo funciona' },
+  { href: '#planes', label: 'Planes' },
   { href: '#preguntas', label: 'Preguntas' }
 ];
 
@@ -210,19 +210,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Planes: el panel del personal en el computador, un plan por bloque */}
-        <section id="planes" aria-labelledby="planes-title" className="px-4 sm:px-6 scroll-mt-16 space-y-4">
-          <Reveal className="text-center max-w-2xl mx-auto pt-20 sm:pt-28 pb-8">
-            <h2 id="planes-title" className="font-display font-extrabold text-4xl sm:text-6xl tracking-[-0.03em] leading-[0.95]">
-              Un plan para cada etapa.
-            </h2>
-            <p className="mt-5 text-lg text-suave leading-relaxed">Empieza con la carta y suma pedidos, cocina y caja cuando los necesites. El plan lo administra la plataforma.</p>
-          </Reveal>
-          {PLANES.map((plan, i) => (
-            <PlanRow key={plan.key} plan={plan} index={i} flip={i % 2 === 1} />
-          ))}
-        </section>
-
         {/* Cómo funciona */}
         <section id="producto" aria-labelledby="producto-title" className="max-w-7xl mx-auto px-4 sm:px-6 py-20 sm:py-28 scroll-mt-16">
           <Reveal className="text-center max-w-2xl mx-auto">
@@ -251,6 +238,19 @@ export default function HomePage() {
               ))}
             </ul>
           </div>
+        </section>
+
+        {/* Planes: el panel del personal en el computador, un plan por bloque */}
+        <section id="planes" aria-labelledby="planes-title" className="px-4 sm:px-6 scroll-mt-16 space-y-4">
+          <Reveal className="text-center max-w-2xl mx-auto pt-10 sm:pt-16 pb-8">
+            <h2 id="planes-title" className="font-display font-extrabold text-4xl sm:text-6xl tracking-[-0.03em] leading-[0.95]">
+              Un plan para cada etapa.
+            </h2>
+            <p className="mt-5 text-lg text-suave leading-relaxed">Empieza con la carta y suma pedidos, cocina y caja cuando los necesites. El plan lo administra la plataforma.</p>
+          </Reveal>
+          {PLANES.map((plan, i) => (
+            <PlanRow key={plan.key} plan={plan} index={i} flip={i % 2 === 1} />
+          ))}
         </section>
 
         {/* Hechos */}
