@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import TableStickersModal from '../components/admin/TableStickersModal';
-import { escapeHtml, getStickerLogoSvg, buildStickersHtml } from '../components/admin/stickers/stickerHtmlTemplate';
+import { escapeHtml, getStickerLogoSvg, getNfcIconSvg, buildStickersHtml } from '../components/admin/stickers/stickerHtmlTemplate';
 
 afterEach(() => {
   cleanup();
@@ -38,6 +38,14 @@ describe('stickerHtmlTemplate (Utilidades Puras de Impresión)', () => {
     expect(html).toContain('MESA 1');
     expect(html).toContain('MESA 2');
     expect(html).toContain('data:image/png;base64,mockqr1');
+    expect(html).toContain('nfc-target');
+    expect(html).toContain('Acerca tu móvil o escanea el QR');
+  });
+
+  it('genera SVG del icono NFC para la señalización central', () => {
+    const nfcSvg = getNfcIconSvg('#1E2B24');
+    expect(nfcSvg).toContain('<svg');
+    expect(nfcSvg).toContain('stroke="#1E2B24"');
   });
 });
 

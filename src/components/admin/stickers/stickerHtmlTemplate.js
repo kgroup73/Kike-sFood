@@ -42,12 +42,23 @@ export function getStickerLogoSvg(isMono) {
   </svg>`;
 }
 
+// SVG oficial del símbolo NFC Contactless
+export function getNfcIconSvg(color = '#1E2B24') {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/>
+    <path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/>
+    <path d="M12.91 4.1a15.91 15.91 0 0 1 .01 15.8"/>
+    <path d="M16.37 2a20.16 20.16 0 0 1 0 20"/>
+  </svg>`;
+}
+
 // Plantilla HTML optimizada para impresión: tamaño compacto calibrado (8.8 x 8.5 cm, 6 por hoja A4)
 export function buildStickersHtml(tenant, tablesWithQr, printMode = 'color') {
   const tenantName = escapeHtml(tenant?.name || '');
   const isSingle = tablesWithQr.length === 1;
   const isMono = printMode === 'mono';
   const logoSvg = getStickerLogoSvg(isMono);
+  const nfcSvg = getNfcIconSvg(isMono ? '#1E2B24' : '#1E2B24');
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -164,30 +175,28 @@ export function buildStickersHtml(tenant, tablesWithQr, printMode = 'color') {
       line-height: 0;
     }
     .qr-img {
-      width: 44mm;
-      height: 44mm;
+      width: 40mm;
+      height: 40mm;
       display: block;
     }
-    .nfc-pill {
-      width: 100%;
-      background: #1E2B24;
-      color: #FFFFFF;
-      padding: 4px 6px;
-      border-radius: 6px;
-      font-size: 8px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-      margin-top: 1px;
-      box-sizing: border-box;
+    .nfc-target {
+      width: 7mm;
+      height: 7mm;
+      border-radius: 50%;
+      background: #F6F7F3;
+      border: 1px solid #D5DBD5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 1.5mm auto;
     }
     .scan-note {
       font-size: 7.5px;
       font-weight: 700;
       color: #56655C;
       text-transform: uppercase;
-      letter-spacing: 0.4px;
-      margin-top: 2px;
+      letter-spacing: 0.5px;
+      margin-top: 1mm;
     }
     .single-guide {
       margin-top: 8px;
@@ -231,13 +240,13 @@ export function buildStickersHtml(tenant, tablesWithQr, printMode = 'color') {
             <div class="brand-name">${tenantName}</div>
             <div class="table-num">MESA ${escapeHtml(t.label)}</div>
           </div>
+          <div class="nfc-target">
+            ${nfcSvg}
+          </div>
           <div class="qr-box">
             <img class="qr-img" src="${t.qrDataUrl}" alt="QR Mesa ${escapeHtml(t.label)}" />
           </div>
-          <div style="width: 100%;">
-            <div class="nfc-pill">📲 Toca con tu celular (NFC)</div>
-            <div class="scan-note">O escanea para ver la carta y pedir</div>
-          </div>
+          <div class="scan-note">Acerca tu móvil o escanea el QR</div>
         </div>
         ${isSingle ? `<div class="single-guide header-bar" style="background:none; color:#56655C; margin:6px 0 0 0; font-size:10px;">✂️ Tamaño de corte: 8.8 cm × 8.5 cm</div>` : ''}
       </div>

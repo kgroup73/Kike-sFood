@@ -115,11 +115,6 @@ export default function NfcTapDemo({ url }) {
           }`}
         >
           <div className="relative w-[190px] h-[230px] rounded-3xl bg-plato border-2 border-tinta p-3 flex flex-col items-center justify-between text-center shadow-[0_16px_40px_-15px_rgb(30_43_36/0.25)]">
-            {/* Indicador contactless en la esquina superior */}
-            <span className="absolute top-2.5 right-3 text-suave/60" title="Contactless">
-              <Nfc className="w-3.5 h-3.5" />
-            </span>
-
             <span className="inline-flex items-center gap-1.5 font-display font-extrabold text-xs tracking-tight text-tinta">
               <Timbre className="w-3.5 h-3.5" /> Kike's
             </span>
