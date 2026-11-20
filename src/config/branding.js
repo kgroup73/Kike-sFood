@@ -14,7 +14,7 @@ export const LEGAL_CONFIG = {
   registry: 'Matrícula Mercantil No. 51373',
   chamberOfCommerce: 'Cámara de Comercio de San Andrés, Providencia y Santa Catalina',
   country: 'Colombia',
-  domicile: 'San Andrés Islas, Colombia',
+  domicile: 'Medellín, Colombia',
   supportEmail: 'soporte@kgroup.site',
   legalEmail: 'legal@kgroup.site',
   contactUrl: 'https://www.kgroup.site/',
