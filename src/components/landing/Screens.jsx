@@ -69,7 +69,7 @@ const CATEGORIAS = ['Entradas', 'Platos fuertes', 'Postres', 'Bebidas'];
 /** La carta de la mesa: refleja con fidelidad editorial la interfaz real del comensal. */
 export function CartaScreen() {
   return (
-    <div className="h-full flex flex-col pt-8 text-left text-tinta bg-mantel select-none overflow-hidden">
+    <div className="h-full flex flex-col pt-3.5 text-left text-tinta bg-mantel select-none overflow-hidden">
       {/* Cabecera del restaurante */}
       <div className="px-4 pt-1 flex items-start justify-between gap-2 border-b border-linea/60 pb-2 shrink-0 text-left">
         <div className="min-w-0 text-left">
@@ -191,7 +191,7 @@ export function PlatoScreen() {
     <div className="h-full flex flex-col text-left text-tinta">
       <div className="relative h-48 shrink-0">
         <img src="/dishes/risotto.jpg" alt="" className="absolute inset-0 w-full h-full object-cover" />
-        <span className="absolute top-10 left-4 w-8 h-8 rounded-full bg-plato/95 inline-flex items-center justify-center">
+        <span className="absolute top-4 left-4 w-8 h-8 rounded-full bg-plato/95 inline-flex items-center justify-center">
           <ArrowLeft className="w-4 h-4" />
         </span>
       </div>
@@ -262,7 +262,7 @@ export function PedidoScreen() {
     { q: 2, name: 'Limonada de flor de saúco', price: '$24.000' }
   ];
   return (
-    <div className="h-full flex flex-col pt-11 text-left text-tinta">
+    <div className="h-full flex flex-col pt-5 text-left text-tinta">
       <div className="px-5">
         <p className="text-xs text-suave">Mesa 4</p>
         <p className="font-display font-extrabold text-xl tracking-tight leading-none">Tu pedido</p>

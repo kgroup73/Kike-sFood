@@ -162,11 +162,6 @@ export default function NfcTapDemo({ url }) {
                 : 'shadow-2xl'
             }`}
           >
-            {/* Dynamic Island / Cámara */}
-            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-14 h-3.5 rounded-full bg-black z-30 flex items-center justify-center">
-              <span className="w-1.5 h-1.5 rounded-full bg-neutral-800" />
-            </div>
-
             {/* Pantalla del smartphone con fondo negro puro que elimina cualquier línea de antialiasing */}
             <div className="w-full h-full rounded-[24px] overflow-hidden bg-black text-tinta flex flex-col relative">
               {step < 3 ? (
