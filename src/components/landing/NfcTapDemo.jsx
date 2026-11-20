@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { Nfc, RotateCcw, CheckCircle2, ArrowRight, Wifi, Battery, Lock, Camera, Flashlight, Globe, Plus } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Nfc, CheckCircle2, Wifi, Battery, Lock, Camera, Flashlight, Globe, Plus } from 'lucide-react';
 import Timbre from '../ui/Timbre';
 import QrCode from '../ui/QrCode';
 
@@ -16,56 +15,37 @@ import QrCode from '../ui/QrCode';
 export default function NfcTapDemo({ url }) {
   // 0: reposo abajo, 1: subiendo a la mesa, 2: contacto NFC y notificación, 3: carta abierta
   const [step, setStep] = useState(0);
-  const [isAuto, setIsAuto] = useState(true);
-  const timerRef = useRef(null);
 
   useEffect(() => {
-    if (!isAuto) return undefined;
+    let t1, t2, t3, t4;
 
-    const runCycle = () => {
-      // 0 -> 1: a los 600ms el teléfono sube decididamente hacia la tarjeta
-      timerRef.current = setTimeout(() => {
-        setStep(1);
+    // 0 -> 1: a los 600ms el teléfono sube decididamente hacia la tarjeta
+    t1 = setTimeout(() => {
+      setStep(1);
 
-        // El ascenso toma 650ms. Justo al llegar a la tarjeta:
-        timerRef.current = setTimeout(() => {
-          setStep(2); // ¡Contacto NFC! Ondas concéntricas y notificación emergente
+      // El ascenso toma 650ms. Justo al llegar a la tarjeta:
+      t2 = setTimeout(() => {
+        setStep(2); // ¡Contacto NFC! Ondas concéntricas y notificación emergente
 
-          // Permanece en lectura NFC durante 850ms
-          timerRef.current = setTimeout(() => {
-            setStep(3); // Se abre la carta digital en el navegador
+        // Permanece en lectura NFC durante 850ms
+        t3 = setTimeout(() => {
+          setStep(3); // Se abre la carta digital en el navegador
 
-            // Mantiene la carta visible durante 3.2s antes de reiniciar el ciclo
-            timerRef.current = setTimeout(() => {
-              setStep(0);
-            }, 3200);
-          }, 850);
-        }, 650);
-      }, 600);
-    };
-
-    runCycle();
-
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [step === 0, isAuto]);
-
-  const handleManualTrigger = () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    setIsAuto(false);
-    setStep(0);
-    setTimeout(() => {
-      setStep(1); // sube
-      setTimeout(() => {
-        setStep(2); // contacto y notificación
-        setTimeout(() => {
-          setStep(3); // abre carta
-          setTimeout(() => setIsAuto(true), 4500);
+          // Mantiene la carta visible durante 3.2s antes de reiniciar el ciclo
+          t4 = setTimeout(() => {
+            setStep(0);
+          }, 3200);
         }, 850);
       }, 650);
-    }, 150);
-  };
+    }, 600);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+    };
+  }, [step === 0]);
 
   return (
     <div className="w-full flex flex-col items-center">
@@ -297,28 +277,9 @@ export default function NfcTapDemo({ url }) {
         </div>
       </div>
 
-      {/* Botón manual para probar en video y enlace directo */}
-      <div className="mt-5 flex flex-col sm:flex-row items-center justify-center gap-2.5 w-full">
-        <button
-          type="button"
-          onClick={handleManualTrigger}
-          className="btn btn-sm btn-primary flex items-center gap-2 px-4 h-10 shadow-md text-xs active:scale-95 transition-transform"
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-          <span>Simular toque NFC</span>
-        </button>
-
-        <Link
-          to="/r/la-trattoria/m/demo-mesa-4"
-          className="btn btn-sm btn-quiet text-xs flex items-center gap-1.5 h-10 hover:text-tinta"
-        >
-          <span>Abrir carta de Mesa 4</span>
-          <ArrowRight className="w-3.5 h-3.5 text-hoja" />
-        </Link>
-      </div>
-
-      <p className="mt-3 text-center text-xs text-suave max-w-xs leading-relaxed">
-        El cliente acerca su celular hacia la mesa y el navegador abre la carta al instante.
+      {/* Explicación concisa y elegante del flujo */}
+      <p className="mt-5 text-center text-xs sm:text-sm text-suave max-w-sm leading-relaxed font-medium">
+        El cliente acerca su teléfono al sticker en la mesa, y el navegador abre la carta al instante.
       </p>
     </div>
   );
