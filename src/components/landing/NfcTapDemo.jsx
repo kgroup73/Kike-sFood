@@ -208,15 +208,24 @@ export default function NfcTapDemo({ url }) {
                   </div>
                 </div>
               ) : (
-                /* Pantalla de la carta abierta al escanear (Inmersiva, sin notch ni barra de URL) */
+                /* Pantalla de la carta abierta al escanear (Inmersiva con status bar realista, sin notch) */
                 <div className="h-full w-full flex flex-col bg-mantel text-tinta select-none overflow-hidden animate-fadeIn text-left">
+                  {/* Header con hora, wifi y batería al ver la carta */}
+                  <div className="flex items-center justify-between text-[9px] text-tinta/80 px-2.5 pt-1.5 pb-0.5 shrink-0 font-semibold tracking-tight">
+                    <span>9:41</span>
+                    <div className="flex items-center gap-1 text-tinta/70">
+                      <Wifi className="w-2.5 h-2.5" />
+                      <Battery className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
+
                   {/* Cabecera del restaurante recién abierto */}
-                  <div className="px-3 pt-3 pb-1.5 border-b border-linea/50 shrink-0">
+                  <div className="px-3 pt-1 pb-1.5 border-b border-linea/50 shrink-0">
                     <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-hoja/10 text-hoja text-[8px] font-bold">
                       <span className="w-1 h-1 rounded-full bg-hoja animate-pulse" />
                       <span>Mesa 4 · pide desde aquí</span>
                     </div>
-                    <h3 className="font-display font-extrabold text-[13px] leading-tight text-tinta truncate mt-0.5">
+                    <h3 className="font-display font-extrabold text-[12px] leading-tight text-tinta truncate mt-0.5">
                       La Trattoria Gourmet
                     </h3>
                   </div>

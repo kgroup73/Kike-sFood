@@ -25,7 +25,7 @@ export default function HeroDevices() {
         <div className="hidden sm:block animate-rise [animation-delay:120ms]">
           <div className="hero-fan-left">
             <div className="w-[250px] lg:w-[290px] h-[480px] lg:h-[560px] translate-x-10 translate-y-10">
-              <PhoneFrame className="h-full">
+              <PhoneFrame className="h-full" statusTone="light">
                 <PlatoScreen />
               </PhoneFrame>
             </div>
