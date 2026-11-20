@@ -264,7 +264,7 @@ export default function HomePage() {
         </section>
 
         {/* Hechos */}
-        <section aria-labelledby="hechos-title" className="px-4 sm:px-6 mt-12 sm:mt-20">
+        <section aria-labelledby="hechos-title" className="px-4 sm:px-6 mt-1 sm:mt-1">
           <div className="max-w-7xl mx-auto rounded-[32px] bg-plato border border-linea px-4 sm:px-10 py-16 sm:py-24">
             <Reveal className="text-center max-w-2xl mx-auto">
               <h2 id="hechos-title" className="font-display font-extrabold text-4xl sm:text-6xl tracking-[-0.03em] leading-[0.95]">Hecho para el servicio de todos los días.</h2>
