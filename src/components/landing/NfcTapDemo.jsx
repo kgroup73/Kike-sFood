@@ -7,8 +7,9 @@ import { CartaScreen } from './Screens';
 
 /**
  * Simulador interactivo de toque NFC en la mesa.
- * El teléfono emerge desde abajo del recuadro (emulando la mano del cliente acercando
- * el móvil a la mesa), toca el chip NFC produciendo ondas y abre la carta digital.
+ * Movimiento pausado y elegante: el teléfono emerge con calma desde abajo
+ * (emulando la mano del cliente acercando el móvil a la mesa), se posa
+ * en el chip NFC produciendo ondas y abre la carta digital.
  */
 export default function NfcTapDemo({ url }) {
   // Pasos: 0: abajo en reposo, 1: sube y toca NFC, 2: carta abierta
@@ -16,23 +17,23 @@ export default function NfcTapDemo({ url }) {
   const [isAuto, setIsAuto] = useState(true);
   const timerRef = useRef(null);
 
-  // Ciclo automático para dar vida continua
+  // Ciclo automático con cadencia pausada para que se aprecie con claridad
   useEffect(() => {
     if (!isAuto) return undefined;
 
     const runCycle = () => {
-      // 0 -> 1 (sube y hace contacto con NFC) a los 1.8s
+      // 0 -> 1: el teléfono sube pausadamente hacia el chip NFC a los 2.2s
       timerRef.current = setTimeout(() => {
         setStep(1);
-        // 1 -> 2 (carta abierta) a los 1.3s
+        // 1 -> 2: permanece en contacto con las ondas NFC y abre la carta a los 1.9s
         timerRef.current = setTimeout(() => {
           setStep(2);
-          // 2 -> 0 (vuelve a bajar para reiniciar) a los 5s
+          // 2 -> 0: la carta permanece legible y visible por 5.5s antes de reiniciar
           timerRef.current = setTimeout(() => {
             setStep(0);
-          }, 5000);
-        }, 1300);
-      }, 1800);
+          }, 5500);
+        }, 1900);
+      }, 2200);
     };
 
     runCycle();
@@ -50,9 +51,9 @@ export default function NfcTapDemo({ url }) {
       setStep(1);
       setTimeout(() => {
         setStep(2);
-        setTimeout(() => setIsAuto(true), 6500);
-      }, 1300);
-    }, 450);
+        setTimeout(() => setIsAuto(true), 7000);
+      }, 1900);
+    }, 600);
   };
 
   return (
@@ -60,7 +61,7 @@ export default function NfcTapDemo({ url }) {
       {/* Indicador de pasos superior */}
       <div className="flex items-center gap-1.5 sm:gap-2 mb-4 text-[11px] sm:text-xs font-bold">
         <span
-          className={`px-2.5 sm:px-3 py-1 rounded-full transition-all ${
+          className={`px-2.5 sm:px-3 py-1 rounded-full transition-all duration-500 ${
             step === 0
               ? 'bg-tinta text-mantel shadow-sm scale-105'
               : 'bg-mantel/70 text-suave border border-linea'
@@ -70,7 +71,7 @@ export default function NfcTapDemo({ url }) {
         </span>
         <span className="text-suave">→</span>
         <span
-          className={`px-2.5 sm:px-3 py-1 rounded-full transition-all flex items-center gap-1 ${
+          className={`px-2.5 sm:px-3 py-1 rounded-full transition-all duration-500 flex items-center gap-1 ${
             step === 1
               ? 'bg-hoja text-sobre-hoja shadow-md scale-105 animate-pulse'
               : 'bg-mantel/70 text-suave border border-linea'
@@ -80,7 +81,7 @@ export default function NfcTapDemo({ url }) {
         </span>
         <span className="text-suave">→</span>
         <span
-          className={`px-2.5 sm:px-3 py-1 rounded-full transition-all flex items-center gap-1 ${
+          className={`px-2.5 sm:px-3 py-1 rounded-full transition-all duration-500 flex items-center gap-1 ${
             step === 2
               ? 'bg-tinta text-mantel shadow-sm scale-105'
               : 'bg-mantel/70 text-suave border border-linea'
@@ -94,7 +95,7 @@ export default function NfcTapDemo({ url }) {
       <div className="relative w-full max-w-[340px] h-[420px] flex items-center justify-center select-none overflow-hidden rounded-2xl bg-mantel/40 p-2 border border-linea/70 shadow-inner">
         {/* Mesa con Sticker físico real (en el fondo) */}
         <div
-          className={`absolute transition-all duration-700 ease-out z-10 ${
+          className={`absolute transition-all duration-[1200ms] ease-out z-10 ${
             step === 2
               ? '-translate-y-20 scale-85 opacity-50 blur-[0.4px]'
               : '-translate-y-6 scale-95 opacity-100'
@@ -127,14 +128,14 @@ export default function NfcTapDemo({ url }) {
           </div>
         </div>
 
-        {/* Teléfono móvil optimizado: emerge desde ABAJO */}
+        {/* Teléfono móvil: movimiento desacelerado y suave desde ABAJO */}
         <div
-          className={`absolute transition-all duration-800 ease-[cubic-bezier(0.16,1,0.3,1)] z-20 ${
+          className={`absolute transition-all duration-[1400ms] ease-[cubic-bezier(0.16,1,0.3,1)] z-20 ${
             step === 0
-              ? 'translate-y-[260px] translate-x-2 rotate-[4deg] scale-90 opacity-75'
+              ? 'translate-y-[280px] translate-x-2 rotate-[4deg] scale-90 opacity-70'
               : step === 1
-              ? 'translate-y-[25px] translate-x-0 rotate-0 scale-95 shadow-[0_0_35px_rgba(40,167,69,0.5)]'
-              : 'translate-y-[15px] translate-x-0 rotate-0 scale-100 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.45)]'
+              ? 'translate-y-[25px] translate-x-0 rotate-0 scale-95 shadow-[0_0_40px_rgba(40,167,69,0.55)]'
+              : 'translate-y-[15px] translate-x-0 rotate-0 scale-100 shadow-[0_22px_55px_-12px_rgba(0,0,0,0.45)]'
           }`}
         >
           {/* Chasis del smartphone compacto y estilizado */}
@@ -148,7 +149,7 @@ export default function NfcTapDemo({ url }) {
             <div className="w-full h-full rounded-[24px] overflow-hidden bg-mantel text-tinta flex flex-col relative">
               {/* Notificación flotante emergente al detectar el NFC */}
               <div
-                className={`absolute top-6 inset-x-1.5 z-40 bg-tinta/95 text-mantel px-2.5 py-1.5 rounded-xl shadow-xl border border-mantel/20 transition-all duration-300 flex items-center gap-2 text-left ${
+                className={`absolute top-6 inset-x-1.5 z-40 bg-tinta/95 text-mantel px-2.5 py-1.5 rounded-xl shadow-xl border border-mantel/20 transition-all duration-500 flex items-center gap-2 text-left ${
                   step === 1
                     ? 'opacity-100 translate-y-0 scale-100'
                     : 'opacity-0 -translate-y-3 scale-95 pointer-events-none'
