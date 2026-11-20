@@ -228,21 +228,15 @@ export default function NfcTapDemo({ url }) {
                   </div>
                 </div>
               ) : (
-                /* Pantalla de Navegador con Carta abierta al escanear (Sin pedidos previos) */
+                /* Pantalla de la carta abierta al escanear (Inmersiva, sin notch ni barra de URL) */
                 <div className="h-full w-full flex flex-col bg-mantel text-tinta select-none overflow-hidden animate-fadeIn text-left">
-                  {/* Barra de dirección URL de navegador móvil */}
-                  <div className="h-5 bg-plato border-b border-linea/60 flex items-center justify-center px-2 shrink-0 text-[8px] text-suave gap-1 font-mono">
-                    <span className="text-hoja text-[7px]">🔒</span>
-                    <span className="truncate">kikes.app/r/la-trattoria/m/4</span>
-                  </div>
-
                   {/* Cabecera del restaurante recién abierto */}
-                  <div className="px-3 pt-2 pb-1.5 border-b border-linea/50 shrink-0">
+                  <div className="px-3 pt-3 pb-1.5 border-b border-linea/50 shrink-0">
                     <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-hoja/10 text-hoja text-[8px] font-bold">
                       <span className="w-1 h-1 rounded-full bg-hoja animate-pulse" />
                       <span>Mesa 4 · pide desde aquí</span>
                     </div>
-                    <h3 className="font-display font-extrabold text-[12px] leading-tight text-tinta truncate mt-0.5">
+                    <h3 className="font-display font-extrabold text-[13px] leading-tight text-tinta truncate mt-0.5">
                       La Trattoria Gourmet
                     </h3>
                   </div>
