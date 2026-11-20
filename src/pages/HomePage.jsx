@@ -180,7 +180,7 @@ export default function HomePage() {
               De la mesa a la cocina, sin papel.
             </h1>
             <p className="mt-6 text-lg sm:text-xl text-suave max-w-xl mx-auto leading-relaxed">
-              El comensal solo acerca su celular con NFC o escanea el QR: la carta abre al instante, la cocina recibe el pedido en segundos y la caja cobra en un clic.
+              Un toque en la mesa: el cliente pide, cocina marcha al instante y caja factura en un clic. Cero esperas, cero errores, ventas en automático.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link to="/crear-restaurante" className="btn btn-primary text-base px-6 h-12 shadow-lg">
