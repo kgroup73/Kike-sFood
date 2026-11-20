@@ -9,6 +9,7 @@ import Reveal from '../components/landing/Reveal';
 import TiltIn from '../components/landing/TiltIn';
 import { CartaAdminScreen, CocinaDesktop, CajaDesktop } from '../components/landing/Screens';
 import TableSticker from '../components/landing/TableSticker';
+import NfcTapDemo from '../components/landing/NfcTapDemo';
 import Faq from '../components/landing/Faq';
 import { PROJECT_NAME, PROJECT_TAGLINE, MAKER_NAME, MAKER_URL } from '../config/branding';
 import { isDemoMode } from '../services/api';
@@ -237,11 +238,8 @@ export default function HomePage() {
             <p className="mt-5 text-lg text-suave leading-relaxed">Un solo sistema con una pantalla para cada quien. Lo que pasa en una se ve en las otras.</p>
           </Reveal>
           <div className="mt-14 grid lg:grid-cols-[2fr_3fr] gap-6 items-stretch">
-            <Reveal variant="scale" className="rounded-[32px] bg-gradient-to-b from-plato to-maracuya/30 border border-linea px-8 py-12 flex flex-col items-center justify-center gap-10">
-              <TableSticker url={qrUrl} />
-              <p className="text-center text-suave max-w-xs leading-relaxed">
-                Stickers inteligentes con chip NFC y código QR. El comensal acerca el celular y pide sin fricción, o escanea el QR si prefiere la cámara.
-              </p>
+            <Reveal variant="scale" className="rounded-[32px] bg-gradient-to-b from-plato to-maracuya/30 border border-linea p-6 sm:p-8 flex flex-col items-center justify-center">
+              <NfcTapDemo url={qrUrl} />
             </Reveal>
             <ul className="grid sm:grid-cols-2 gap-4">
               {PANTALLAS.map(({ icon: Icon, who, title, text }, i) => (

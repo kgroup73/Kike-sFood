@@ -421,6 +421,15 @@ html.carta body {
   to { transform: translateY(0); opacity: 1; }
 }
 
+@keyframes nfc-ring {
+  0% { transform: scale(0.7); opacity: 0.9; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+.animate-nfc-ring {
+  animation: nfc-ring 1.3s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
