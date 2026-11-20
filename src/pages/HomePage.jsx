@@ -251,7 +251,7 @@ export default function HomePage() {
         </section>
 
         {/* Planes: el panel del personal en el computador, un plan por bloque */}
-        <section id="planes" aria-labelledby="planes-title" className="px-4 sm:px-6 scroll-mt-16 space-y-4">
+        <section id="planes" aria-labelledby="planes-title" className="px-4 sm:px-6 scroll-mt-16 space-y-6 sm:space-y-8 pb-4 sm:pb-6">
           <Reveal className="text-center max-w-2xl mx-auto pt-10 sm:pt-16 pb-8">
             <h2 id="planes-title" className="font-display font-extrabold text-4xl sm:text-6xl tracking-[-0.03em] leading-[0.95]">
               Un plan para cada etapa.
@@ -264,7 +264,7 @@ export default function HomePage() {
         </section>
 
         {/* Hechos */}
-        <section aria-labelledby="hechos-title" className="px-4 sm:px-6">
+        <section aria-labelledby="hechos-title" className="px-4 sm:px-6 mt-6 sm:mt-10">
           <div className="max-w-7xl mx-auto rounded-[32px] bg-plato border border-linea px-4 sm:px-10 py-16 sm:py-24">
             <Reveal className="text-center max-w-2xl mx-auto">
               <h2 id="hechos-title" className="font-display font-extrabold text-4xl sm:text-6xl tracking-[-0.03em] leading-[0.95]">Hecho para el servicio de todos los días.</h2>
